@@ -11,7 +11,8 @@ test-results
 .claude/
 
 # Local denylist terms — never formatted, never committed.
-.denylist.local
+.denylist.local*
+!.denylist.local.example
 
 # Prose is hand-wrapped and never reformatted. Reflowing an ADR produces a diff that
 # touches every line and makes the history of governance decisions unreadable.

@@ -34,7 +34,13 @@
 
 # Local denylist terms. NEVER COMMIT — this file holds the identifying information the
 # repo exists to keep out. The committed template is .denylist.local.example.
-.denylist.local
+#
+# The wildcard covers editor backups and hand-made copies (.bak, .save, ~, .orig).
+# A copy of this file that .gitignore does not match is indistinguishable from the
+# original in every way that matters, and is exactly how a local-only secret reaches
+# a commit. The negation keeps the template committable.
+.denylist.local*
+!.denylist.local.example
 
 # debug
 npm-debug.log*
