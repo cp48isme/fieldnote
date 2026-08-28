@@ -12,7 +12,7 @@ application does nothing beyond serving the default page.
 
 ### Added
 
-- Next.js 15 scaffold: App Router, `src/` layout, TypeScript in strict mode,
+- Next.js 16 scaffold: App Router, `src/` layout, TypeScript in strict mode,
   Tailwind v4, ESLint 9 flat config, pnpm.
 - Test tooling: Vitest on a jsdom environment, Playwright for end-to-end, each with a
   placeholder spec proving the harness runs.

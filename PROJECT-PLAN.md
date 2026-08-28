@@ -290,7 +290,7 @@ risk tier. Reviewers notice the difference.
 
 **Stack**
 
-- Next.js 15 (App Router), TypeScript in strict mode
+- Next.js 16 (App Router), TypeScript in strict mode
 - Tailwind, shadcn/ui
 - Dexie (IndexedDB) for local-first persistence
 - WebCrypto envelope encryption at rest, key derived from a passphrase
