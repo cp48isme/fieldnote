@@ -110,8 +110,8 @@ and pass rates are published in the README.
 ### Session 8 — Roster import
 *~2 hours*
 
-SheetJS, client-side. Column mapping UI, because sign-in sheets never have consistent
-headers. Fuzzy match against captured names.
+read-excel-file, client-side. Column mapping UI, because sign-in sheets never have
+consistent headers. Fuzzy match against captured names.
 
 **Done when:** a messy real-shaped `.xlsx` imports correctly and the file never touches
 the network.
