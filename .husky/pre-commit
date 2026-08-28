@@ -1,6 +1,31 @@
 set -e
 
-# Identifying information first: fail before anything reformats the diff.
+# Order is deliberate.
+#
+# 1. Denylist first. It must see the diff exactly as written, before any formatter
+#    rewrites line numbers, and a leaked name should fail before other signals compete
+#    for attention in the log.
+# 2. Gitleaks second: credentials, on the staged content only.
+# 3. lint-staged last, because it is the only step that modifies files.
 node scripts/check-denylist.mjs
+
+if command -v gitleaks >/dev/null 2>&1; then
+  # --redact keeps the matched secret out of terminal scrollback and CI logs, matching
+  # the denylist check's behaviour: report the location, never the value.
+  #
+  # `gitleaks git` superseded `gitleaks protect` in v8.18. Probe for it rather than
+  # pinning a subcommand, so the hook works on both old and current installs.
+  if gitleaks git --help >/dev/null 2>&1; then
+    gitleaks git --staged --redact --no-banner
+  else
+    gitleaks protect --staged --redact --no-banner
+  fi
+else
+  printf '\033[33mwarning\033[0m  gitleaks not found — secret scan SKIPPED.\n'
+  printf '         Install it:  brew install gitleaks\n'
+  printf '         (or see https://github.com/gitleaks/gitleaks#installing)\n'
+  printf '         Continuing so a fresh clone is not blocked, but this commit was\n'
+  printf '         NOT scanned for credentials.\n'
+fi
 
 pnpm exec lint-staged

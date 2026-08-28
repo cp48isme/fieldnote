@@ -48,8 +48,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files. `.env*` deliberately catches every variant, including ones nobody thinks
+# to add (.env.production.local, .env.test). The negation keeps the value-free template
+# committable — without it, .env.example is ignored like everything else and the
+# onboarding file silently never lands.
 .env*
+!.env.example
 
 # vercel
 .vercel
