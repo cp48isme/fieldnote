@@ -1,0 +1,6 @@
+set -e
+
+# Identifying information first: fail before anything reformats the diff.
+node scripts/check-denylist.mjs
+
+pnpm exec lint-staged

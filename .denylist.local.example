@@ -1,0 +1,33 @@
+# Denylist terms — template
+#
+# Copy this file to `.denylist.local` and replace the placeholders with the actual
+# terms you need to keep out of this repository: names of people, employers,
+# institutions, products, and anything else that identifies someone.
+#
+#     cp .denylist.local.example .denylist.local
+#
+# `.denylist.local` is gitignored and MUST STAY THAT WAY. It is the one file in this
+# repo that contains the information the project exists to protect. A committed list of
+# the names we are hiding would publish exactly what the check prevents, and hashing
+# them is not a fix — proper nouns are short and fall to a dictionary attack.
+#
+# Consequence, stated plainly: CI cannot see `.denylist.local`, so the term check runs
+# only on machines that have one. CI enforces the structural patterns (emails, phone
+# numbers) and nothing else. See the header of scripts/check-denylist.mjs.
+#
+# Format: one term per line. Blank lines and lines starting with # are ignored.
+# Matching is case-insensitive and word-boundary aware, so `Ackerman` catches
+# `ackerman` and `Ackerman's` but not `Ackermanized`. Multi-word entries are fine.
+
+# --- people (replace these placeholders) ---
+PLACEHOLDER_GIVEN_NAME
+PLACEHOLDER_SURNAME
+PLACEHOLDER_FULL_NAME
+
+# --- employer, manufacturer, product ---
+PLACEHOLDER_EMPLOYER
+PLACEHOLDER_PRODUCT
+
+# --- institutions and sites ---
+PLACEHOLDER_HOSPITAL
+PLACEHOLDER_CITY

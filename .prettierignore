@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+build
+coverage
+pnpm-lock.yaml
+playwright-report
+test-results
+
+# Tool-managed local settings, not ours to style.
+.claude/
+
+# Local denylist terms — never formatted, never committed.
+.denylist.local
+
+# Prose is hand-wrapped and never reformatted. Reflowing an ADR produces a diff that
+# touches every line and makes the history of governance decisions unreadable.
+*.md
+
