@@ -98,9 +98,9 @@ nightly debrief, cross-event pattern analysis.
   interruption. v1 is local-first: every keystroke debounced to IndexedDB, restored on
   load, with an explicit "recovered unsaved session" state. This is the highest-priority
   fix — everything else is worthless if a closed tab wipes the afternoon.
-- **Roster import.** Excel and CSV upload, parsed entirely in the browser via SheetJS.
-  Column mapping UI, because sign-in sheets never have the same headers twice. The file
-  never leaves the device.
+- **Roster import.** Excel and CSV upload, parsed entirely in the browser via
+  read-excel-file. Column mapping UI, because sign-in sheets never have the same
+  headers twice. The file never leaves the device.
 - **Draft generation** moves server-side so the API key isn't in the client.
 
 ### 3.2 Event planning — internal briefing (new)
@@ -290,11 +290,12 @@ risk tier. Reviewers notice the difference.
 
 **Stack**
 
-- Next.js 15 (App Router), TypeScript in strict mode
+- Next.js 16 (App Router), TypeScript in strict mode
 - Tailwind, shadcn/ui
 - Dexie (IndexedDB) for local-first persistence
 - WebCrypto envelope encryption at rest, key derived from a passphrase
-- SheetJS for client-side spreadsheet parsing
+- read-excel-file for client-side spreadsheet parsing — read-only by design; see
+  ADR-0003
 - React-PDF or Puppeteer for the briefing PDF
 - Anthropic API via a route handler; key server-side only
 - Vitest for unit tests, Playwright for end-to-end, custom harness for evals

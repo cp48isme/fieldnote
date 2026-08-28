@@ -12,13 +12,13 @@ application does nothing beyond serving the default page.
 
 ### Added
 
-- Next.js 15 scaffold: App Router, `src/` layout, TypeScript in strict mode,
+- Next.js 16 scaffold: App Router, `src/` layout, TypeScript in strict mode,
   Tailwind v4, ESLint 9 flat config, pnpm.
 - Test tooling: Vitest on a jsdom environment, Playwright for end-to-end, each with a
   placeholder spec proving the harness runs.
 - Runtime dependencies for the phases ahead: Dexie and `dexie-react-hooks` for
-  local-first persistence, SheetJS for client-side roster parsing, the Anthropic SDK,
-  and zod.
+  local-first persistence, read-excel-file for client-side roster parsing, the
+  Anthropic SDK, and zod.
 - Scripts: `dev`, `build`, `lint`, `typecheck`, `test`, `test:e2e`, `evals`, `format`.
   `evals` is a placeholder that exits 0, wired from the first commit so the pipeline
   exists before the guardrails it will gate.
@@ -41,11 +41,25 @@ application does nothing beyond serving the default page.
   major version bump gets its own review.
 - `SECURITY.md`, `.env.example`, an Apache 2.0 `LICENSE`, a pull request template, and
   this changelog.
-- ADR-0001 (public/private split) and ADR-0002 (invitation design), both recording the
-  rejected alternatives alongside the decision.
+- ADR-0001 (public/private split), ADR-0002 (invitation design), and ADR-0003
+  (spreadsheet parsing library), each recording the rejected alternatives alongside the
+  decision.
+
+### Changed
+
+- Spreadsheet parsing moves from `xlsx` (SheetJS) to `read-excel-file`. See ADR-0003.
 
 ### Security
 
+- Removed `xlsx@0.18.5`, resolving four open high-severity Dependabot alerts:
+  CVE-2023-30533 (prototype pollution) and CVE-2024-22363 (ReDoS). No registry update
+  could fix these — `0.18.5` is the newest version published to npm, and the patched
+  releases exist only on the vendor's own CDN. The vulnerable path is parsing a crafted
+  spreadsheet, which is exactly what roster import will do on untrusted files, so the
+  alerts were not dismissible as unreachable. The replacement is read-only by design:
+  the application never writes spreadsheets, and a parser that cannot write is a
+  smaller thing to trust. ADR-0003 records the rejected alternatives, including pinning
+  the vendor CDN tarball via a pnpm override.
 - All GitHub Actions are pinned to a commit SHA rather than a floating tag, with the
   version in a trailing comment so Dependabot can still bump them.
 - `.gitignore` uses wildcard-plus-negation for `.env*` and `.denylist.local*`, so
