@@ -1,10 +1,18 @@
-# Fieldnote — Project Plan
+# Field Follow-Up — Project Plan
 
-**Name:** Fieldnote (public build) / Truck Log (private build)
+**Project:** Fieldnote (`fieldnote`)
 **Owner:** cp48isme
 **Primary user:** one field representative running mobile demo events
-**Status:** prototype validated, moving to v1
-**Date:** August 2026
+**Status:** Phase 0 complete, Phase 1 in progress
+**Date:** August 2026 — revised 2026-09-01
+
+> **Revision note, 2026-09-01.** §3.1, §5, §6, and §7 were revised after Phase 0
+> shipped, to correct the stack description against what was actually built and to
+> record two decisions taken at the start of session 2 (ADR-0004, ADR-0005). The
+> substance of §1–§4 is unchanged.
+>
+> "Truck Log" was the prototype's working title and is retained only in the history.
+> The repository, and the system, are Fieldnote.
 
 ---
 
@@ -99,9 +107,14 @@ nightly debrief, cross-event pattern analysis.
   load, with an explicit "recovered unsaved session" state. This is the highest-priority
   fix — everything else is worthless if a closed tab wipes the afternoon.
 - **Roster import.** Excel and CSV upload, parsed entirely in the browser via
-  read-excel-file. Column mapping UI, because sign-in sheets never have the same
-  headers twice. The file never leaves the device.
+  `read-excel-file` (see ADR-0003; the original SheetJS dependency was replaced during
+  Phase 0). Column mapping UI, because sign-in sheets never have the same headers twice.
+  The file never leaves the device.
 - **Draft generation** moves server-side so the API key isn't in the client.
+
+**Dictated capture** uses the device keyboard's own dictation. The application records
+no audio and integrates no transcription service; dictated input reaches it as text and
+is treated as untrusted. See ADR-0005.
 
 ### 3.2 Event planning — internal briefing (new)
 
@@ -110,7 +123,7 @@ A styled PDF the representative generates and sends to her team before an event.
 Contents: event dossier (date, location, configuration, objectives); attendee profiles
 with photo, specialty, institution, prior interaction history, and a suggested opener;
 approved talking points; logistics with a site map; staffing roles; contact cards with
-photos and numbers for the truck operator, the site coordinator, and the representative;
+photos and numbers for the truck operator, the site coordinator, and the representative herself;
 contingency plan.
 
 Two constraints matter here.
@@ -201,6 +214,11 @@ Pair it with zero-retention configuration on the API and you have a genuinely st
 demonstrable data-minimization story. Write it up as a data flow diagram. It's the
 single most impressive thing in the repo.
 
+**The single-egress claim is load-bearing and constrains later decisions.** It is the
+reason ADR-0005 rejects API transcription: a second egress would not weaken this
+section, it would falsify it. Any future proposal that adds a network destination
+should be tested against this paragraph first.
+
 ### 4.2 Approved-content-only mode for claim-bearing text
 
 Two classes of generated text, with different rules.
@@ -258,6 +276,10 @@ guardrail failures:
 Each case has an assertion. The suite runs in CI on every change to a prompt, guardrail,
 or model version. A pull request that weakens a guardrail fails the build.
 
+Cases in the dictated-input class should be written from real dictation artifacts
+rather than invented — see §7 and ADR-0005. Synthetic dictation is reliably too clean to
+test anything.
+
 Publish the pass rates in the README. An AI governance candidate who ships a red-team
 harness against their own system, wired into CI, with published results, is in a
 different category from one who writes a policy. This is where you spend your effort.
@@ -284,22 +306,38 @@ transparency. Saying so accurately, and then voluntarily implementing Article 12
 logging anyway with a clear rationale, reads as far more competent than overclaiming a
 risk tier. Reviewers notice the difference.
 
+The same standard applies to the control set. Where a control listed in §5 was
+deliberately not built, the ADR recording that decision is the artifact, and
+`THREAT-MODEL.md` and `DATA-PROTECTION.md` should state the residual risk plainly rather
+than eliding it. See ADR-0004.
+
 ---
 
 ## 5. Technical architecture
 
-**Stack**
+**Stack — installed as of Phase 0**
 
 - Next.js 16 (App Router), TypeScript in strict mode
-- Tailwind, shadcn/ui
-- Dexie (IndexedDB) for local-first persistence
-- WebCrypto envelope encryption at rest, key derived from a passphrase
-- read-excel-file for client-side spreadsheet parsing — read-only by design; see
-  ADR-0003
-- React-PDF or Puppeteer for the briefing PDF
-- Anthropic API via a route handler; key server-side only
-- Vitest for unit tests, Playwright for end-to-end, custom harness for evals
-- Vercel deployment, GitHub Actions for CI
+- Tailwind v4
+- `read-excel-file` for client-side spreadsheet parsing (ADR-0003)
+- pnpm, Vitest for unit tests, Playwright for end-to-end, GitHub Actions for CI
+
+**Stack — chosen, not yet installed**
+
+These are decisions, not yet load-bearing code. Dexie and the Anthropic SDK are in
+`package.json` but nothing imports them; the rest are not installed at all. Each
+becomes real with the session that needs it.
+
+- Dexie (IndexedDB) for local-first persistence — installed, unused until session 2
+- shadcn/ui — session 3
+- Anthropic API via a route handler, key server-side only — SDK installed, route
+  lands session 5
+- Custom harness for evals — session 7
+- React-PDF or Puppeteer for the briefing PDF — session 11
+- Vercel deployment
+
+Keeping these lists separate is the point: a stack section that reads as built when it
+is aspirational is the same category of error as an eval badge over an empty suite.
 
 **Non-negotiables**
 
@@ -309,8 +347,20 @@ risk tier. Reviewers notice the difference.
 3. No third-party analytics. None. A tool handling physician data does not phone home
    to a marketing SDK.
 4. Content Security Policy, Subresource Integrity, strict headers. Table stakes, but a
-   reviewer will check.
+   reviewer will check — and asserted in CI against a live response, not just present in
+   config. Lands with the route handler in session 5.
 5. PWA with a service worker so capture works offline in a parking lot with no signal.
+   Lands with the capture UI in session 3, and is verified by a hard reload with the
+   network disabled — not by toggling the network on an already-loaded page.
+6. No audio. The application requests no microphone permission, stores no recordings,
+   and integrates no transcription service. Dictation is the device keyboard's, and
+   dictated text is untrusted input. See ADR-0005.
+7. All persistence routes through a single data-access layer, with `encrypt`/`decrypt`
+   hooks and every field classified as encryption-eligible or not. The hooks are
+   pass-throughs in the public build; real WebCrypto envelope encryption is private-fork
+   only and ships in session 19, gated on a key-recovery story. This replaces the
+   original unconditional encryption-at-rest requirement — see ADR-0004 for the threat
+   analysis and the availability argument behind the change.
 
 **Data model**
 
@@ -318,46 +368,69 @@ risk tier. Reviewers notice the difference.
 plus `VoiceProfile`, `ApprovedContent`, `Settings`
 
 Every record carries `createdAt`, `updatedAt`, and a schema version for migrations.
+Every field carries an encryption-eligibility classification, per non-negotiable 7.
 
 ---
 
 ## 6. Phases
 
-**Phase 0 — foundation (this weekend).** Repo, CI, doc skeleton, ADR-0001 recording
-the public/private split. Nothing works yet; the scaffolding is visible.
+**Phase 0 — foundation.** Repo, CI, doc skeleton, ADR-0001 recording the public/private
+split. Nothing works yet; the scaffolding is visible. **Complete, 2026-08-28.**
+~2 hours.
 
 **Phase 1 — parity, done properly (week 1–2).** Capture, persistence with crash
 recovery, roster import, drafting server-side, pseudonymization boundary, review gate,
 audit log, and the first eval cases. Compliance lands with the feature, never after.
+~22 hours.
 
 **Phase 2 — planning A (week 3).** Approved content library, attendee profiles, the
-briefing PDF.
+briefing PDF. ~8.5 hours.
 
 **Phase 3 — planning B (week 4).** Pre-event email, map links, `.ics` generation,
-site map upload, Design A invite behind its flag.
+site map upload, Design A invite behind its flag. ~7 hours.
 
 **Phase 4 — hardening (week 5).** Eval suite to full coverage, threat model, DPIA,
-compliance map, published results, demo video.
+compliance map, published results, demo video. ~12 hours.
 
-Five weeks of evenings. Phase 1 alone is a defensible portfolio piece; don't let
-Phases 2–4 hold up shipping something real.
+**Private fork, off the critical path.** Session 19, encryption at rest over the seam
+built in session 2. ~3 hours. Not required for the public build, and gated on the same
+§2 conversation that gates private deployment generally.
+
+Roughly six weeks of evenings at three a week; nine to ten at two. Phase 1 alone is a
+defensible portfolio piece; don't let Phases 2–4 hold up shipping something real.
 
 ---
 
 ## 7. What I need from you
 
-§1 and §3.4 are settled — ADR-0001 and ADR-0002 are drafted and ready to commit. What
-remains:
+§1 and §3.4 are settled — ADR-0001 and ADR-0002 are committed. §5's encryption and
+dictation questions are settled as ADR-0004 and ADR-0005. What remains:
 
 1. **8–15 more of the representative's emails**, with range: an enthusiastic recipient, a lukewarm
    one, a department chair, a staff coordinator, and one where she's asking for
-   something. Range matters more than volume. Placeholder the names.
-2. **Status on §2** — has the representative raised this with her manager, or is that still ahead?
-   Doesn't block the public build, gates the private one.
-3. **What "approved content" she actually has** — a leave-behind, an approved slide,
+   something. Range matters more than volume. One `.md` file, samples separated by
+   `---`, each preceded by three lines: recipient role, what it followed, and how warm
+   they were. Whole emails — subject line and sign-off included, because the sign-off is
+   voice. Names placeholdered (`[Dr. A]`, `[Coordinator B]`); the specifics of what each
+   person said or asked about are kept, because those are the entire signal.
+   **Status: requested, in progress.**
+2. **6–10 dictated notes, uncorrected.** Recorded on her phone's keyboard dictation,
+   under realistic conditions, and sent exactly as they came out — punctuation,
+   homophones, mangled surnames, false starts, and all. These are input material for
+   sessions 4, 7, and 15, which all depend on knowing what real dictation produces.
+   See ADR-0005. **Status: to request.**
+3. **Status on §2** — has the representative raised it with her manager, or is that still ahead?
+   Doesn't block the public build, gates the private one. **Status: open.**
+4. **What "approved content" she actually has** — a leave-behind, an approved slide,
    a fact sheet. It determines whether §4.2 is a library-selection feature or just a
-   text field she pastes into.
-4. **Your GitHub handle**, and confirmation the repo is public from the first commit.
+   text field she pastes into. Needed by session 9. **Status: open.**
+
+Items 1 and 2 are private-fork material and are gitignored on the public side. Where
+dictated notes are adapted into public eval cases, names are replaced with the synthetic
+roster per ADR-0001.
+
+*(The original item 4 — GitHub handle and public-from-first-commit — was resolved in
+Phase 0: `cp48isme`, public from the first commit.)*
 
 ---
 
@@ -370,3 +443,7 @@ remains:
 - How much do you want to invest in the voice profile versus letting her edit? There's
   a real ceiling on style matching, and past a point her editing pass is faster than
   another round of prompt work.
+- What retention policy does the local store get? ADR-0004 leans on "the device holds
+  two events, not two years" as a mitigation for accepted residual risk, which means
+  retention needs to be a real implemented behaviour rather than an assumption. Decide
+  before session 16.

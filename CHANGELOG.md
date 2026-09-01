@@ -44,10 +44,30 @@ application does nothing beyond serving the default page.
 - ADR-0001 (public/private split), ADR-0002 (invitation design), and ADR-0003
   (spreadsheet parsing library), each recording the rejected alternatives alongside the
   decision.
+- ADR-0004 — encryption seam in the data layer; passphrase-derived encryption at rest
+  deferred to the private fork. Declines to build the control in the public build: it
+  closes one row of a five-row threat table and introduces a permanent data-loss path
+  into the workflow the project exists to make reliable. The seam ships; the
+  cryptography is gated on a key-recovery story.
+- ADR-0005 — device dictation only; no microphone permission, no audio storage, no
+  transcription service. A transcription call would be a second egress, and dictated
+  text is treated as untrusted input.
+- `docs/adr/README.md` — index of all five records, and the convention they follow:
+  immutable once accepted, superseded when a decision changes, amended in place with a
+  dated note when a consequence is added.
 
 ### Changed
 
 - Spreadsheet parsing moves from `xlsx` (SheetJS) to `read-excel-file`. See ADR-0003.
+- ADR-0003 amended with two consequences surfaced while planning session 8: the loss of
+  legacy `.xls` support, which roster import must detect and explain rather than fail
+  on, and `read-excel-file`'s less-proven handling of pathological real-world
+  spreadsheets. The decision is unchanged.
+- `PROJECT-PLAN.md` and `BUILD-GUIDE.md` revised to record Phase 0 as shipped and moved
+  into `docs/`, where CLAUDE.md locates them. Plan §5 now separates the stack that is
+  installed from the stack that is chosen but not yet installed. Session estimates
+  revised: Phase 1 ~22 hours, Phase 2 ~8.5, public total ~51.5, with the private-fork
+  encryption session excluded from that total.
 
 ### Security
 
