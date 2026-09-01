@@ -17,7 +17,6 @@
 
 import {
   clearSessionMarkers,
-  getSessionMarker,
   insertSessionMarker,
   listOpenSessionMarkers,
   makeSessionMarker,
@@ -44,6 +43,8 @@ export interface SessionHandle {
 }
 
 let current: SessionMarkerRecord | null = null;
+/** A marker closed by `endSession` that `resumeSession` can reopen. */
+let suspended: SessionMarkerRecord | null = null;
 let heartbeat: ReturnType<typeof setInterval> | null = null;
 
 /**
@@ -115,16 +116,48 @@ export async function recordTouchedNote(noteId: Id): Promise<void> {
 }
 
 /**
- * Marks a clean shutdown. Registered on `pagehide`, which fires on tab close and
- * navigation. It deliberately does not fire on a renderer crash or a force quit — that
- * asymmetry is what makes an open marker meaningful.
+ * Marks a clean shutdown.
+ *
+ * Deliberately a single write against in-memory state, not a read-modify-write. The
+ * page is being torn down when this runs, and every extra IndexedDB round trip is
+ * another chance the browser kills the renderer first. An earlier version read the
+ * marker back before updating it and lost that race often enough to report a clean
+ * close as a crash — a false "your session ended unexpectedly" is worse than no notice
+ * at all, because it teaches the user to ignore the one that matters.
+ *
+ * Callers should invoke this on `visibilitychange` → hidden as well as `pagehide`. The
+ * visibility event fires while the page is still fully alive, so in practice the write
+ * has already landed by the time the tab actually closes; `pagehide` is the backstop.
+ * Neither fires on a crash or a force quit, and that asymmetry is what makes an open
+ * marker meaningful.
  */
 export async function endSession(): Promise<void> {
   stopHeartbeat();
   if (!current) return;
-  const latest = (await getSessionMarker(current.id)) ?? current;
-  await updateSessionMarker({ ...latest, endedAt: Date.now() });
+  const closing: SessionMarkerRecord = { ...current, endedAt: Date.now() };
+  suspended = closing;
   current = null;
+  await updateSessionMarker(closing);
+}
+
+/**
+ * Reopens the same marker when a hidden tab becomes visible again.
+ *
+ * Without this, backgrounding a tab would leave its session marked closed for good, and
+ * a crash after returning to it would go unreported. Reuses the existing marker rather
+ * than starting a new one, so toggling tabs does not accumulate rows.
+ */
+export async function resumeSession(): Promise<void> {
+  if (current || !suspended) return;
+  const reopened: SessionMarkerRecord = {
+    ...suspended,
+    endedAt: null,
+    lastSeenAt: Date.now(),
+  };
+  suspended = null;
+  current = reopened;
+  startHeartbeat();
+  await updateSessionMarker(reopened);
 }
 
 /**
@@ -139,4 +172,5 @@ export async function acknowledgeRecovery(recovered: RecoveredSession): Promise<
 export function resetSessionState(): void {
   stopHeartbeat();
   current = null;
+  suspended = null;
 }

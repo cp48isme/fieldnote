@@ -20,6 +20,7 @@ import {
   createEvent,
   createNote,
   endSession,
+  resumeSession,
   listEvents,
   listNotes,
   recordTouchedNote,
@@ -78,14 +79,25 @@ export default function Home() {
     };
   }, []);
 
-  // Clean shutdown: flush the pending write, then close the session marker. A crash
-  // skips both, which is exactly what makes an open marker meaningful.
+  // Clean shutdown. `visibilitychange` is the primary signal because it fires while the
+  // page is still fully alive, so the write lands well before teardown; `pagehide` is
+  // the backstop for the case where the tab goes straight from visible to gone. Neither
+  // runs on a crash, which is what makes an open marker meaningful.
   useEffect(() => {
-    const onPageHide = () => {
-      void autosave.flush().then(() => endSession());
+    const closeCleanly = () => {
+      void autosave.flush();
+      void endSession();
     };
-    window.addEventListener("pagehide", onPageHide);
-    return () => window.removeEventListener("pagehide", onPageHide);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") closeCleanly();
+      else void resumeSession();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", closeCleanly);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", closeCleanly);
+    };
   }, [autosave]);
 
   const onCreateEvent = useCallback(async () => {

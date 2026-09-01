@@ -67,6 +67,7 @@ export {
 export {
   beginSession,
   endSession,
+  resumeSession,
   recordTouchedNote,
   acknowledgeRecovery,
   resetSessionState,
