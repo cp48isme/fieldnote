@@ -83,6 +83,10 @@ Substantive architectural or governance choices get an ADR in `docs/adr/`, numbe
 sequentially, following the existing format. Record rejected alternatives and their
 reasoning — the rejections are as much a part of the artifact as the decisions.
 
-Existing:
+Existing (index and conventions in `docs/adr/README.md`):
 - ADR-0001 — de-branded public build, private fork for production use
 - ADR-0002 — attendee invitation limited to recipient-forwarded messages
+- ADR-0003 — `read-excel-file` for spreadsheet parsing, replacing `xlsx` (SheetJS)
+- ADR-0004 — encryption seam in the data layer; passphrase-derived encryption deferred
+  to the private fork
+- ADR-0005 — device dictation only; no audio capture, storage, or transcription
