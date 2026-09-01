@@ -68,6 +68,18 @@ application does nothing beyond serving the default page.
   installed from the stack that is chosen but not yet installed. Session estimates
   revised: Phase 1 ~22 hours, Phase 2 ~8.5, public total ~51.5, with the private-fork
   encryption session excluded from that total.
+- ADR-0004 amended with the full-disk-encryption premise its threat table rests on,
+  verified rather than assumed: `fdesetup status` reported `FileVault is On` on
+  2026-09-01, on the machine the private fork is intended to run on. Recorded as a dated
+  dependency of the record — nothing in the repository detects or enforces FileVault, so
+  the analysis needs re-running if it is ever disabled. The dependency applies to row 1
+  of the table only; row 2 rests on a different premise. The decision is unchanged.
+- ADR-0005 amended, and build guide session 5 extended, so the single-egress claim in
+  plan §4.1 becomes a CI check rather than a prose assertion: from session 5 the build
+  fails when a network destination other than the model API route appears in `src/`. The
+  initial check is a grep and is recorded as catching the careless case rather than the
+  determined one, scheduled to tighten in session 15. The check is owed, not yet written.
+  The decision is unchanged.
 
 ### Security
 

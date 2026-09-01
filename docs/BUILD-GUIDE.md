@@ -120,8 +120,30 @@ minutes of the estimate. Assert them in a test against a live response rather th
 leaving a config file nobody reads again — in this repository a control that isn't tested
 isn't a control.
 
+**Plus a single-egress check in CI** (plan §4.1, ADR-0005). The claim that this system
+has exactly one network destination — the model API route — is the strongest property in
+the repository, and it currently lives only in prose. Make it a test that fails the
+build when a second destination appears.
+
+Start crude. A grep over `src/` for `fetch(`, `XMLHttpRequest`, `new WebSocket`,
+`navigator.sendBeacon`, `EventSource`, and `import(` with a remote specifier, with the
+model route as the single allowed destination, is enough. The value is not in the
+sophistication of the check; it is that adding a transcription service, an analytics
+SDK, or a CDN font in month four fails CI instead of passing unnoticed. Budget about 30
+minutes, and expect the allowlist to be the fiddly part.
+
+Tighten it as the codebase grows. A grep is easy to evade once there is indirection —
+a URL assembled from parts, a fetch behind a wrapper, a dependency that phones home from
+inside `node_modules` where this check never looks. The honest framing is that this
+catches the careless case, not the determined one, and the check should be described that
+way wherever it is cited rather than as proof of the property. Revisit it in session 15
+when the threat model is written, and consider whether a CSP `connect-src` assertion
+against a live response covers more ground than the grep does.
+
 **Done when:** drafts generate end to end with names tokenized in the API payload and
-correct in the UI, and a CI test asserts the security headers on a real response.
+correct in the UI, a CI test asserts the security headers on a real response, and a CI
+check fails when a network destination other than the model route is introduced —
+verified by adding one temporarily and watching the build go red.
 
 ### Session 6 — Audit log and review gate
 *~2–3 hours*

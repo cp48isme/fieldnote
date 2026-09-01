@@ -3,6 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Deciders:** cp48isme (owner)
+- **Amended:** 2026-09-01 — one consequence added recording that the single-egress
+  property becomes a CI check. The decision is unchanged.
 
 ## Context
 
@@ -93,6 +95,12 @@ thing this repository should not ship.
 **Positive**
 
 - §4.1's single-egress claim remains literally true and defensible under inspection.
+- **Added 2026-09-01.** That claim stops being a documentation assertion and becomes an
+  enforced one: from session 5, CI fails the build when a network destination other than
+  the model API route appears in `src/`. A future transcription service would therefore
+  break the build rather than quietly falsify this record. The initial check is a grep
+  and catches the careless case rather than the determined one — it should be cited with
+  that limit attached, and is scheduled to tighten in session 15.
 - No microphone permission prompt, which is one less thing to explain and one less
   capability to hold.
 - No audio retention question in the DPIA (session 16), because there is no audio.
