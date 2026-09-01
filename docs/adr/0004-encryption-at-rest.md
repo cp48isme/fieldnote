@@ -3,6 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Deciders:** cp48isme (owner)
+- **Amended:** 2026-09-01 — the full-disk-encryption premise under the threat table
+  verified and dated. The decision is unchanged.
 
 ## Context
 
@@ -27,6 +29,33 @@ threats to locally persisted data on the representative's device:
 | Malicious extension, or XSS in the page | No — operates in page context, after decryption |
 | Backup or sync service copying the browser profile | Partially — only while the passphrase is not cached |
 | Another local process reading the profile off disk | Yes, while locked — this is the genuine residual gap |
+
+**Added 2026-09-01 — the full-disk-encryption premise, verified.** Row 1 dismisses
+app-level encryption on the grounds that full-disk encryption already covers the threat.
+That was originally asserted rather than checked, and it is load-bearing: if FileVault
+were off, a lost or stolen powered-off device would be an uncovered threat and the
+arithmetic of this table would change.
+
+Checked on 2026-09-01 against the machine the private fork is intended to run on
+(macOS 15.6, build 24G84):
+
+```
+$ fdesetup status
+FileVault is On.
+```
+
+Row 1's dismissal therefore holds **as of that date, and only while FileVault remains
+enabled**. It is a dependency of this record, not a property of the application, and
+nothing in this repository detects or enforces it. If FileVault is ever disabled on a
+device holding private-fork data, row 1 becomes uncovered and this analysis should be
+re-run before relying on it.
+
+Two narrower points, so the scope of what was verified is not overstated. Row 2 is
+dismissed on a different premise — that the browser session is already open on an
+unlocked device — which full-disk encryption does not bear on either way; disk
+encryption offers nothing once the volume is mounted. And this check covers one machine
+at one moment: it says nothing about any other device the private fork might later run
+on.
 
 One row of five, and that row is conditional on the passphrase not being cached — which
 in practice it would be, because a passphrase prompt on every load is not survivable at an
