@@ -29,3 +29,18 @@ else
 fi
 
 pnpm exec lint-staged
+
+# 4. Beads last, and chained here rather than given its own hooks directory.
+#
+# `bd init` installs .beads/hooks/ and repoints core.hooksPath at it, which silently
+# replaces this file — disabling the denylist and gitleaks checks above with no error
+# and no warning. CI does not catch it, because CI enforces structural patterns only.
+# If beads is ever reinitialised, check `git config core.hooksPath` still reads
+# `.husky/_` before trusting a green commit.
+#
+# Non-fatal on purpose: an issue tracker failing to sync must not block a commit that
+# has already passed the checks that matter.
+if command -v bd >/dev/null 2>&1; then
+  BD_GIT_HOOK=1 bd hooks run pre-commit "$@" || \
+    printf '\033[33mwarning\033[0m  beads pre-commit hook failed; commit proceeding.\n'
+fi

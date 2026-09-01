@@ -66,6 +66,12 @@ pass before merge.
 - Write the eval case before the guardrail. A guardrail with no adversarial test is
   unverified.
 - Schema changes require a migration and a version bump.
+- Use `bd` commands for issue tracking, not markdown TODOs. Beads holds internal build
+  state: findings, deferred decisions, open questions. GitHub issues hold anything a
+  public reader should see. Issue #11 stays where it is.
+- One session, one PR. A finding that surfaces mid-session and isn't blocking gets a
+  bead, not a new branch. Amend documents when the session that changes them lands, not
+  on discovery.
 - If a task requires violating a constraint above, stop and say so rather than finding
   a way around it. The constraint is the point.
 
