@@ -3,6 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-08-28
 - **Deciders:** cp48isme (owner)
+- **Amended:** 2026-09-01 — two consequences added to the Negative list. The decision is
+  unchanged.
 
 ## Context
 
@@ -112,6 +114,19 @@ larger risk than either library, and the effort belongs in the guardrails instea
   points.
 - Less community material and fewer worked examples than SheetJS, which is the more
   widely used library despite its maintenance state.
+- **Added 2026-09-01.** `read-excel-file` reads the OOXML `.xlsx` format only. SheetJS
+  additionally reads the legacy binary `.xls` format, and this decision gives that up.
+  Sign-in sheets are exactly the kind of artifact that arrives as a file someone saved
+  from a desktop copy of Office years ago, so the gap is not theoretical. Session 8 must
+  therefore detect `.xls` explicitly and tell the user to re-save as `.xlsx`, rather
+  than failing with a parse error that looks like a bug. That is an acceptable answer —
+  it is one instruction, and adding a legacy binary parser back into an untrusted-input
+  path to avoid giving it would invert the whole decision — but it should be a
+  deliberate, implemented behaviour rather than a surprise discovered at an event.
+- **Added 2026-09-01.** SheetJS has absorbed a decade of pathological real-world
+  spreadsheets. `read-excel-file` has not, and its behaviour on merged header cells,
+  stray formatting rows, and multi-row headers is less proven. Budget session 8's column
+  mapping UI accordingly; it may need to tolerate more input shapes than expected.
 
 **Residual risk — not mitigated by this decision**
 
