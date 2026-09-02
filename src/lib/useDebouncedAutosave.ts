@@ -44,6 +44,17 @@ export function useDebouncedAutosave<T>(
   const pending = useRef<{ value: T } | null>(null);
   /** The write currently running, so a second one queues behind it and `flush` can wait. */
   const inFlight = useRef<Promise<void> | null>(null);
+  /**
+   * Increments once per write, so a finishing write can tell whether it is still the
+   * current one before clearing `inFlight`.
+   *
+   * A counter rather than comparing the promise against `inFlight.current`, which is what
+   * this did first. That comparison was correct — identity, not a forgotten `await` — but
+   * it reads as a missing await to anyone scanning the file, and CodeQL's `js/missing-await`
+   * flagged it for exactly that reason. A guard that has to be explained every time it is
+   * read is worse than the equivalent one that does not.
+   */
+  const writeId = useRef(0);
   // Held in a ref so a caller passing an inline closure does not restart the debounce
   // on every render.
   //
@@ -66,7 +77,9 @@ export function useDebouncedAutosave<T>(
     if (!next) return;
     pending.current = null;
 
-    const run = (async () => {
+    const id = (writeId.current += 1);
+
+    inFlight.current = (async () => {
       try {
         await saveRef.current(next.value);
         setState("saved");
@@ -78,9 +91,10 @@ export function useDebouncedAutosave<T>(
       }
     })();
 
-    inFlight.current = run;
-    await run;
-    if (inFlight.current === run) inFlight.current = null;
+    await inFlight.current;
+    // Only the newest write clears the slot. Anything else would drop a later write's
+    // promise on the floor and let `flush` return before it had finished.
+    if (writeId.current === id) inFlight.current = null;
   }, []);
 
   const schedule = useCallback(
