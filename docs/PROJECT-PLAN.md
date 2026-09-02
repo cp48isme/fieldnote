@@ -419,7 +419,10 @@ defensible portfolio piece; don't let Phases 2–4 hold up shipping something re
 ## 7. What I need from you
 
 §1 and §3.4 are settled — ADR-0001 and ADR-0002 are committed. §5's encryption and
-dictation questions are settled as ADR-0004 and ADR-0005. What remains:
+dictation questions are settled as ADR-0004 and ADR-0005. Items 1 to 3 below have since
+arrived or been resolved; **item 4 is the only one still outstanding.** The closed items
+are kept rather than deleted, because what was asked for and what was received are both
+inputs a later session has to be able to check.
 
 1. **8–15 more of the representative's emails**, with range: an enthusiastic recipient, a lukewarm
    one, a department chair, a staff coordinator, and one where she's asking for
@@ -428,28 +431,48 @@ dictation questions are settled as ADR-0004 and ADR-0005. What remains:
    they were. Whole emails — subject line and sign-off included, because the sign-off is
    voice. Names placeholdered (`[Dr. A]`, `[Coordinator B]`); the specifics of what each
    person said or asked about are kept, because those are the entire signal.
-   **Status: requested, in progress.**
+   **Status: received.** Eight samples at `private/email-samples.md`.
+   The three-line preambles are not filled in yet, so the samples teach register but not
+   personalisation until they are. That is the ceiling the build guide already names for
+   session 5, and no amount of prompt work raises it.
 2. **6–10 dictated notes, uncorrected.** Recorded on her phone's keyboard dictation,
    under realistic conditions, and sent exactly as they came out — punctuation,
    homophones, mangled surnames, false starts, and all. These are input material for
    sessions 4, 7, and 15, which all depend on knowing what real dictation produces.
-   See ADR-0005. **Status: to request.**
+   See ADR-0005. **Status: received.** Seven notes at `private/dictated-notes.md`;
+   sessions 4, 7, and 15 are unblocked.
 3. **Status on §2** — has the representative raised it with her manager, or is that still ahead?
-   Doesn't block the public build, gates the private one. **Status: open.**
+   Doesn't block the public build, gates the private one. **Status: resolved.**
 4. **What "approved content" she actually has** — a leave-behind, an approved slide,
    a fact sheet. It determines whether §4.2 is a library-selection feature or just a
    text field she pastes into. Needed by session 9. **Status: open.**
 
-Items 1 and 2 are private-fork material and belong at `private/`, which is gitignored on
-the public side. Where dictated notes are adapted into public eval cases, names are
-replaced with the synthetic roster per ADR-0001.
+Items 1 and 2 are private-fork material and live at `private/`, which is gitignored on
+the public side. Where either is adapted into public eval cases, **names are replaced with
+the synthetic roster per ADR-0001, and so is every product and commercial detail** —
+product characteristics, competitive pricing comparisons, and regulatory indication
+status among them. Each of those identifies the manufacturer to anyone who works in the
+field, whether or not a name survives, and each is the employer's commercial data in its
+own right rather than personal data that de-identification would address. What the eval
+cases need from these files is the *shape* of dictation — the run-ons, the homophones,
+the mangled surnames, the claim-shaped question — not the actual product facts, and the
+shape survives substitution intact.
 
-> **Amended 2026-09-02, session 3.** This paragraph previously asserted that items 1 and
-> 2 were already gitignored. No such rule existed — `.gitignore` covered build output,
-> `.denylist.local*`, and `.env*`, and nothing else — so the material had no safe landing
-> place and the claim was false from the day it was written. `private/` was added to
-> `.gitignore` in the same commit as this amendment, which makes the sentence true and
-> names the path rather than leaving it implied.
+> **Amended 2026-09-02, session 3.** Two corrections, both to claims that were false when
+> written.
+>
+> This paragraph asserted that items 1 and 2 were already gitignored. No such rule existed
+> — `.gitignore` covered build output, `.denylist.local*`, and `.env*`, and nothing else —
+> so the material had no safe landing place. `private/` was added to `.gitignore` in the
+> same commit as the first version of this amendment.
+>
+> It then said only that *names* are replaced when this material is adapted into public
+> eval cases. That is not sufficient, and the gap is not a small one: the dictated notes
+> carry product characteristics, a competitive pricing comparison, and regulatory
+> indication status. Any of those identifies the manufacturer to an industry reader with
+> every name already removed, which is the ADR-0001 failure this repository exists to
+> avoid, and they remain the employer's commercial data regardless. The sentence now
+> covers product and commercial detail alongside names.
 
 *(The original item 4 — GitHub handle and public-from-first-commit — was resolved in
 Phase 0: `cp48isme`, public from the first commit.)*
