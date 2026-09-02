@@ -39,24 +39,45 @@ export function useDebouncedAutosave<T>(
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<{ value: T } | null>(null);
+  /** The write currently running, so a second one queues behind it and `flush` can wait. */
+  const inFlight = useRef<Promise<void> | null>(null);
   // Held in a ref so a caller passing an inline closure does not restart the debounce
   // on every render.
+  //
+  // The reassignment below is load-bearing, not redundant. `useRef(save)` alone captures
+  // the first render's closure forever; reassigning on every render is what lets the save
+  // callback see current state without the caller threading refs of its own. Callers
+  // depend on that — see the autosave comment in `CaptureScreen`. Do not "tidy" it away.
   const saveRef = useRef(save);
   saveRef.current = save;
 
-  const write = useCallback(async () => {
+  const write = useCallback(async (): Promise<void> => {
+    // Wait out a write that is already running before starting another. Two writes racing
+    // on the same record is bad enough; the sharper problem is that without this, `flush`
+    // could resolve while a save was still in flight, and a caller that moved the editor
+    // to a different note straight afterwards would have the earlier write's completion
+    // land on top of the move — pointing the editor at the previous note.
+    await inFlight.current;
+
     const next = pending.current;
     if (!next) return;
     pending.current = null;
-    try {
-      await saveRef.current(next.value);
-      setState("saved");
-      setSavedAt(Date.now());
-      setError(null);
-    } catch (cause) {
-      setState("error");
-      setError(cause instanceof Error ? cause : new Error(String(cause)));
-    }
+
+    const run = (async () => {
+      try {
+        await saveRef.current(next.value);
+        setState("saved");
+        setSavedAt(Date.now());
+        setError(null);
+      } catch (cause) {
+        setState("error");
+        setError(cause instanceof Error ? cause : new Error(String(cause)));
+      }
+    })();
+
+    inFlight.current = run;
+    await run;
+    if (inFlight.current === run) inFlight.current = null;
   }, []);
 
   const schedule = useCallback(
