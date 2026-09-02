@@ -125,9 +125,18 @@ test.describe("offline shell", () => {
     await page.goto("/");
     await waitForServiceWorker(page);
 
+    // The cache is named per build (`fieldnote-shell-<buildId>`), so it is found by prefix
+    // rather than by a literal name that would drift on the next build.
     const cachedUrls = await page.evaluate(async () => {
-      const cache = await caches.open("fieldnote-shell");
-      return (await cache.keys()).map((request) => request.url);
+      const names = (await caches.keys()).filter((name) =>
+        name.startsWith("fieldnote-shell-"),
+      );
+      const entries = await Promise.all(
+        names.map(async (name) =>
+          (await (await caches.open(name)).keys()).map((request) => request.url),
+        ),
+      );
+      return entries.flat();
     });
 
     expect(cachedUrls.length).toBeGreaterThan(0);

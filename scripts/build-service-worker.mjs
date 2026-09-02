@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 /**
- * Writes the service worker's precache manifest.
+ * Writes the service worker and its precache manifest.
  *
- * Runs after `next build`, as part of `pnpm build`. The service worker itself is
- * hand-written and committed at `public/sw.js`; the only thing that cannot be written by
- * hand is this list, because Next content-hashes asset filenames and they change on
- * every build.
+ * Runs after `next build`, as part of `pnpm build`. Two outputs, both gitignored:
+ *
+ *   - `public/sw.js`, from the source at `src/sw/service-worker.js` with the build id
+ *     stamped in. The stamp is what makes the worker updatable: a browser only
+ *     re-installs when the script's bytes change, so a worker that is identical across
+ *     builds installs once per user and pins them to that build forever. That was a real
+ *     defect, found by deploying twice; see the header of the source file.
+ *   - `public/precache.json`, the URL list, which cannot be written by hand because Next
+ *     content-hashes asset filenames and they change on every build.
  *
  * The rule is: precache everything the build emitted under `.next/static`, plus the small
  * fixed set of shell URLs below. Over-precaching is deliberate. A partial list derived
@@ -24,6 +29,12 @@ const NEXT_DIR = ".next";
 const STATIC_DIR = join(NEXT_DIR, "static");
 const BUILD_ID_FILE = join(NEXT_DIR, "BUILD_ID");
 const OUTPUT_FILE = join("public", "precache.json");
+
+const WORKER_SOURCE_FILE = join("src", "sw", "service-worker.js");
+const WORKER_OUTPUT_FILE = join("public", "sw.js");
+
+/** The token in the worker source that carries the build id. */
+const BUILD_ID_PLACEHOLDER = "__FIELDNOTE_BUILD_ID__";
 
 /**
  * Shell URLs that are not build assets.
@@ -88,8 +99,40 @@ function main() {
   mkdirSync(dirname(OUTPUT_FILE), { recursive: true });
   writeFileSync(OUTPUT_FILE, `${JSON.stringify({ buildId, urls }, null, 2)}\n`, "utf8");
 
+  writeWorker(buildId);
+
   process.stdout.write(
     `build-service-worker: ${urls.length} URLs precached for build ${buildId}\n`,
+  );
+}
+
+/**
+ * Stamps the build id into the worker source and writes `public/sw.js`.
+ *
+ * Fails the build if the placeholder is missing rather than writing a worker that happens
+ * to be byte-identical to the last one. That silent case is exactly the defect this
+ * function exists to prevent, and it would look like a successful build.
+ */
+function writeWorker(buildId) {
+  let source;
+  try {
+    source = readFileSync(WORKER_SOURCE_FILE, "utf8");
+  } catch {
+    fail(`${WORKER_SOURCE_FILE} not found. It is the source for ${WORKER_OUTPUT_FILE}.`);
+  }
+
+  if (!source.includes(BUILD_ID_PLACEHOLDER)) {
+    fail(
+      `${WORKER_SOURCE_FILE} no longer contains ${BUILD_ID_PLACEHOLDER}. Without it every ` +
+        `build emits an identical worker, the browser never re-installs it, and users are ` +
+        `pinned to whichever build they first loaded. See fieldnote-jug.`,
+    );
+  }
+
+  writeFileSync(
+    WORKER_OUTPUT_FILE,
+    source.replaceAll(BUILD_ID_PLACEHOLDER, buildId),
+    "utf8",
   );
 }
 

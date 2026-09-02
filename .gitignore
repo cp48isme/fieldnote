@@ -22,9 +22,11 @@
 /.next/
 /out/
 
-# Service worker precache manifest. Generated from the build's content-hashed asset names
-# by scripts/build-service-worker.mjs; committing it would guarantee a stale list.
+# Service worker build outputs, both written by scripts/build-service-worker.mjs. The
+# precache manifest is generated from the build's content-hashed asset names, and sw.js is
+# src/sw/service-worker.js with the build id stamped in. Edit the source, not these.
 /public/precache.json
+/public/sw.js
 
 # production
 /build
