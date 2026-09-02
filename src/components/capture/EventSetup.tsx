@@ -13,9 +13,11 @@ import { useState } from "react";
 
 export interface EventSetupProps {
   onCreate: (name: string) => void;
+  /** Provided only when there is an event to go back to — the first one has no cancel. */
+  onCancel?: () => void;
 }
 
-export function EventSetup({ onCreate }: EventSetupProps) {
+export function EventSetup({ onCreate, onCancel }: EventSetupProps) {
   const [name, setName] = useState("");
   const trimmed = name.trim();
 
@@ -39,14 +41,26 @@ export function EventSetup({ onCreate }: EventSetupProps) {
         // 16px, like the note textarea: anything smaller makes iOS zoom the page on focus.
         className="min-h-12 rounded-lg border px-4 text-base"
       />
-      <button
-        type="submit"
-        data-testid="create-event"
-        disabled={trimmed.length === 0}
-        className="min-h-12 self-start rounded-lg border px-5 text-base font-medium disabled:opacity-40"
-      >
-        Start capturing
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="submit"
+          data-testid="create-event"
+          disabled={trimmed.length === 0}
+          className="min-h-12 rounded-lg border px-5 text-base font-medium disabled:opacity-40"
+        >
+          Start capturing
+        </button>
+        {onCancel && (
+          <button
+            type="button"
+            data-testid="cancel-event"
+            onClick={onCancel}
+            className="min-h-12 rounded-lg border px-5 text-base"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }

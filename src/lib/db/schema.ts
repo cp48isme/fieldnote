@@ -241,6 +241,15 @@ export const APPROVED_CONTENT_POLICIES: FieldPolicies<ApprovedContentRecord> = {
 
 // --- Settings --------------------------------------------------------------
 
+/**
+ * The debounce written into a new settings row, and the hook's default.
+ *
+ * Lives here rather than in `useDebouncedAutosave` because this is the field that
+ * persists it. Two constants with the same value in two files is the magic-number problem
+ * wearing a name.
+ */
+export const DEFAULT_AUTOSAVE_DEBOUNCE_MS = 300;
+
 export interface SettingsRecord extends BaseRecord {
   activeEventId: Id | null;
   autosaveDebounceMs: number;

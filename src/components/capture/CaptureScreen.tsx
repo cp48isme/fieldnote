@@ -33,11 +33,13 @@ import {
   createAttendee,
   createEvent,
   createNote,
+  getActiveEventId,
   listAttendees,
   listEvents,
   listNotes,
   recordTouchedNote,
   saveNoteBody,
+  setActiveEventId,
   type AttendeeRecord,
   type EventRecord,
   type Id,
@@ -48,12 +50,16 @@ import { useSessionLifecycle } from "@/lib/useSessionLifecycle";
 
 import { CaptureDock } from "./CaptureDock";
 import { EventSetup } from "./EventSetup";
+import { EventSwitcher } from "./EventSwitcher";
 import { NoteLog } from "./NoteLog";
 import { RecoveryNotice } from "./RecoveryNotice";
 
 export function CaptureScreen() {
   const [loaded, setLoaded] = useState(false);
+  const [events, setEvents] = useState<EventRecord[]>([]);
   const [event, setEvent] = useState<EventRecord | null>(null);
+  /** True while the new-event form is up, so the dock cannot be typed into meanwhile. */
+  const [startingNewEvent, setStartingNewEvent] = useState(false);
   const [attendees, setAttendees] = useState<AttendeeRecord[]>([]);
   /** Oldest first, as `listNotes` returns them. Reversed for display. */
   const [notes, setNotes] = useState<NoteRecord[]>([]);
@@ -100,32 +106,42 @@ export function CaptureScreen() {
     }, [autosave]),
   );
 
-  // Restore the most recent event, its people, its log, and the note that was open.
+  /**
+   * Points the whole screen at an event: its people, its log, and the note that was open
+   * in it. Shared by first load, switching, and creating, so all three land in the same
+   * state — the restore-the-most-recent-note behaviour is a property of opening an event,
+   * not something the load path does specially.
+   */
+  const openEvent = useCallback(async (target: EventRecord) => {
+    const [people, captured] = await Promise.all([
+      listAttendees(target.id),
+      listNotes(target.id),
+    ]);
+
+    setEvent(target);
+    setAttendees(people);
+    setNotes(captured);
+
+    const open = captured[captured.length - 1] ?? null;
+    setActiveNote(open);
+    setBody(open?.body ?? "");
+    setAttendeeId(open?.attendeeId ?? null);
+    setStartingNewEvent(false);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const events = await listEvents();
+      const [all, activeId] = await Promise.all([listEvents(), getActiveEventId()]);
       if (cancelled) return;
 
-      const latest = events[0] ?? null;
-      setEvent(latest);
-
-      if (latest) {
-        const [people, captured] = await Promise.all([
-          listAttendees(latest.id),
-          listNotes(latest.id),
-        ]);
-        if (cancelled) return;
-
-        setAttendees(people);
-        setNotes(captured);
-
-        const open = captured[captured.length - 1] ?? null;
-        setActiveNote(open);
-        setBody(open?.body ?? "");
-        setAttendeeId(open?.attendeeId ?? null);
-      }
+      setEvents(all);
+      // The stored choice wins. Falling back to the newest matters when the setting has
+      // never been written, or points at an event that has since been deleted.
+      const target = all.find((candidate) => candidate.id === activeId) ?? all[0] ?? null;
+      if (target) await openEvent(target);
+      if (cancelled) return;
 
       setLoaded(true);
     })();
@@ -133,11 +149,47 @@ export function CaptureScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [openEvent]);
 
-  const onCreateEvent = useCallback(async (name: string) => {
-    setEvent(await createEvent({ name }));
-  }, []);
+  /**
+   * Moves capture to a different event.
+   *
+   * The flush is first and is not optional: keystrokes still sitting in the debounce
+   * belong to the note in the event being left. Clearing `creating` afterwards matters for
+   * the same reason — it holds an in-flight `createNote` for the *previous* event, and a
+   * later first keystroke would otherwise resolve to that promise and write into the wrong
+   * event's note. Resetting `attendeeId` is the third: an attendee id from event A applied
+   * to a note in event B is a cross-event reference the schema will happily store.
+   *
+   * `openEvent` resets all three of `activeNote`, `body`, and `attendeeId` from the target.
+   */
+  const switchEvent = useCallback(
+    async (eventId: Id) => {
+      const target = events.find((candidate) => candidate.id === eventId);
+      if (!target || target.id === event?.id) return;
+
+      await autosave.flush();
+      creating.current = null;
+
+      await setActiveEventId(target.id);
+      await openEvent(target);
+    },
+    [autosave, event, events, openEvent],
+  );
+
+  const onCreateEvent = useCallback(
+    async (name: string) => {
+      // Same discipline as switching: anything pending belongs to the outgoing event.
+      await autosave.flush();
+      creating.current = null;
+
+      const created = await createEvent({ name });
+      setEvents(await listEvents());
+      await setActiveEventId(created.id);
+      await openEvent(created);
+    },
+    [autosave, openEvent],
+  );
 
   const onBodyChange = useCallback(
     (value: string) => {
@@ -200,15 +252,24 @@ export function CaptureScreen() {
     // past the viewport instead of scrolling inside it.
     <main className="flex h-[100dvh] flex-col">
       <header className="shrink-0 border-b border-black/10 px-4 py-3 dark:border-white/15">
-        <div className="mx-auto flex max-w-2xl items-baseline justify-between gap-3">
-          <h1
-            data-testid="event-name-display"
-            className="truncate text-base font-semibold"
-          >
-            {event ? event.name : "Fieldnote"}
-          </h1>
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+          {event ? (
+            <EventSwitcher
+              events={events}
+              activeEventId={event.id}
+              onSwitch={(eventId) => void switchEvent(eventId)}
+              onStartNew={() => setStartingNewEvent(true)}
+            />
+          ) : (
+            <h1 className="truncate text-base font-semibold">Fieldnote</h1>
+          )}
           {event && (
             <p className="shrink-0 text-xs opacity-60">
+              {/* The event name also lives here as text, so tests and screen readers have
+                  something stable to read that is not the select's own value. */}
+              <span data-testid="event-name-display" className="sr-only">
+                {event.name}
+              </span>
               {notes.length} note{notes.length === 1 ? "" : "s"}
             </p>
           )}
@@ -224,9 +285,14 @@ export function CaptureScreen() {
             />
           )}
 
-          {!event && <EventSetup onCreate={(name) => void onCreateEvent(name)} />}
+          {(!event || startingNewEvent) && (
+            <EventSetup
+              onCreate={(name) => void onCreateEvent(name)}
+              onCancel={event ? () => setStartingNewEvent(false) : undefined}
+            />
+          )}
 
-          {event && (
+          {event && !startingNewEvent && (
             <NoteLog
               notes={[...notes].reverse()}
               attendees={attendees}
@@ -237,7 +303,7 @@ export function CaptureScreen() {
         </div>
       </div>
 
-      {event && (
+      {event && !startingNewEvent && (
         <CaptureDock
           body={body}
           onBodyChange={onBodyChange}

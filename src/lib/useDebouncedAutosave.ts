@@ -14,7 +14,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export const DEFAULT_DEBOUNCE_MS = 300;
+import { DEFAULT_AUTOSAVE_DEBOUNCE_MS } from "@/lib/db";
+
+/** Re-exported from the schema, which owns it because `Settings` persists it. */
+export const DEFAULT_DEBOUNCE_MS = DEFAULT_AUTOSAVE_DEBOUNCE_MS;
 
 export type SaveState = "idle" | "pending" | "saved" | "error";
 

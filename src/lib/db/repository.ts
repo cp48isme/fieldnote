@@ -40,6 +40,7 @@ import { encryptRecord, decryptAll, decryptRecord } from "./cipher";
 import { getDatabase } from "./database";
 import {
   CURRENT_SCHEMA_VERSION,
+  DEFAULT_AUTOSAVE_DEBOUNCE_MS,
   TABLES,
   type AttendeeRecord,
   type DraftRecord,
@@ -48,6 +49,7 @@ import {
   type NoteRecord,
   type NoteSource,
   type SessionMarkerRecord,
+  type SettingsRecord,
 } from "./schema";
 
 function newId(): Id {
@@ -211,6 +213,49 @@ export async function attributeNote(id: Id, attendeeId: Id | null): Promise<Note
 export async function listDrafts(eventId: Id): Promise<DraftRecord[]> {
   const rows = await getDatabase().drafts.where("eventId").equals(eventId).toArray();
   return decryptAll(TABLES.drafts, rows);
+}
+
+// --- Settings --------------------------------------------------------------
+
+/**
+ * Settings is a singleton row under a fixed key.
+ *
+ * A generated id would mean every read had to find "the row", which is a query with no
+ * answer when there are two. A constant makes the singleton a fact rather than a
+ * convention. It is a stable identifier, not a magic value: nothing else may use it.
+ */
+const SETTINGS_ID: Id = "settings";
+
+async function readSettings(): Promise<SettingsRecord | undefined> {
+  const row = await getDatabase().settings.get(SETTINGS_ID);
+  return row ? decryptRecord(TABLES.settings, row) : undefined;
+}
+
+/**
+ * Which event capture is currently on.
+ *
+ * Persisted rather than inferred, because inferring it as "the most recent event" silently
+ * discards the user's choice on every reload — switch to last week's event, reload, and you
+ * are back on this week's, writing into the wrong one.
+ */
+export async function getActiveEventId(): Promise<Id | null> {
+  return (await readSettings())?.activeEventId ?? null;
+}
+
+export async function setActiveEventId(eventId: Id | null): Promise<void> {
+  const existing = await readSettings();
+  const timestamp = now();
+  const record: SettingsRecord = existing
+    ? { ...existing, activeEventId: eventId, updatedAt: timestamp }
+    : {
+        id: SETTINGS_ID,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        activeEventId: eventId,
+        autosaveDebounceMs: DEFAULT_AUTOSAVE_DEBOUNCE_MS,
+      };
+  await getDatabase().settings.put(encryptRecord(TABLES.settings, record));
 }
 
 // --- Session markers (crash recovery) --------------------------------------
