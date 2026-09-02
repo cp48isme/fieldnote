@@ -425,9 +425,16 @@ dictation questions are settled as ADR-0004 and ADR-0005. What remains:
    a fact sheet. It determines whether §4.2 is a library-selection feature or just a
    text field she pastes into. Needed by session 9. **Status: open.**
 
-Items 1 and 2 are private-fork material and are gitignored on the public side. Where
-dictated notes are adapted into public eval cases, names are replaced with the synthetic
-roster per ADR-0001.
+Items 1 and 2 are private-fork material and belong at `private/`, which is gitignored on
+the public side. Where dictated notes are adapted into public eval cases, names are
+replaced with the synthetic roster per ADR-0001.
+
+> **Amended 2026-09-02, session 3.** This paragraph previously asserted that items 1 and
+> 2 were already gitignored. No such rule existed — `.gitignore` covered build output,
+> `.denylist.local*`, and `.env*`, and nothing else — so the material had no safe landing
+> place and the claim was false from the day it was written. `private/` was added to
+> `.gitignore` in the same commit as this amendment, which makes the sentence true and
+> names the path rather than leaving it implied.
 
 *(The original item 4 — GitHub handle and public-from-first-commit — was resolved in
 Phase 0: `cp48isme`, public from the first commit.)*

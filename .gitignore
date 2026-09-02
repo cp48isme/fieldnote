@@ -42,6 +42,14 @@
 .denylist.local*
 !.denylist.local.example
 
+# Private, non-public material: plan §7's writing samples and dictated notes, and any
+# other pre-de-branding source read for reference and never committed. NEVER COMMIT —
+# this material predates ADR-0001 and is expected to contain real manufacturer, product,
+# and attendee names. The wildcard on the directory name covers hand-made copies for the
+# same reason `.denylist.local*` does.
+/private/
+/private*
+
 # debug
 npm-debug.log*
 yarn-debug.log*
