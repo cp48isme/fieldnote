@@ -37,6 +37,31 @@
 //   The durable mitigation is human review of every diff touching prose, which no
 //   pattern can replace.
 //
+// SECOND HONEST LIMITATION — terms match literal spellings only:
+//
+//   Each entry in `.denylist.local` becomes a case-insensitive regex with a word
+//   boundary at each end. That catches the term as written and nothing else. A name
+//   split across words, missing a letter, or carrying a trailing plural does not match:
+//   with `Quillfeather` listed, `quill feather`, `Quilfeather`, and `Quillfeathers` all
+//   pass clean. Verified, not assumed.
+//
+//   This matters most where it is least obvious. Device dictation mangles surnames by
+//   design — phoneticised, split, or heard as a common noun (ADR-0005) — so text derived
+//   from the dictated notes in `private/` is exactly the text this check cannot see. The
+//   eval corpus and the tokenizer fixtures from session 4 onward are made of it.
+//
+//   Do not read a green hook as evidence that no real name is in the diff. It is
+//   evidence that no *listed spelling* is, which is a much smaller claim. For any diff
+//   carrying text derived from the dictated notes, human review is the control and this
+//   check is a backstop — not the other way round. Listing known mangled variants
+//   alongside each real name narrows the gap and does not close it; the space of
+//   mishearings is open, and a matcher loose enough to cover it would fire on ordinary
+//   prose and be bypassed, for the same reason the phone pattern below is conservative.
+//
+//   Recorded as `fieldnote-ech`, and owed a first-class entry in session 15's threat
+//   model: an untrusted input channel defeating a control is the same class of finding
+//   as prompt injection via dictated input, which that session already treats as such.
+//
 // A second deliberate tradeoff: the phone pattern requires separator punctuation and
 // does not match ten bare consecutive digits. Bare-digit matching fires on timestamps,
 // content hashes, and build IDs, and a check that cries wolf gets bypassed with
@@ -74,7 +99,18 @@ const STRUCTURAL = [
 ];
 
 // Paths never scanned. The denylist files are excluded because one holds the terms
-// themselves and the other holds deliberately synthetic placeholders.
+// themselves and the other holds deliberately synthetic placeholders. The rest are
+// dependency trees, lockfiles, and build output — machine-written, and none of it a
+// place a person types a name.
+//
+// `public/` was on this list and was removed. It is not build output: the app icons are
+// hand-written SVG with comments in them, and anything else added there is committed
+// source too. Excluding it meant a real name in an icon comment or a manifest string
+// reached a public commit with no gate in front of it, which was verified by staging one
+// and watching the check pass. Whatever the entry was originally for — most likely
+// binary assets — is already handled by the NUL-byte test below, which skips binaries by
+// content rather than by path. The two generated files that do live there, `sw.js` and
+// `precache.json`, are gitignored and so are never staged for this check to see.
 const SKIP = [
   /^node_modules\//,
   /(^|\/)pnpm-lock\.yaml$/,
@@ -83,7 +119,6 @@ const SKIP = [
   /(^|\/)\.denylist\.local(\.example)?$/,
   /(^|\/)\.git\//,
   /^\.next\//,
-  /^public\//,
 ];
 
 function git(args) {
