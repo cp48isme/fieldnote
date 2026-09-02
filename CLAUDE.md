@@ -72,6 +72,12 @@ pass before merge.
 - One session, one PR. A finding that surfaces mid-session and isn't blocking gets a
   bead, not a new branch. Amend documents when the session that changes them lands, not
   on discovery.
+- The last commit of every session updates `docs/HANDOFF.md`, from
+  `docs/HANDOFF-TEMPLATE.md`. Re-read the sources rather than editing the previous
+  handoff in place: a handoff written from the last handoff drifts.
+- Prefer the plainly correct implementation over the clever or convenient one. No inline
+  data that belongs in a module, no magic values, no shortcut that would need explaining
+  in review. If a task tempts you toward one, say so rather than taking it.
 - If a task requires violating a constraint above, stop and say so rather than finding
   a way around it. The constraint is the point.
 
