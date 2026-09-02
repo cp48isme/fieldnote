@@ -13,6 +13,12 @@
 >
 > "Truck Log" was the prototype's working title and is retained only in the history.
 > The repository, and the system, are Fieldnote.
+>
+> **Revision note, 2026-09-02.** Three corrections from session 3, each marked inline
+> where it applies: §3.1's heading implied the capture surface would be rebuilt from the
+> prototype, and it was not; §5 moves shadcn/ui from session 3 to session 8, the first
+> session that needs its primitives; and §7's claim that the private material was already
+> gitignored was false when written, and is now true.
 
 ---
 
@@ -95,10 +101,18 @@ Build the public version now regardless. It doesn't depend on the answer.
 
 Four surfaces. The prototype covered the first.
 
-### 3.1 Capture and follow-up (built, needs rebuilding properly)
+### 3.1 Capture and follow-up (prototyped, then rebuilt from this section)
 
 Fast in-field capture, batch drafting in her voice, action extraction, card shortlist,
 nightly debrief, cross-event pattern analysis.
+
+> **Amended 2026-09-02, session 3.** The heading read "built, needs rebuilding properly",
+> which implied the rebuild would start from the prototype. It did not. The prototype was
+> a Claude artifact outside this repository, it was not retrieved, and session 3 built the
+> capture surface from the four sentences above. The prototype's real value was that it
+> was used at an actual event, and that validation does not transfer to a layout derived
+> from a feature list — so the capture surface as it stands is unvalidated, and the design
+> decisions taken in its absence are recorded in that session's PR.
 
 **Fixes from the prototype test:**
 
@@ -329,7 +343,8 @@ These are decisions, not yet load-bearing code. Dexie and the Anthropic SDK are 
 becomes real with the session that needs it.
 
 - Dexie (IndexedDB) for local-first persistence — installed, unused until session 2
-- shadcn/ui — session 3
+- shadcn/ui — session 8, moved from session 3: session 3's capture surface needed none of
+  its primitives, and session 8's column-mapping UI is the first that does
 - Anthropic API via a route handler, key server-side only — SDK installed, route
   lands session 5
 - Custom harness for evals — session 7
