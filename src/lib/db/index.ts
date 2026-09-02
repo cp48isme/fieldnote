@@ -23,6 +23,7 @@ export { MIGRATIONS, LATEST_MIGRATION_VERSION } from "./migrations";
 
 export {
   CURRENT_SCHEMA_VERSION,
+  DEFAULT_AUTOSAVE_DEBOUNCE_MS,
   TABLES,
   POLICIES_BY_TABLE,
   eligibleFields,
@@ -59,6 +60,8 @@ export {
   saveNoteBody,
   attributeNote,
   listDrafts,
+  getActiveEventId,
+  setActiveEventId,
   type NewEventInput,
   type NewAttendeeInput,
   type NewNoteInput,

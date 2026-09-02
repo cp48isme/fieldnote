@@ -22,6 +22,12 @@
 /.next/
 /out/
 
+# Service worker build outputs, both written by scripts/build-service-worker.mjs. The
+# precache manifest is generated from the build's content-hashed asset names, and sw.js is
+# src/sw/service-worker.js with the build id stamped in. Edit the source, not these.
+/public/precache.json
+/public/sw.js
+
 # production
 /build
 
@@ -41,6 +47,14 @@
 # a commit. The negation keeps the template committable.
 .denylist.local*
 !.denylist.local.example
+
+# Private, non-public material: plan §7's writing samples and dictated notes, and any
+# other pre-de-branding source read for reference and never committed. NEVER COMMIT —
+# this material predates ADR-0001 and is expected to contain real manufacturer, product,
+# and attendee names. The wildcard on the directory name covers hand-made copies for the
+# same reason `.denylist.local*` does.
+/private/
+/private*
 
 # debug
 npm-debug.log*

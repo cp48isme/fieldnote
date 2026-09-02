@@ -74,6 +74,15 @@ imports Dexie, and a test asserts the encrypt/decrypt round trip.
 Port the prototype's capture dock and log. It's already validated — don't redesign it,
 just rebuild it on the real data layer with proper components and types.
 
+> **Amended 2026-09-02, in the session that built it.** This did not happen. The prototype
+> was a Claude artifact built outside this repository, it was not retrieved, and the
+> capture surface was built fresh from plan §3.1 instead. "Already validated — don't
+> redesign it" was the load-bearing half of the instruction above, and it no longer holds:
+> the layout in the repository has never been in front of the representative, so her
+> reaction is deferred validation rather than validation already banked. The commit
+> messages, the PR, and the handoff say *built*, not *ported*, for the same reason a green
+> eval badge over an empty suite would be wrong.
+
 **Plus the service worker and PWA manifest** (plan §5, non-negotiable 5). It had no
 session and capture is the first thing that has to survive a dead signal, so it lands
 here. Budget about an hour of the four for it.

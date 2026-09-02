@@ -14,7 +14,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export const DEFAULT_DEBOUNCE_MS = 300;
+import { DEFAULT_AUTOSAVE_DEBOUNCE_MS } from "@/lib/db";
+
+/** Re-exported from the schema, which owns it because `Settings` persists it. */
+export const DEFAULT_DEBOUNCE_MS = DEFAULT_AUTOSAVE_DEBOUNCE_MS;
 
 export type SaveState = "idle" | "pending" | "saved" | "error";
 
@@ -39,24 +42,59 @@ export function useDebouncedAutosave<T>(
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<{ value: T } | null>(null);
+  /** The write currently running, so a second one queues behind it and `flush` can wait. */
+  const inFlight = useRef<Promise<void> | null>(null);
+  /**
+   * Increments once per write, so a finishing write can tell whether it is still the
+   * current one before clearing `inFlight`.
+   *
+   * A counter rather than comparing the promise against `inFlight.current`, which is what
+   * this did first. That comparison was correct — identity, not a forgotten `await` — but
+   * it reads as a missing await to anyone scanning the file, and CodeQL's `js/missing-await`
+   * flagged it for exactly that reason. A guard that has to be explained every time it is
+   * read is worse than the equivalent one that does not.
+   */
+  const writeId = useRef(0);
   // Held in a ref so a caller passing an inline closure does not restart the debounce
   // on every render.
+  //
+  // The reassignment below is load-bearing, not redundant. `useRef(save)` alone captures
+  // the first render's closure forever; reassigning on every render is what lets the save
+  // callback see current state without the caller threading refs of its own. Callers
+  // depend on that — see the autosave comment in `CaptureScreen`. Do not "tidy" it away.
   const saveRef = useRef(save);
   saveRef.current = save;
 
-  const write = useCallback(async () => {
+  const write = useCallback(async (): Promise<void> => {
+    // Wait out a write that is already running before starting another. Two writes racing
+    // on the same record is bad enough; the sharper problem is that without this, `flush`
+    // could resolve while a save was still in flight, and a caller that moved the editor
+    // to a different note straight afterwards would have the earlier write's completion
+    // land on top of the move — pointing the editor at the previous note.
+    await inFlight.current;
+
     const next = pending.current;
     if (!next) return;
     pending.current = null;
-    try {
-      await saveRef.current(next.value);
-      setState("saved");
-      setSavedAt(Date.now());
-      setError(null);
-    } catch (cause) {
-      setState("error");
-      setError(cause instanceof Error ? cause : new Error(String(cause)));
-    }
+
+    const id = (writeId.current += 1);
+
+    inFlight.current = (async () => {
+      try {
+        await saveRef.current(next.value);
+        setState("saved");
+        setSavedAt(Date.now());
+        setError(null);
+      } catch (cause) {
+        setState("error");
+        setError(cause instanceof Error ? cause : new Error(String(cause)));
+      }
+    })();
+
+    await inFlight.current;
+    // Only the newest write clears the slot. Anything else would drop a later write's
+    // promise on the floor and let `flush` return before it had finished.
+    if (writeId.current === id) inFlight.current = null;
   }, []);
 
   const schedule = useCallback(

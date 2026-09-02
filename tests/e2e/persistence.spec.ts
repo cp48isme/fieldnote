@@ -1,30 +1,25 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { expect, test, type Page } from "@playwright/test";
 
-import { chromium, expect, test, type BrowserContext, type Page } from "@playwright/test";
+import {
+  clearProfileLocks,
+  crashRenderer,
+  firstPage,
+  makeProfile,
+  openProfile,
+  removeProfile,
+} from "./support/persistent-profile";
 
 /**
  * The session 2 done-check: create an event, lose the tab mid-typing, reopen, and find
  * everything including the half-finished note.
  *
- * Simulating an unclean shutdown took three attempts, and the reasoning is worth
- * recording because the obvious approaches quietly test the wrong thing.
+ * Session 3 replaced the harness page these tests were written against with the real
+ * capture screen. The tests are unchanged apart from moving the persistent-profile
+ * helpers into `support/`, which is deliberate: they are the check that the capture UI
+ * inherited session 2's persistence rather than quietly dropping it.
  *
- *   - `page.close()` fires `visibilitychange` and `pagehide`, so the app closes its
- *     session marker properly. That tests a clean close, which is a different case —
- *     covered separately below.
- *   - CDP `Target.closeTarget` also fires `visibilitychange`, for the same reason. It
- *     looks abrupt from the outside but the app still runs its shutdown path.
- *   - CDP `Page.crash` is a genuine renderer death and skips both, but it takes the
- *     whole browser context down with it, so a non-persistent context loses its
- *     IndexedDB and there is nothing left to reopen.
- *
- * So the crash cases run against a persistent profile on disk: crash the renderer, let
- * the context die, relaunch a fresh browser on the same profile directory. That is as
- * close to "the tab died and you reopened the app" as this harness can get, and the
- * storage genuinely round-trips through disk rather than living in a context that was
- * politely torn down.
+ * How an unclean shutdown is simulated, and why the obvious approaches do not work, is in
+ * the header of `support/persistent-profile.ts`.
  *
  * Chromium-only, matching the single project in playwright.config.ts.
  *
@@ -43,10 +38,6 @@ const SAVED_CHUNK =
 /** Typed after that, with no pause — in flight when the renderer dies. */
 const IN_FLIGHT_SUFFIX = " Follow up with the meas";
 
-async function firstPage(context: BrowserContext): Promise<Page> {
-  return context.pages()[0] ?? (await context.newPage());
-}
-
 async function createEventWithNote(page: Page, text: string): Promise<void> {
   await page.goto(`${BASE_URL}/`);
   await page.getByTestId("event-name").fill(SITE);
@@ -56,35 +47,11 @@ async function createEventWithNote(page: Page, text: string): Promise<void> {
   await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
 }
 
-/**
- * Kills the renderer outright. No visibilitychange, no pagehide, no shutdown path.
- *
- * `Page.crash` is deliberately not awaited: the target dies before it can reply, and the
- * promise sits unresolved for a minute before rejecting. The page's own `crash` event is
- * the signal that the renderer is actually gone, and it arrives in milliseconds.
- */
-async function crashRenderer(context: BrowserContext, page: Page): Promise<void> {
-  const crashed = page.waitForEvent("crash", { timeout: 10_000 }).catch(() => {});
-  const cdp = await context.newCDPSession(page);
-  void cdp.send("Page.crash").catch(() => {});
-  await crashed;
-}
-
-/**
- * Chromium leaves singleton lock files behind when a profile's browser does not exit
- * cleanly. Removing them lets the next launch reuse the profile instead of hanging.
- */
-function clearProfileLocks(profile: string): void {
-  for (const name of ["SingletonLock", "SingletonCookie", "SingletonSocket"]) {
-    rmSync(join(profile, name), { force: true });
-  }
-}
-
 test.describe("persistence and crash recovery", () => {
   test("a half-finished note survives a renderer crash", async () => {
-    const profile = mkdtempSync(join(tmpdir(), "fieldnote-e2e-"));
+    const profile = makeProfile();
     try {
-      const first = await chromium.launchPersistentContext(profile, {});
+      const first = await openProfile(profile);
       const page = await firstPage(first);
 
       await createEventWithNote(page, SAVED_CHUNK);
@@ -101,7 +68,7 @@ test.describe("persistence and crash recovery", () => {
       clearProfileLocks(profile);
 
       // Reopen the app against the same on-disk profile.
-      const second = await chromium.launchPersistentContext(profile, {});
+      const second = await openProfile(profile);
       const reopened = await firstPage(second);
       await reopened.goto(`${BASE_URL}/`);
 
@@ -118,21 +85,21 @@ test.describe("persistence and crash recovery", () => {
 
       await second.close();
     } finally {
-      rmSync(profile, { recursive: true, force: true });
+      removeProfile(profile);
     }
   });
 
   test("dismissing recovery clears it for the next load", async () => {
-    const profile = mkdtempSync(join(tmpdir(), "fieldnote-e2e-"));
+    const profile = makeProfile();
     try {
-      const first = await chromium.launchPersistentContext(profile, {});
+      const first = await openProfile(profile);
       const page = await firstPage(first);
       await createEventWithNote(page, SAVED_CHUNK);
       await crashRenderer(first, page);
       await first.close().catch(() => {});
       clearProfileLocks(profile);
 
-      const second = await chromium.launchPersistentContext(profile, {});
+      const second = await openProfile(profile);
       const afterCrash = await firstPage(second);
       await afterCrash.goto(`${BASE_URL}/`);
       await expect(afterCrash.getByTestId("recovered-session")).toBeVisible();
@@ -146,14 +113,14 @@ test.describe("persistence and crash recovery", () => {
       clearProfileLocks(profile);
 
       // The notice does not come back — the user has been told once.
-      const third = await chromium.launchPersistentContext(profile, {});
+      const third = await openProfile(profile);
       const later = await firstPage(third);
       await later.goto(`${BASE_URL}/`);
       await expect(later.getByTestId("note-body")).toHaveValue(SAVED_CHUNK);
       await expect(later.getByTestId("recovered-session")).toBeHidden();
       await third.close();
     } finally {
-      rmSync(profile, { recursive: true, force: true });
+      removeProfile(profile);
     }
   });
 
