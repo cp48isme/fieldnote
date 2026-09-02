@@ -18,9 +18,18 @@
  *     cached response to it would be a stale copy of a generation — with content in it —
  *     sitting in a cache this file would then be responsible for. The guard is written
  *     now, before the route exists, because that is the cheap moment to write it.
+ *
+ * KNOWN LIMITATION — this worker does not update after a deploy. `bd show fieldnote-jug`.
+ * The install and activate handlers below re-prime and prune the cache correctly, but a
+ * browser only re-installs a worker when the script's bytes change, and this file is
+ * hand-written and identical across builds. So install runs once, ever. Verified by
+ * building, loading, changing a source string, rebuilding, and reloading: the old build
+ * is still what runs, online and offline. Nothing is lost and the app keeps working — it
+ * is pinned to whichever build the user first loaded. The fix is to make the script vary
+ * per build, and it is not in this session.
  */
 
-/** Single cache, pruned to the current build's manifest on activate. */
+/** Single cache, pruned to the precached manifest on activate. */
 const CACHE_NAME = "fieldnote-shell";
 
 /** Written by `scripts/build-service-worker.mjs` as part of `pnpm build`. */

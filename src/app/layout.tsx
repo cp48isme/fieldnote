@@ -24,19 +24,21 @@ export const metadata: Metadata = {
 };
 
 /**
- * `viewportFit: "cover"` and `maximumScale: 1` are both about the phone case.
+ * `viewportFit: "cover"` lets the capture dock sit against the bottom edge on a device
+ * with a home indicator, with the safe-area inset handled in CSS rather than by leaving a
+ * permanent gap.
  *
- * Cover lets the capture dock sit against the bottom edge on a device with a home
- * indicator, with the safe-area inset handled in CSS rather than by leaving a permanent
- * gap. The scale lock stops iOS zooming the page when the note textarea takes focus,
- * which otherwise shifts the whole layout sideways mid-sentence — the textarea's own type
- * is set at 16px for the same reason.
+ * There is deliberately no `maximumScale`. Locking the scale is the usual way to stop iOS
+ * zooming when a field takes focus, but it also disables pinch zoom for everyone, which
+ * fails WCAG 1.4.4. It is also unnecessary here: iOS only zooms on focus when the field's
+ * type is below 16px, and the note textarea and every other input in the capture surface
+ * are set at 16px for exactly that reason. The type size solves the problem the scale lock
+ * was reaching for, without taking zoom away from someone who needs it.
  */
 export const viewport: Viewport = {
   themeColor: "#1e293b",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 
