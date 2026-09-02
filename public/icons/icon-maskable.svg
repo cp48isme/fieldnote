@@ -1,0 +1,14 @@
+<!--
+  Maskable variant of the app icon. Same mark, inset so it survives whatever shape the
+  launcher crops to: the platform safe zone is the central 80%, so the card sits well
+  inside that and the background bleeds to the edges.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Fieldnote">
+  <rect width="512" height="512" fill="#1e293b" />
+  <rect x="176" y="160" width="160" height="192" rx="16" fill="#f8fafc" />
+  <g fill="#1e293b">
+    <rect x="203" y="197" width="106" height="14" rx="7" />
+    <rect x="203" y="234" width="106" height="14" rx="7" />
+    <rect x="203" y="271" width="64" height="14" rx="7" />
+  </g>
+</svg>
