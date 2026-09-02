@@ -1,12 +1,18 @@
 import { CaptureScreen } from "@/components/capture/CaptureScreen";
+import { SecureContextGate } from "@/components/capture/SecureContextGate";
 
 /**
  * The capture surface, and for now the whole app.
  *
- * This replaces session 2's data-layer harness. The harness existed to prove autosave and
- * crash recovery against a real browser; that behaviour is unchanged and still covered by
- * `tests/e2e/persistence.spec.ts`, which runs against this screen.
+ * The gate is outside the screen rather than inside it so that on an insecure origin the
+ * screen never mounts, and therefore never touches the data layer. `crypto.randomUUID` and
+ * `navigator.serviceWorker` are both absent there, so mounting and failing later is the
+ * behaviour this replaces.
  */
 export default function Home() {
-  return <CaptureScreen />;
+  return (
+    <SecureContextGate>
+      <CaptureScreen />
+    </SecureContextGate>
+  );
 }

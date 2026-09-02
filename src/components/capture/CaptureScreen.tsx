@@ -48,6 +48,7 @@ import {
 import { useDebouncedAutosave } from "@/lib/useDebouncedAutosave";
 import { useSessionLifecycle } from "@/lib/useSessionLifecycle";
 
+import { BlockingNotice } from "./BlockingNotice";
 import { CaptureDock } from "./CaptureDock";
 import { EventSetup } from "./EventSetup";
 import { EventSwitcher } from "./EventSwitcher";
@@ -56,6 +57,11 @@ import { RecoveryNotice } from "./RecoveryNotice";
 
 export function CaptureScreen() {
   const [loaded, setLoaded] = useState(false);
+  /**
+   * Set when the data layer failed to open. Terminal: the screen is replaced rather than
+   * shown with a warning, because every control on it writes to the store that just failed.
+   */
+  const [loadError, setLoadError] = useState<Error | null>(null);
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [event, setEvent] = useState<EventRecord | null>(null);
   /** True while the new-event form is up, so the dock cannot be typed into meanwhile. */
@@ -133,17 +139,25 @@ export function CaptureScreen() {
     let cancelled = false;
 
     void (async () => {
-      const [all, activeId] = await Promise.all([listEvents(), getActiveEventId()]);
-      if (cancelled) return;
+      try {
+        const [all, activeId] = await Promise.all([listEvents(), getActiveEventId()]);
+        if (cancelled) return;
 
-      setEvents(all);
-      // The stored choice wins. Falling back to the newest matters when the setting has
-      // never been written, or points at an event that has since been deleted.
-      const target = all.find((candidate) => candidate.id === activeId) ?? all[0] ?? null;
-      if (target) await openEvent(target);
-      if (cancelled) return;
-
-      setLoaded(true);
+        setEvents(all);
+        // The stored choice wins. Falling back to the newest matters when the setting has
+        // never been written, or points at an event that has since been deleted.
+        const target =
+          all.find((candidate) => candidate.id === activeId) ?? all[0] ?? null;
+        if (target) await openEvent(target);
+      } catch (cause) {
+        // Reaching a terminal state is the point. Before this, a throw here left `loaded`
+        // false for ever and the screen sat on "Loading…" with an unhandled rejection in a
+        // console nobody is reading in a car park.
+        if (cancelled) return;
+        setLoadError(cause instanceof Error ? cause : new Error(String(cause)));
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
     })();
 
     return () => {
@@ -183,10 +197,16 @@ export function CaptureScreen() {
       await autosave.flush();
       creating.current = null;
 
-      const created = await createEvent({ name });
-      setEvents(await listEvents());
-      await setActiveEventId(created.id);
-      await openEvent(created);
+      try {
+        const created = await createEvent({ name });
+        setEvents(await listEvents());
+        await setActiveEventId(created.id);
+        await openEvent(created);
+      } catch (cause) {
+        // Same rule as the load path: a write that fails becomes something the user can
+        // see, not an unhandled rejection.
+        setLoadError(cause instanceof Error ? cause : new Error(String(cause)));
+      }
     },
     [autosave, openEvent],
   );
@@ -236,6 +256,18 @@ export function CaptureScreen() {
 
   const ready = loaded && session.ready;
 
+  if (loadError) {
+    return (
+      <BlockingNotice
+        testId="load-failed"
+        title="Fieldnote could not open its local store"
+        explanation="Nothing has been lost — notes already saved are still on this device — but capture cannot start until the store opens."
+        action="Reload the page. If it happens again, the browser may be blocking storage for this site: check that it is not in private browsing and that site data is allowed."
+        detail={loadError.message}
+      />
+    );
+  }
+
   if (!ready) {
     return (
       <main className="flex h-[100dvh] items-center justify-center">
@@ -278,6 +310,18 @@ export function CaptureScreen() {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl">
+          {!session.recoveryAvailable && (
+            <p
+              data-testid="recovery-unavailable"
+              role="status"
+              className="mx-4 mt-4 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm"
+            >
+              Capture is working and your notes are saving. Crash recovery is not armed
+              for this session, so if the app closes unexpectedly it will not be able to
+              tell you what was open.
+            </p>
+          )}
+
           {session.recovered && (
             <RecoveryNotice
               recovered={session.recovered}

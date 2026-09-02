@@ -28,10 +28,16 @@ import {
 } from "@/lib/db";
 
 export interface SessionLifecycle {
-  /** False until the session marker has been written and any dead session read. */
+  /** True once the session has been opened, or once opening it has failed. */
   ready: boolean;
   /** Non-null when the previous session did not shut down cleanly. */
   recovered: RecoveredSession | null;
+  /**
+   * False when the session marker could not be written. Capture still works; what is lost
+   * is the ability to notice that *this* session died, so the next load will not be able to
+   * report it. The screen says so rather than pretending recovery is armed.
+   */
+  recoveryAvailable: boolean;
   /** Clears the dead markers so the notice does not reappear on every load. */
   dismissRecovery: () => Promise<void>;
 }
@@ -43,6 +49,7 @@ export interface SessionLifecycle {
 export function useSessionLifecycle(onSuspend: () => void): SessionLifecycle {
   const [ready, setReady] = useState(false);
   const [recovered, setRecovered] = useState<RecoveredSession | null>(null);
+  const [recoveryAvailable, setRecoveryAvailable] = useState(true);
 
   // Held in a ref so a caller passing an inline closure does not tear down and re-add the
   // listeners on every render — a re-subscribe between `hidden` and `pagehide` would drop
@@ -54,10 +61,23 @@ export function useSessionLifecycle(onSuspend: () => void): SessionLifecycle {
     let cancelled = false;
 
     void (async () => {
-      const handle = await beginSession();
-      if (cancelled) return;
-      setRecovered(handle.recovered);
-      setReady(true);
+      try {
+        const handle = await beginSession();
+        if (cancelled) return;
+        setRecovered(handle.recovered);
+      } catch (cause) {
+        // Crash recovery is bookkeeping, not persistence. Losing it must not cost capture:
+        // an unopened session marker means the next load cannot report that this one died,
+        // which is worth telling the user and is not worth refusing to work over.
+        //
+        // This is the specific path that hung. `ready` gated the whole screen and only the
+        // success branch set it, so a throw here left "Loading…" on screen for good.
+        if (cancelled) return;
+        setRecoveryAvailable(false);
+        console.warn("Session marker unavailable; crash recovery is off.", cause);
+      } finally {
+        if (!cancelled) setReady(true);
+      }
     })();
 
     return () => {
@@ -90,5 +110,5 @@ export function useSessionLifecycle(onSuspend: () => void): SessionLifecycle {
     setRecovered(null);
   }, [recovered]);
 
-  return { ready, recovered, dismissRecovery };
+  return { ready, recovered, recoveryAvailable, dismissRecovery };
 }
