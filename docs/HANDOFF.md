@@ -1,6 +1,7 @@
 # Handoff
 
-Written 2026-09-02, at `268cf97` on `main`.
+Written 2026-09-02, at `15bd014` on `feat/session-4-privacy-boundary`. `main` is at
+`7a7bdf8`; this branch is session 4 and is not merged at the time of writing.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -38,7 +39,7 @@ violates one is wrong regardless of how well it is implemented.
 
 ## Where we've been
 
-55 commits on `main`, 14 merged pull requests, none open. Verified with
+57 commits on `main`, 15 merged pull requests, none open. Verified with
 `git rev-list --count main` and `gh pr list`.
 
 **Phase 0 — foundation.** Build guide session 1. The Next.js 16 scaffold, CI, and the
@@ -76,13 +77,28 @@ hand-written service worker; e2e coverage of both; the previously untested
 document amendments. Six of the thirteen commits are review findings fixed in place — a
 viewport scale lock that failed WCAG 1.4.4, a service worker that could never update, an
 autosave `flush` that resolved while a write was still running, a CodeQL missing-await,
-and the discovery that the app could hold only one event ever.
+and the discovery that the capture screen had no path to a second event. The data layer
+and the schema had supported several all along — `createEvent` and `listEvents` were
+unconstrained from session 2, and `Settings.activeEventId` had sat there unused since
+then — so the single-event assumption was the new UI's, not the design's.
 
 The session did **not** do what the build guide told it to. The guide says to port an
 already-validated prototype and not to redesign it; that prototype was a Claude artifact
 built outside this repository, it was not retrieved, and the capture surface was built
 from plan §3.1 instead. The guide and §3.1 were amended in the same PR, and the layout is
 tracked as unvalidated in `fieldnote-xjs`. Nothing here should describe it as ported.
+
+**Session 4 — the privacy boundary.** Three commits on
+`feat/session-4-privacy-boundary`, not yet merged. `src/lib/privacy/` with roster matching,
+structural name detection, and a guard on the API client; dictation fixtures in their own
+commit with per-case provenance; and ADR-0006 recording what changed about the boundary's
+meaning.
+
+The session's substantive addition is structural detection: a token following a title is a
+name whether or not the roster knows it. Roster matching alone is fail-open by
+construction — it cannot catch a name it was never told about, and dictation reliably
+produces exactly that. ADR-0006 carries the reasoning, the rejected alternatives, and the
+residual risk.
 
 **Project inputs and the denylist.** Two small PRs after session 3, neither attached to a
 build guide session. **#16** recorded plan §7 items 1 to 3 as received or resolved and
@@ -96,8 +112,9 @@ header.
 
 ## Where we are
 
-`main` is at `268cf97` with a clean working tree and no open pull requests. CI green on
-the last three merges (`gh run list --branch main`).
+`main` is at `7a7bdf8` with a clean working tree and no open pull requests; session 4 is
+three commits ahead on its branch. CI green on the last three merges
+(`gh run list --branch main`).
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
 suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
@@ -126,6 +143,19 @@ unit tests, and build, and those are real. Four caveats matter more than the bad
   the backstop. `fieldnote-ech`, which also owes session 15 a threat-model entry.
 - **The service worker's update path is not covered by any test.** Verified by hand
   twice; the worker's own header says so, and `fieldnote-unp` carries the procedure.
+
+**The privacy boundary now exists**, ahead of the route that will cross it. Names are
+replaced by roster matching and by a structural rule — a token after a title is a name
+whether or not the roster knows it — and `assertPseudonymized` re-derives what a name looks
+like rather than trusting that the tokenizer ran, so removing the structural pass makes a
+test fail. That counterfactual is demonstrated in the suite, not asserted.
+
+Two things about it are worth carrying forward rather than rediscovering. It
+over-tokenizes on purpose: a tokenized non-name costs an odd sentence in a draft a human is
+about to read, a missed name sends identity to a third party, and ADR-0006 records that as
+a decision. And fail-closed means tokenizing more, never refusing to draft — nothing in the
+module can surface an error to the representative, because a tool that errors in a car park
+is one that stops being used.
 
 **What the offline claim rests on.** Plan §5 non-negotiable 5 is met and was verified the
 hard way rather than by toggling a browser switch: with the app loaded and a note
@@ -168,47 +198,50 @@ README", and there is no README, so that criterion is unmet.
 
 ## What's next
 
-### Session 4 — The privacy boundary
+### Session 5 — Generation route, guardrails, and headers
 
-Read `docs/BUILD-GUIDE.md` session 4 in full before starting; this is a pointer, not a
-substitute. Budgeted at ~2–3 hours.
+Read `docs/BUILD-GUIDE.md` session 5 in full before starting; this is a pointer, not a
+substitute. Budgeted at ~3.5 hours, of which about 45 minutes is the security headers and
+about 30 the egress check.
 
-`src/lib/privacy/pseudonymize.ts`: stable tokenisation of names, rehydration, and a guard
-that throws if an untokenised string reaches the API client. Unit tests including the
-nasty cases — names inside note prose, possessives, initials, a surgeon sharing a surname
-with a staff member — plus the dictation cases, which per ADR-0005 are written from the
-real dictated notes rather than invented, because invented dictation artifacts are always
-too tidy.
+A server-side route handler, prompt templates and guardrail rulesets as versioned modules,
+per-person batching with accumulated openings, and the retry and truncation handling from
+the prototype fix. Plus CSP, SRI, and strict security headers, asserted in a test against a
+live response rather than left in a config nobody reads. Plus the single-egress check in
+CI — a grep over `src/` with the model route as the only allowed destination, which catches
+the careless case rather than the determined one and should be cited with that limit
+attached.
 
-Build it **before** the generation route. The guide is explicit that if generation exists
-first you will wire it up directly and retrofit the boundary, and retrofitted boundaries
-leak. Session 3 held that line: capture writes notes, tokenises nothing, and calls no API.
+**Done when** drafts generate end to end with names tokenised in the API payload and
+correct in the UI, a test asserts the headers on a real response, and the egress check goes
+red when a second destination is added — verified by adding one temporarily.
 
-**Done when** a test asserting no raw name can reach the API client passes, and fails if
-you remove the guard.
-
-Its corpus dependency is now satisfied — `private/dictated-notes.md` exists, where the
-last handoff recorded it as *to request*. Two things follow. Every fixture derived from it
-has names *and* product and commercial detail substituted, per §7 as amended. And the
-pre-commit hook will not catch a mangled real name in one of those fixtures, so those
-diffs need reading rather than trusting.
+Three things session 4 hands it. Everything crossing to the model goes through
+`createPseudonymizer` and then `assertPseudonymized`; the guard is an internal invariant,
+so session 5 owns making a throw surface as a defect report to the developer rather than as
+a failure to the representative. Token stability across a batch comes from reusing one
+pseudonymizer instance, which is what per-person batching needs. And `fieldnote-q0h` —
+roles are not tokenised — should be decided before generation is wired up, because a role
+reaching the model is the same failure as a name reaching it.
 
 ### Where outstanding work lives
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — internal build state.** Findings, deferred decisions, open questions. 29
-issues: 22 open, 3 closed, 4 deferred, with 10 ready. Run `bd ready` for what is
+**Beads — internal build state.** Findings, deferred decisions, open questions. 31
+issues: 23 open, 4 closed, 4 deferred, with 10 ready. Run `bd ready` for what is
 actionable and `bd blocked` for what is waiting and on what. Session-container beads
 exist only to hang dependency edges from and are deferred so they do not compete with
 real work. This handoff deliberately does not list them: a handoff that copies the
 tracker drifts from it.
 
-Three are worth naming because they qualify claims made above. `fieldnote-xjs` — the
-capture layout is unvalidated. `fieldnote-bdw` — the iOS install path and Safari's
-storage eviction are unverified and the availability argument rests on them; it blocks
-`fieldnote-tcq`, because a retention policy cannot be chosen without knowing whether
-eviction deletes first. `fieldnote-ech` — the denylist matches listed spellings only.
+Four are worth naming because they qualify claims made above. `fieldnote-q0h` — role
+references identify people and the tokenizer does not see them, which is the largest
+remaining hole in §4.1. `fieldnote-xjs` — the capture layout is unvalidated.
+`fieldnote-bdw` — the iOS install path and Safari's storage eviction are unverified and the
+availability argument rests on them; it blocks `fieldnote-tcq`, because a retention policy
+cannot be chosen without knowing whether eviction deletes first. `fieldnote-ech` — the
+denylist matches listed spellings only.
 
 **GitHub issues — public record.** Anything a public reader should see. One open: **#11**,
 migrating ESLint to flat config and upgrading `eslint-config-next` to 16.x. It is blocked
@@ -219,7 +252,10 @@ version when PR #3 was closed, so it will not resurface on its own. PR #5 (TypeS
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`. Records are immutable
 once accepted: superseded by a new record when a decision changes, amended in place with
 a dated note when a consequence is added. Session 2 deferred one ADR that is now a bead —
-audit records surviving event deletion. Two more are owed but not yet due. When
+audit records surviving event deletion. **ADR-0006** landed in session 4, recording that
+the pseudonymization boundary is roster matching plus structural detection plus a
+fail-closed guard, with the over-tokenizing asymmetry and the rejected alternatives. Two
+more are owed but not yet due. When
 `fieldnote-bdw` resolves, ADR-0004 gains a dated note, because that record accepted
 residual risk at rest on confidentiality grounds and storage eviction is a second
 residual risk in the same territory on the availability axis. And the substance of the §2
@@ -293,9 +329,19 @@ Stated rather than smoothed over.
   resolved and nothing about what was described or approved, because that was not
   supplied. §2 gates the private build on the substance, so "resolved" is not yet enough
   to act on.
-- **The ADR index is still stale.** `docs/adr/README.md` shows ADR-0004 and ADR-0005 as
-  plain "Accepted" though both carry dated `Amended` lines in their own headers.
-  Re-verified and unchanged. `fieldnote-fpm`.
+- **Role references are not pseudonymised, and four of the seven available notes name
+  nobody any other way.** In a single-institution note "the Biomed Director" identifies a
+  person as certainly as a surname. The tokenizer does not see it, the tests say so
+  explicitly rather than passing over it, and `fieldnote-q0h` carries the design shape. This
+  is the largest remaining hole in plan §4.1's claim and it should be closed before
+  generation is wired to the boundary.
+- **The evidence for dictation mangling surnames is five names.** One severe failure
+  (`Swali` → `Swelha`), four transcribed correctly. That establishes the failure exists and
+  what shape it has — rare, so nobody is watching, and severe, so nothing approximate
+  recovers it — and it cannot support a claim about frequency. The build guide states the
+  behaviour more strongly than the evidence does; amending it is the owner's call.
+- **A name with neither a title nor a roster entry is still missed.** The structural rule
+  closes the common case, not the general one.
 - **Session-to-PR attribution before session 2 is partly inferred.** Commits and PRs are
   quoted from `git log` and `gh pr list` and are accurate, but the build guide does not
   record which PR closed which session, so the grouping under *Where we've been* is a

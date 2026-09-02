@@ -14,8 +14,9 @@ the artifact.
 | [0001](0001-public-private-split.md) | De-branded public build, private fork for production use | Accepted | 2026-08-27 |
 | [0002](0002-invitation-design.md) | Attendee invitation limited to recipient-forwarded messages | Accepted | 2026-08-27 |
 | [0003](0003-spreadsheet-parsing-library.md) | `read-excel-file` for spreadsheet parsing, replacing `xlsx` (SheetJS) | Accepted, amended 2026-09-01 | 2026-08-28 |
-| [0004](0004-encryption-at-rest.md) | Encryption seam in the data layer; passphrase-derived encryption deferred to the private fork | Accepted | 2026-09-01 |
-| [0005](0005-dictation-input.md) | Device dictation only; no audio capture, storage, or transcription | Accepted | 2026-09-01 |
+| [0004](0004-encryption-at-rest.md) | Encryption seam in the data layer; passphrase-derived encryption deferred to the private fork | Accepted, amended 2026-09-01 | 2026-09-01 |
+| [0005](0005-dictation-input.md) | Device dictation only; no audio capture, storage, or transcription | Accepted, amended 2026-09-01 | 2026-09-01 |
+| [0006](0006-structural-name-detection.md) | Structural name detection at the pseudonymization boundary | Accepted | 2026-09-02 |
 
 ## What each one settles
 
@@ -36,6 +37,12 @@ deferred to the private fork.
 **0005** declines a capability. No microphone permission, no audio, no transcription
 service — because a transcription call would be a second egress, and the single-egress
 claim in project plan §4.1 is the strongest thing in the repository.
+
+**0006** widens what the pseudonymization boundary means: roster matching plus structural
+detection plus a fail-closed guard, rather than roster matching alone, which cannot catch
+a name it was never told about. It records a deliberate asymmetry — over-tokenizing is
+preferred to under-tokenizing — and is explicit that fail-closed means tokenizing more,
+never refusing to draft.
 
 ## Numbering
 
