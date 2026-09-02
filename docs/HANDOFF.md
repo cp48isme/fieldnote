@@ -1,7 +1,6 @@
 # Handoff
 
-Written 2026-09-02, at `e3c425c` on `feat/session-3-capture-ui`. `main` is at `9a7c1b0`;
-this branch is session 3, open as PR #15 and not merged at the time of writing.
+Written 2026-09-02, at `268cf97` on `main`.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -39,8 +38,8 @@ violates one is wrong regardless of how well it is implemented.
 
 ## Where we've been
 
-37 commits on `main`, 11 merged pull requests. Verified with `git rev-list --count main`
-and `gh pr list`.
+55 commits on `main`, 14 merged pull requests, none open. Verified with
+`git rev-list --count main` and `gh pr list`.
 
 **Phase 0 — foundation.** Build guide session 1. The Next.js 16 scaffold, CI, and the
 security baseline landed first as two direct commits (`989d459`, `d509dca`), then
@@ -70,35 +69,45 @@ restores the gate, chains beads behind it, and records both findings as beads.
 two `CLAUDE.md` working agreements behind them: regenerate the handoff from sources at
 the end of every session, and prefer the plainly correct implementation.
 
-**Session 3 — capture UI and offline shell.** PR **#15**, eleven commits, open. A
-gitignored path for private material; the PWA manifest and service worker; the capture
-dock and log on the session 2 data layer; e2e coverage of both; the previously untested
-`resumeSession` path; document amendments; and then five commits of review findings —
-the viewport scale lock removed, the service worker made updatable, autosave's `flush`
-corrected, and event switching added.
+**Session 3 — capture UI and offline shell.** **#15**, thirteen commits, merged at
+`7c09831`. The capture dock and log on the session 2 data layer; the PWA manifest and a
+hand-written service worker; e2e coverage of both; the previously untested
+`resumeSession` path; a gitignored `private/` path for pre-de-branding material; and
+document amendments. Six of the thirteen commits are review findings fixed in place — a
+viewport scale lock that failed WCAG 1.4.4, a service worker that could never update, an
+autosave `flush` that resolved while a write was still running, a CodeQL missing-await,
+and the discovery that the app could hold only one event ever.
 
 The session did **not** do what the build guide told it to. The guide says to port an
 already-validated prototype and not to redesign it; that prototype was a Claude artifact
 built outside this repository, it was not retrieved, and the capture surface was built
 from plan §3.1 instead. The guide and §3.1 were amended in the same PR, and the layout is
-tracked as unvalidated in `fieldnote-xjs`. Nothing in this repository should describe it
-as ported.
+tracked as unvalidated in `fieldnote-xjs`. Nothing here should describe it as ported.
+
+**Project inputs and the denylist.** Two small PRs after session 3, neither attached to a
+build guide session. **#16** recorded plan §7 items 1 to 3 as received or resolved and
+widened the rule governing how that material may be adapted into public eval cases —
+previously names only, now product and commercial detail as well. **#17** removed
+`public/` from the denylist's skip list, where a real name in a committed SVG would have
+gone unscanned, and wrote the term check's literal-match limitation into the script
+header.
 
 ---
 
 ## Where we are
 
-`main` is at `9a7c1b0` with a clean working tree. One open pull request, **#15**, eleven
-commits ahead. CI green on the last three merges to `main` (`gh run list --branch main`).
+`main` is at `268cf97` with a clean working tree and no open pull requests. CI green on
+the last three merges (`gh run list --branch main`).
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
 suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
-branches, and force pushes disabled. Required approving reviews: **0**, which is
-deliberate for a single-maintainer repository but worth knowing: the gate is CI, not
-review.
+branches, required conversation resolution, and force pushes disabled. Required approving
+reviews: **0**, which is deliberate for a single-maintainer repository but worth knowing:
+the gate is CI, not review. Required conversation resolution is not decorative — it
+blocked #15 on an unresolved CodeQL thread after every check was already green.
 
 **What the green checks actually mean.** `Verify` runs the denylist, lint, typecheck,
-unit tests, and build, and those are real. Three caveats matter more than the badge:
+unit tests, and build, and those are real. Four caveats matter more than the badge:
 
 - **The eval suite passes against zero cases.** `scripts/evals.mjs` prints
   `evals: no cases defined yet (scaffold placeholder)` and exits 0. Every green
@@ -108,29 +117,44 @@ unit tests, and build, and those are real. Three caveats matter more than the ba
 - **CI enforces structural denylist patterns only.** The literal-term list lives in
   `.denylist.local`, which is gitignored by design and therefore absent on a runner. CI
   cannot catch a real name in a diff; only the local pre-commit hook can.
-- **The service worker's update path is not covered by any test.** It is verified by
-  hand, the worker's own header says so, and `fieldnote-unp` carries the procedure. A
-  green suite says nothing about it.
+- **The local hook catches listed spellings, not names.** Terms compile to
+  case-insensitive regexes with word boundaries, so a name split across words, missing a
+  letter, or carrying a trailing plural passes clean — verified, not assumed. Device
+  dictation mangles surnames by design, so text derived from `private/dictated-notes.md`
+  is precisely what this cannot see, and from session 4 the tokenizer fixtures and eval
+  corpus are made of that text. Human review of those diffs is the control; the hook is
+  the backstop. `fieldnote-ech`, which also owes session 15 a threat-model entry.
+- **The service worker's update path is not covered by any test.** Verified by hand
+  twice; the worker's own header says so, and `fieldnote-unp` carries the procedure.
 
-**What the offline claim rests on.** Plan §5 non-negotiable 5 is met and was verified
-the hard way rather than by toggling a browser switch: with the app loaded and a note
+**What the offline claim rests on.** Plan §5 non-negotiable 5 is met and was verified the
+hard way rather than by toggling a browser switch: with the app loaded and a note
 captured, the server process was killed, a page fetch to the origin was confirmed
 refused, the HTTP cache was disabled, and a full reload still rendered the capture screen
 with the note intact and accepted a new one. `tests/e2e/offline.spec.ts` is the automated
 form, and it was confirmed to fail when the worker is replaced with one that activates
 but caches nothing.
 
-The update path was found broken during review and fixed in the same PR: the worker was
-hand-written and byte-identical across builds, so a browser never re-installed it and a
-user stayed on whichever build they first loaded, indefinitely. `public/sw.js` is now
-generated from `src/sw/service-worker.js` with the build id stamped in, caches are named
-per build, and navigations fetch with `cache: "reload"` because the browser's own HTTP
-cache was a second, independent way to be pinned to an old build. Verified by deploying
-twice; the transcript is in PR #15.
+The update path was found broken under review and fixed in the same PR. The worker had
+been hand-written and byte-identical across builds, so a browser never re-installed it
+and a user stayed on whichever build they first loaded, indefinitely. `public/sw.js` is
+now generated from `src/sw/service-worker.js` with the build id stamped in, caches are
+named per build, and navigations fetch with `cache: "reload"` because the browser's own
+HTTP cache was a second, independent way to be pinned. Verified by deploying twice.
 
-Two limits remain. The worker registers in production builds only, so `next dev` has no
-offline behaviour by design; and whether the generated `public/precache.json` and
-`public/sw.js` survive a Vercel deploy is **unverified**, tracked as `fieldnote-6x5`.
+Two limits remain: the worker registers in production builds only, so `next dev` has no
+offline behaviour by design; and whether the generated `public/sw.js` and
+`public/precache.json` survive a Vercel deploy is **unverified** — `fieldnote-6x5`.
+
+**Project inputs.** Plan §7 items 1 and 2 have arrived and live at `private/`, which is
+gitignored: eight writing samples and seven uncorrected dictated notes. Item 3 is
+resolved; item 4 — what approved content actually exists, needed by session 9 — is the
+only one still open. Two caveats travel with the material. The email samples' three-line
+preambles are not filled in, so they teach register but not personalisation, which is the
+ceiling the build guide already names for session 5. And per §7 as amended, anything
+adapted from either file into public eval cases has names **and product and commercial
+detail** replaced — product characteristics, pricing comparisons, and indication status
+each identify the manufacturer to an industry reader with every name already gone.
 
 **Documentation set.** `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md`, five ADRs with an
 index at `docs/adr/README.md`, this handoff and its template, plus `CHANGELOG.md` and
@@ -152,7 +176,7 @@ substitute. Budgeted at ~2–3 hours.
 `src/lib/privacy/pseudonymize.ts`: stable tokenisation of names, rehydration, and a guard
 that throws if an untokenised string reaches the API client. Unit tests including the
 nasty cases — names inside note prose, possessives, initials, a surgeon sharing a surname
-with a staff member — plus the dictation cases, which per ADR-0005 must be written from
+with a staff member — plus the dictation cases, which per ADR-0005 are written from the
 real dictated notes rather than invented, because invented dictation artifacts are always
 too tidy.
 
@@ -163,25 +187,28 @@ leak. Session 3 held that line: capture writes notes, tokenises nothing, and cal
 **Done when** a test asserting no raw name can reach the API client passes, and fails if
 you remove the guard.
 
-Note the dependency: the dictation cases need plan §7 item 2, six to ten uncorrected
-dictated notes, whose status is *to request*. The session can be built without them; its
-test corpus cannot be finished without them.
+Its corpus dependency is now satisfied — `private/dictated-notes.md` exists, where the
+last handoff recorded it as *to request*. Two things follow. Every fixture derived from it
+has names *and* product and commercial detail substituted, per §7 as amended. And the
+pre-commit hook will not catch a mangled real name in one of those fixtures, so those
+diffs need reading rather than trusting.
 
 ### Where outstanding work lives
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — internal build state.** Findings, deferred decisions, open questions. 25
-issues, 21 open, 10 of them ready. Run `bd ready` for what is actionable and `bd blocked`
-for what is waiting and on what. Session-container beads exist only to hang dependency
-edges from and are deferred so they do not compete with real work. This handoff
-deliberately does not list them: a handoff that copies the tracker drifts from it.
+**Beads — internal build state.** Findings, deferred decisions, open questions. 29
+issues: 22 open, 3 closed, 4 deferred, with 10 ready. Run `bd ready` for what is
+actionable and `bd blocked` for what is waiting and on what. Session-container beads
+exist only to hang dependency edges from and are deferred so they do not compete with
+real work. This handoff deliberately does not list them: a handoff that copies the
+tracker drifts from it.
 
-Two are worth naming here because they qualify claims this document makes. `fieldnote-xjs`
-— the capture layout is unvalidated. `fieldnote-bdw` — the iOS install path and Safari's
-storage eviction are unverified, and the project's availability argument rests on them;
-it now blocks `fieldnote-tcq`, because a retention policy cannot be chosen without
-knowing whether eviction deletes first.
+Three are worth naming because they qualify claims made above. `fieldnote-xjs` — the
+capture layout is unvalidated. `fieldnote-bdw` — the iOS install path and Safari's
+storage eviction are unverified and the availability argument rests on them; it blocks
+`fieldnote-tcq`, because a retention policy cannot be chosen without knowing whether
+eviction deletes first. `fieldnote-ech` — the denylist matches listed spellings only.
 
 **GitHub issues — public record.** Anything a public reader should see. One open: **#11**,
 migrating ESLint to flat config and upgrading `eslint-config-next` to 16.x. It is blocked
@@ -192,11 +219,12 @@ version when PR #3 was closed, so it will not resurface on its own. PR #5 (TypeS
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`. Records are immutable
 once accepted: superseded by a new record when a decision changes, amended in place with
 a dated note when a consequence is added. Session 2 deferred one ADR that is now a bead —
-audit records surviving event deletion. Session 3 deferred none; its three document
-amendments are corrections of fact and stack sequencing, not decisions. One amendment is
-owed but not yet due: when `fieldnote-bdw` resolves, ADR-0004 gains a dated note, because
-that record accepted residual risk at rest on confidentiality grounds and storage eviction
-is a second residual risk in the same territory on the availability axis.
+audit records surviving event deletion. Two more are owed but not yet due. When
+`fieldnote-bdw` resolves, ADR-0004 gains a dated note, because that record accepted
+residual risk at rest on confidentiality grounds and storage eviction is a second
+residual risk in the same territory on the availability axis. And the substance of the §2
+conversation, when it exists, likely belongs in an ADR rather than a §7 status line,
+because it constrains what the private fork may do.
 
 ---
 
@@ -213,6 +241,10 @@ is a second residual risk in the same territory on the availability axis.
   worse.** Session 3 shipped a service worker whose commit message described cache
   versioning that in practice never ran a second time. Where something genuinely cannot
   be covered, say so in the file itself rather than letting a green suite imply otherwise.
+- **Check existence and ignore status separately.** `git check-ignore` is a pattern
+  query: it reports a match whether or not the file exists. Used alone it will "confirm"
+  files that are not there, which happened once already when material turned out to be a
+  directory deeper than expected.
 - **The constraints in `CLAUDE.md` are not optional.** If a task requires violating one,
   stop and say so rather than finding a way around it. The constraint is the point.
 - **Never `--no-verify`.** If the pre-commit hook fires, stop and show the output. The
@@ -223,7 +255,7 @@ is a second residual risk in the same territory on the availability axis.
   checkboxes carry the CLAUDE.md constraints, and the PR then has to be rewritten by hand.
 - **One session, one PR.** A finding that surfaces mid-session and is not blocking gets a
   bead, not a new branch. Amend documents when the session that changes them lands, not
-  on discovery.
+  on discovery. Work not attached to a session — #16 and #17 — gets its own small PR.
 - **Separate commits per logical change.** Merge with a merge commit rather than a
   squash: the commit history is part of the artifact, and squashing flattens the
   reasoning into one line.
@@ -234,12 +266,16 @@ is a second residual risk in the same territory on the availability axis.
 
 Stated rather than smoothed over.
 
-- **The capture layout has never been used by anyone.** It was built from a
-  four-sentence feature list, not ported from the validated prototype, and every decision
-  behind it — what sits where, how attribution is reached, what a log row shows — was
-  invented in session 3 and is listed in the PR #15 body. `fieldnote-xjs` tracks getting
-  it in front of the representative. Treat "capture works" here as "capture functions",
-  not as "capture is right".
+- **The capture layout has never been used by anyone.** It was built from a four-sentence
+  feature list, not ported from the validated prototype, and every decision behind it —
+  what sits where, how attribution is reached, what a log row shows — was invented in
+  session 3 and is listed in the #15 body. `fieldnote-xjs` tracks getting it in front of
+  the representative. Treat "capture works" here as "capture functions", not as "capture
+  is right".
+- **Nothing here has read the material in `private/`.** The counts and paths above come
+  from the session brief and a filesystem check, not from the contents. Whether the
+  samples have the range §7 asks for, and whether the notes carry the artifacts sessions
+  4, 7, and 15 need, is unverified by this document.
 - **The service worker update path has no automated coverage.** Verified manually, twice,
   and the procedure is written out in `fieldnote-unp`. Playwright's `webServer` builds
   once per run, so a two-build test needs a harness this repository does not have.
@@ -249,15 +285,17 @@ Stated rather than smoothed over.
   `fieldnote-6x5`.
 - **The backgrounded-tab e2e emulates `visibilitychange` rather than producing it.** A
   headless browser will not reliably background a tab, so the event is dispatched. The
-  state machine underneath is covered directly in `tests/unit/session-lifecycle.test.ts`;
-  what the e2e proves is that the app's listeners are wired to the right calls.
+  state machine underneath is covered directly in `tests/unit/session-lifecycle.test.ts`.
 - **`useDebouncedAutosave` has no unit test.** Session 3 fixed a real race in it — `flush`
-  resolving while a write was still in flight — and covered it only through an e2e, because
-  a hook test needs a React testing library this repository does not have and adding a
-  dependency was not that session's call.
+  resolving while a write was still in flight — and covered it only through an e2e,
+  because a hook test needs a React testing library this repository does not have.
+- **Plan §7 item 3 records a status with no substance.** It says the §2 conversation is
+  resolved and nothing about what was described or approved, because that was not
+  supplied. §2 gates the private build on the substance, so "resolved" is not yet enough
+  to act on.
 - **The ADR index is still stale.** `docs/adr/README.md` shows ADR-0004 and ADR-0005 as
   plain "Accepted" though both carry dated `Amended` lines in their own headers.
-  Re-verified this session and unchanged. `fieldnote-fpm`.
+  Re-verified and unchanged. `fieldnote-fpm`.
 - **Session-to-PR attribution before session 2 is partly inferred.** Commits and PRs are
   quoted from `git log` and `gh pr list` and are accurate, but the build guide does not
   record which PR closed which session, so the grouping under *Where we've been* is a
