@@ -1,7 +1,7 @@
 # Handoff
 
-Written 2026-09-02, at `bb4911b` on `feat/session-3-capture-ui`. `main` is at `9a7c1b0`;
-this branch is session 3 and is not merged yet.
+Written 2026-09-02, at `e3c425c` on `feat/session-3-capture-ui`. `main` is at `9a7c1b0`;
+this branch is session 3, open as PR #15 and not merged at the time of writing.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -39,8 +39,8 @@ violates one is wrong regardless of how well it is implemented.
 
 ## Where we've been
 
-37 commits on `main`, 11 merged pull requests, none open. Verified with
-`git rev-list --count main` and `gh pr list`.
+37 commits on `main`, 11 merged pull requests. Verified with `git rev-list --count main`
+and `gh pr list`.
 
 **Phase 0 — foundation.** Build guide session 1. The Next.js 16 scaffold, CI, and the
 security baseline landed first as two direct commits (`989d459`, `d509dca`), then
@@ -70,12 +70,12 @@ restores the gate, chains beads behind it, and records both findings as beads.
 two `CLAUDE.md` working agreements behind them: regenerate the handoff from sources at
 the end of every session, and prefer the plainly correct implementation.
 
-**Session 3 — capture UI and offline shell.** Six commits on
-`feat/session-3-capture-ui`, not yet merged. A gitignored path for private material; the
-PWA manifest and a hand-written service worker with a generated precache manifest; the
-capture dock and log built on the session 2 data layer; end-to-end coverage of the
-capture surface and the offline shell; a test closing the untested `resumeSession` path;
-and amendments to the build guide and the plan.
+**Session 3 — capture UI and offline shell.** PR **#15**, eleven commits, open. A
+gitignored path for private material; the PWA manifest and service worker; the capture
+dock and log on the session 2 data layer; e2e coverage of both; the previously untested
+`resumeSession` path; document amendments; and then five commits of review findings —
+the viewport scale lock removed, the service worker made updatable, autosave's `flush`
+corrected, and event switching added.
 
 The session did **not** do what the build guide told it to. The guide says to port an
 already-validated prototype and not to redesign it; that prototype was a Claude artifact
@@ -88,50 +88,57 @@ as ported.
 
 ## Where we are
 
-`main` is at `9a7c1b0` with a clean working tree and no open pull requests; session 3 is
-six commits ahead on its branch. CI green on the last four merges to `main`
-(`gh run list --branch main`).
+`main` is at `9a7c1b0` with a clean working tree. One open pull request, **#15**, eleven
+commits ahead. CI green on the last three merges to `main` (`gh run list --branch main`).
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
-suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict
-up-to-date branches, and force pushes disabled. Required approving reviews: **0**, which
-is deliberate for a single-maintainer repository but worth knowing: the gate is CI, not
-review. Re-verified this session against the branch-protection API.
+suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
+branches, and force pushes disabled. Required approving reviews: **0**, which is
+deliberate for a single-maintainer repository but worth knowing: the gate is CI, not
+review.
 
 **What the green checks actually mean.** `Verify` runs the denylist, lint, typecheck,
-unit tests, and build, and those are real. Two caveats matter more than the badge:
+unit tests, and build, and those are real. Three caveats matter more than the badge:
 
 - **The eval suite passes against zero cases.** `scripts/evals.mjs` prints
   `evals: no cases defined yet (scaffold placeholder)` and exits 0. Every green
   "Adversarial guardrail suite" check since PR #7 is evidence that the wiring works, not
   that any guardrail holds. It is also a *required* check, so the gate currently proves
-  nothing about guardrails. Real cases land at session 7. No eval badge in the README
-  before then.
+  nothing about guardrails. Real cases land at session 7.
 - **CI enforces structural denylist patterns only.** The literal-term list lives in
   `.denylist.local`, which is gitignored by design and therefore absent on a runner. CI
-  cannot catch a real name in a diff; only the local pre-commit hook can. This is stated
-  in `.github/workflows/ci.yml` and in the header of `scripts/check-denylist.mjs`.
+  cannot catch a real name in a diff; only the local pre-commit hook can.
+- **The service worker's update path is not covered by any test.** It is verified by
+  hand, the worker's own header says so, and `fieldnote-unp` carries the procedure. A
+  green suite says nothing about it.
 
-**What the offline claim rests on.** Plan §5 non-negotiable 5 is met and was verified the
-hard way rather than by toggling a browser switch: with the app loaded and a note
-captured, the server process was killed, a fetch to the origin was confirmed refused, the
-HTTP cache was disabled, and a full reload still rendered the capture screen with the note
-intact and accepted a new one. `tests/e2e/offline.spec.ts` is the automated form of the
-same check, and it was confirmed to fail when `public/sw.js` is replaced with a worker
-that activates but caches nothing — so it tests the worker rather than passing for free.
+**What the offline claim rests on.** Plan §5 non-negotiable 5 is met and was verified
+the hard way rather than by toggling a browser switch: with the app loaded and a note
+captured, the server process was killed, a page fetch to the origin was confirmed
+refused, the HTTP cache was disabled, and a full reload still rendered the capture screen
+with the note intact and accepted a new one. `tests/e2e/offline.spec.ts` is the automated
+form, and it was confirmed to fail when the worker is replaced with one that activates
+but caches nothing.
 
-Two limits on that: the service worker is registered in production builds only, so
-`next dev` has no offline behaviour by design; and whether the generated
-`public/precache.json` survives a Vercel deploy is **unverified** and tracked as
-`fieldnote-6x5`.
+The update path was found broken during review and fixed in the same PR: the worker was
+hand-written and byte-identical across builds, so a browser never re-installed it and a
+user stayed on whichever build they first loaded, indefinitely. `public/sw.js` is now
+generated from `src/sw/service-worker.js` with the build id stamped in, caches are named
+per build, and navigations fetch with `cache: "reload"` because the browser's own HTTP
+cache was a second, independent way to be pinned to an old build. Verified by deploying
+twice; the transcript is in PR #15.
+
+Two limits remain. The worker registers in production builds only, so `next dev` has no
+offline behaviour by design; and whether the generated `public/precache.json` and
+`public/sw.js` survive a Vercel deploy is **unverified**, tracked as `fieldnote-6x5`.
 
 **Documentation set.** `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md`, five ADRs with an
 index at `docs/adr/README.md`, this handoff and its template, plus `CHANGELOG.md` and
-`SECURITY.md` at the root. Plan §4.6 also specifies `README.md`,
-`docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`, `docs/THREAT-MODEL.md`,
-`docs/DATA-PROTECTION.md`, and `docs/COMPLIANCE-MAP.md` — **none of which exist yet.**
-Most are scheduled for Phase 4. The README is not: session 1's stated done-when includes
-"both badges render in the README", and there is no README, so that criterion is unmet.
+`SECURITY.md`. Plan §4.6 also specifies `README.md`, `docs/ARCHITECTURE.md`,
+`docs/AI-SYSTEM-CARD.md`, `docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, and
+`docs/COMPLIANCE-MAP.md` — **none of which exist yet.** Most are scheduled for Phase 4.
+The README is not: session 1's stated done-when includes "both badges render in the
+README", and there is no README, so that criterion is unmet.
 
 ---
 
@@ -164,25 +171,32 @@ test corpus cannot be finished without them.
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — internal build state.** Findings, deferred decisions, open questions. 22
-issues, 18 open. Run `bd ready` for what is actionable and `bd blocked` for what is
-waiting and on what. Session-container beads exist only to hang dependency edges from and
-are deferred so they do not compete with real work. This handoff deliberately does not
-list them: a handoff that copies the tracker drifts from it. The one worth knowing about
-without opening the tracker is `fieldnote-xjs`, because it qualifies a claim this document
-makes — the capture layout is unvalidated.
+**Beads — internal build state.** Findings, deferred decisions, open questions. 25
+issues, 21 open, 10 of them ready. Run `bd ready` for what is actionable and `bd blocked`
+for what is waiting and on what. Session-container beads exist only to hang dependency
+edges from and are deferred so they do not compete with real work. This handoff
+deliberately does not list them: a handoff that copies the tracker drifts from it.
+
+Two are worth naming here because they qualify claims this document makes. `fieldnote-xjs`
+— the capture layout is unvalidated. `fieldnote-bdw` — the iOS install path and Safari's
+storage eviction are unverified, and the project's availability argument rests on them;
+it now blocks `fieldnote-tcq`, because a retention policy cannot be chosen without
+knowing whether eviction deletes first.
 
 **GitHub issues — public record.** Anything a public reader should see. One open: **#11**,
-migrating ESLint to flat config and upgrading `eslint-config-next` to 16.x. It is
-blocked on a migration rather than a version bump, and Dependabot registered an ignore
-for the version when PR #3 was closed, so it will not resurface on its own. PR #5
-(TypeScript 6.0.3) was closed the same way and has the same problem.
+migrating ESLint to flat config and upgrading `eslint-config-next` to 16.x. It is blocked
+on a migration rather than a version bump, and Dependabot registered an ignore for the
+version when PR #3 was closed, so it will not resurface on its own. PR #5 (TypeScript
+6.0.3) was closed the same way and has the same problem.
 
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`. Records are immutable
 once accepted: superseded by a new record when a decision changes, amended in place with
 a dated note when a consequence is added. Session 2 deferred one ADR that is now a bead —
-audit records surviving event deletion. Session 3 deferred none: its three document
-amendments are corrections of fact and stack sequencing, not decisions.
+audit records surviving event deletion. Session 3 deferred none; its three document
+amendments are corrections of fact and stack sequencing, not decisions. One amendment is
+owed but not yet due: when `fieldnote-bdw` resolves, ADR-0004 gains a dated note, because
+that record accepted residual risk at rest on confidentiality grounds and storage eviction
+is a second residual risk in the same territory on the availability axis.
 
 ---
 
@@ -195,6 +209,10 @@ amendments are corrections of fact and stack sequencing, not decisions.
   port a validated prototype rested on an artifact that no longer existed. A guide entry
   is a plan written earlier, not a fact about the repository now, and where the two
   disagree the repository wins and the guide gets amended in the session that found it.
+- **A control that is not tested is not a control, and one that reads as tested is
+  worse.** Session 3 shipped a service worker whose commit message described cache
+  versioning that in practice never ran a second time. Where something genuinely cannot
+  be covered, say so in the file itself rather than letting a green suite imply otherwise.
 - **The constraints in `CLAUDE.md` are not optional.** If a task requires violating one,
   stop and say so rather than finding a way around it. The constraint is the point.
 - **Never `--no-verify`.** If the pre-commit hook fires, stop and show the output. The
@@ -202,11 +220,10 @@ amendments are corrections of fact and stack sequencing, not decisions.
   literal-term denylist. Check `git config core.hooksPath` still reads `.husky/_` after
   any tool that installs hooks of its own.
 - **`gh pr create`, never `--fill`.** `--fill` skips `PULL_REQUEST_TEMPLATE.md`, whose
-  checkboxes carry the CLAUDE.md constraints, and the PR then has to be rewritten by
-  hand.
-- **One session, one PR.** A finding that surfaces mid-session and is not blocking gets
-  a bead, not a new branch. Amend documents when the session that changes them lands,
-  not on discovery.
+  checkboxes carry the CLAUDE.md constraints, and the PR then has to be rewritten by hand.
+- **One session, one PR.** A finding that surfaces mid-session and is not blocking gets a
+  bead, not a new branch. Amend documents when the session that changes them lands, not
+  on discovery.
 - **Separate commits per logical change.** Merge with a merge commit rather than a
   squash: the commit history is part of the artifact, and squashing flattens the
   reasoning into one line.
@@ -217,29 +234,36 @@ amendments are corrections of fact and stack sequencing, not decisions.
 
 Stated rather than smoothed over.
 
-- **The capture layout has never been used by anyone.** It was built from a four-sentence
-  feature list, not ported from the validated prototype, and every decision behind it —
-  what sits where, how attribution is reached, what a log row shows — was invented in this
-  session and is listed in the session 3 PR body. `fieldnote-xjs` tracks getting it in
-  front of the representative. Treat "capture works" in this document as "capture
-  functions", not as "capture is right".
-- **Session-to-PR attribution before session 2 is partly inferred.** Commits and PRs are
-  quoted from `git log` and `gh pr list` and are accurate, but the build guide does not
-  record which PR closed which session, so the grouping under *Where we've been* is a
-  reading of commit messages rather than a recorded fact.
-- **The ADR index is still stale.** `docs/adr/README.md` marks ADR-0003 as "Accepted,
-  amended 2026-09-01" but shows ADR-0004 and ADR-0005 as plain "Accepted", though both
-  carry dated `Amended` lines in their own headers. Re-verified this session and unchanged
-  since the last handoff; tracked as `fieldnote-fpm`.
-- **The Vercel deploy path for the offline shell is untested.** `public/precache.json` is
-  written after `next build` finishes, and nothing here confirms Vercel collects it.
-  Verified locally and under Playwright only. `fieldnote-6x5`.
+- **The capture layout has never been used by anyone.** It was built from a
+  four-sentence feature list, not ported from the validated prototype, and every decision
+  behind it — what sits where, how attribution is reached, what a log row shows — was
+  invented in session 3 and is listed in the PR #15 body. `fieldnote-xjs` tracks getting
+  it in front of the representative. Treat "capture works" here as "capture functions",
+  not as "capture is right".
+- **The service worker update path has no automated coverage.** Verified manually, twice,
+  and the procedure is written out in `fieldnote-unp`. Playwright's `webServer` builds
+  once per run, so a two-build test needs a harness this repository does not have.
+- **The Vercel deploy path for the offline shell is untested.** Both `public/sw.js` and
+  `public/precache.json` are written after `next build` finishes, and nothing here
+  confirms Vercel collects them. Verified locally and under Playwright only.
+  `fieldnote-6x5`.
 - **The backgrounded-tab e2e emulates `visibilitychange` rather than producing it.** A
   headless browser will not reliably background a tab, so the event is dispatched. The
   state machine underneath is covered directly in `tests/unit/session-lifecycle.test.ts`;
   what the e2e proves is that the app's listeners are wired to the right calls.
+- **`useDebouncedAutosave` has no unit test.** Session 3 fixed a real race in it — `flush`
+  resolving while a write was still in flight — and covered it only through an e2e, because
+  a hook test needs a React testing library this repository does not have and adding a
+  dependency was not that session's call.
+- **The ADR index is still stale.** `docs/adr/README.md` shows ADR-0004 and ADR-0005 as
+  plain "Accepted" though both carry dated `Amended` lines in their own headers.
+  Re-verified this session and unchanged. `fieldnote-fpm`.
+- **Session-to-PR attribution before session 2 is partly inferred.** Commits and PRs are
+  quoted from `git log` and `gh pr list` and are accurate, but the build guide does not
+  record which PR closed which session, so the grouping under *Where we've been* is a
+  reading of commit messages rather than a recorded fact.
 - **Hours in the build guide's phase table are estimates, not measurements.** Nothing in
   this repository records actual time spent, so no claim is made about whether any session
   landed within its budget.
-- **This handoff does not verify the private fork.** It has no visibility into whether
-  one exists or what state it is in.
+- **This handoff does not verify the private fork.** It has no visibility into whether one
+  exists or what state it is in.
