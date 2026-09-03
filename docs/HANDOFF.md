@@ -1,7 +1,6 @@
 # Handoff
 
-Written 2026-09-02, at `15bd014` on `feat/session-4-privacy-boundary`. `main` is at
-`7a7bdf8`; this branch is session 4 and is not merged at the time of writing.
+Written 2026-09-02, at `4dd3af4` on `main`.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -39,7 +38,7 @@ violates one is wrong regardless of how well it is implemented.
 
 ## Where we've been
 
-57 commits on `main`, 15 merged pull requests, none open. Verified with
+68 commits on `main`, 19 merged pull requests, none open. Verified with
 `git rev-list --count main` and `gh pr list`.
 
 **Phase 0 — foundation.** Build guide session 1. The Next.js 16 scaffold, CI, and the
@@ -88,17 +87,29 @@ built outside this repository, it was not retrieved, and the capture surface was
 from plan §3.1 instead. The guide and §3.1 were amended in the same PR, and the layout is
 tracked as unvalidated in `fieldnote-xjs`. Nothing here should describe it as ported.
 
-**Session 4 — the privacy boundary.** Three commits on
-`feat/session-4-privacy-boundary`, not yet merged. `src/lib/privacy/` with roster matching,
-structural name detection, and a guard on the API client; dictation fixtures in their own
-commit with per-case provenance; and ADR-0006 recording what changed about the boundary's
-meaning.
+**Session 4 — the privacy boundary.** **#19**, four commits, merged at `8445e5f`.
+`src/lib/privacy/` with roster matching, structural name detection, and a guard on the API
+client; dictation fixtures in their own commit with per-case provenance; and ADR-0006
+recording what changed about the boundary's meaning.
 
 The session's substantive addition is structural detection: a token following a title is a
 name whether or not the roster knows it. Roster matching alone is fail-open by
 construction — it cannot catch a name it was never told about, and dictation reliably
 produces exactly that. ADR-0006 carries the reasoning, the rejected alternatives, and the
 residual risk.
+
+**The first device run, and what it found.** Three PRs after session 4, none of them
+session work. Running the app on a phone over `http://<LAN-IP>:3000` produced an
+indefinite "Loading…" and an unhandled rejection: `crypto.randomUUID` is secure-context
+only, so `beginSession` threw while reads succeeded, and `ready` gated the screen on both.
+
+**#20** made data-layer failures visible — a session-marker failure degrades to capture
+without crash recovery, a failing read or write reaches a terminal state naming the fault
+and the action, and an insecure origin is refused up front rather than run anyway. No
+fallback id generator: it would leave permanently unexercised code in the tree and make
+device tests run against a build differing from production in the data layer. **#21** added
+`pnpm serve:https`, which is what makes device testing possible at all. **#22** stopped
+`next dev` writing to `CLAUDE.md`.
 
 **Project inputs and the denylist.** Two small PRs after session 3, neither attached to a
 build guide session. **#16** recorded plan §7 items 1 to 3 as received or resolved and
@@ -112,9 +123,8 @@ header.
 
 ## Where we are
 
-`main` is at `7a7bdf8` with a clean working tree and no open pull requests; session 4 is
-three commits ahead on its branch. CI green on the last three merges
-(`gh run list --branch main`).
+`main` is at `4dd3af4` with a clean working tree and no open pull requests. CI green on
+the last three merges (`gh run list --branch main`).
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
 suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
@@ -143,6 +153,13 @@ unit tests, and build, and those are real. Four caveats matter more than the bad
   the backstop. `fieldnote-ech`, which also owes session 15 a threat-model entry.
 - **The service worker's update path is not covered by any test.** Verified by hand
   twice; the worker's own header says so, and `fieldnote-unp` carries the procedure.
+- **The suite was structurally blind to an entire class until today.** Playwright runs
+  against `127.0.0.1`, a secure context, so no test could reach the failure a phone hit on
+  the first try. `tests/e2e/environment.spec.ts` now covers it by reproducing the *API
+  surface* — `Crypto.prototype.randomUUID` deleted, `isSecureContext` overridden — because
+  there is no Chromium flag to make an origin insecure and the alternatives put a network
+  dependency in the suite. Worth carrying forward as a habit rather than a fix: a green
+  suite says nothing about environments the harness cannot enter.
 
 **The privacy boundary now exists**, ahead of the route that will cross it. Names are
 replaced by roster matching and by a structural rule — a token after a title is a name
@@ -175,6 +192,26 @@ HTTP cache was a second, independent way to be pinned. Verified by deploying twi
 Two limits remain: the worker registers in production builds only, so `next dev` has no
 offline behaviour by design; and whether the generated `public/sw.js` and
 `public/precache.json` survive a Vercel deploy is **unverified** — `fieldnote-6x5`.
+
+**Device testing works, and is still owed.** `pnpm serve:https` serves the production
+build over HTTPS on the LAN address, with a certificate whose SAN covers it — verified end
+to end: secure context, service worker activated, capture working, offline reload returning
+the note. `docs/TESTING-ON-DEVICE.md` is the runbook.
+
+Two traps it records, both found by running things rather than reading about them.
+`next dev --experimental-https` is not the answer: it is `next dev` only, so it can never
+produce the service worker, its certificate hard-codes `localhost`/`127.0.0.1`/`::1` and so
+never covers the LAN address, and when `mkcert -install` cannot prompt for a password it
+**logs a failure and falls back to plain HTTP while continuing to serve** — advertising the
+exact origin the app rejects. And ignoring a certificate error is not the same as trusting
+the certificate: the first verification run did the former and `serviceWorker.ready` never
+resolved, which is precisely the iOS failure mode the runbook warns about.
+
+**Nothing has been run on a physical device.** All of the above is the same origin
+classification reached headlessly. `fieldnote-xjs` (is the capture layout right) and
+`fieldnote-bdw` (does it install, and does iOS keep the data) both still need hardware, and
+`fieldnote-bdw` additionally needs the iOS certificate trust steps, which are documented and
+unrun.
 
 **Project inputs.** Plan §7 items 1 and 2 have arrived and live at `private/`, which is
 gitignored: eight writing samples and seven uncorrected dictated notes. Item 3 is
@@ -228,14 +265,22 @@ reaching the model is the same failure as a name reaching it.
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — internal build state.** Findings, deferred decisions, open questions. 31
-issues: 23 open, 4 closed, 4 deferred, with 10 ready. Run `bd ready` for what is
+**Beads — internal build state.** Findings, deferred decisions, open questions. 33
+issues: 23 open, 6 closed, 4 deferred, with 10 ready. Run `bd ready` for what is
 actionable and `bd blocked` for what is waiting and on what. Session-container beads
 exist only to hang dependency edges from and are deferred so they do not compete with
 real work. This handoff deliberately does not list them: a handoff that copies the
 tracker drifts from it.
 
-Four are worth naming because they qualify claims made above. `fieldnote-q0h` — role
+Five are worth naming because they qualify claims made above. `fieldnote-n8z` — three
+separate tools have now written to the files that govern how the agent behaves: an
+installer rewrote instructions in `CLAUDE.md` (`fieldnote-rrv`), an installer repointed
+`core.hooksPath` and silently disabled the pre-commit gate (`fieldnote-vmj`), and a build
+tool appended to `CLAUDE.md` on every dev run. The last is the sharpest — the text it
+appends is addressed to the agent and advises committing it, which is a path into the
+governance layer rather than a formatting nuisance. Closed at source with `agentRules:
+false`; **no automated control was added**, deliberately, and the four rejected options and
+their reasoning are in the bead. `fieldnote-q0h` — role
 references identify people and the tokenizer does not see them, which is the largest
 remaining hole in §4.1. `fieldnote-xjs` — the capture layout is unvalidated.
 `fieldnote-bdw` — the iOS install path and Safari's storage eviction are unverified and the
@@ -329,6 +374,18 @@ Stated rather than smoothed over.
   resolved and nothing about what was described or approved, because that was not
   supplied. §2 gates the private build on the substance, so "resolved" is not yet enough
   to act on.
+- **No part of this has run on a physical device.** Everything about phone behaviour —
+  the `dvh` column, the dock above the software keyboard, iOS zoom, the install path — is
+  reached headlessly at the same origin classification, which is not the same as holding
+  the hardware. `fieldnote-xjs` and `fieldnote-bdw` both still want a device, and the iOS
+  certificate trust steps in `docs/TESTING-ON-DEVICE.md` are documented and unrun.
+- **There is no automated control against a tool writing to the governance files**, after
+  three instances. The mitigation is a working agreement — stage explicit paths, never
+  `git add -A` after a tool has run, treat an unexpected modification as a finding — and it
+  depends on whoever is staging actually reading. A checksum, tool-run-time detection, a
+  marker scan, and a loud non-blocking diff were each considered and rejected with reasons
+  in `fieldnote-n8z`. Session 15 owes this a threat-model entry stating the residual risk
+  plainly.
 - **Role references are not pseudonymised, and four of the seven available notes name
   nobody any other way.** In a single-institution note "the Biomed Director" identifies a
   person as certainly as a surname. The tokenizer does not see it, the tests say so
