@@ -253,6 +253,21 @@ attached.
 correct in the UI, a test asserts the headers on a real response, and the egress check goes
 red when a second destination is added — verified by adding one temporarily.
 
+**Two conflicts were resolved before this session starts**, both found while writing its
+prompt, both amended into the build guide. On eval ordering: `CLAUDE.md` requires the case
+before the guardrail while the guide put guardrails in session 5 and the suite in session 7,
+which cannot both hold — session 5 now writes an adversarial case alongside each guardrail
+it builds, and session 7 builds the runner and CI integration that execute them at scale.
+On claim-bearing text: the approved content library is session 9, so with nothing to match
+against, everything claim-bearing is unmatched and session 5 blocks all of it. Drafts come
+back with gratitude and logistics and a gap where product language would go. That is §4.2
+working, observed early, and not a defect to design around.
+
+**Two gates must be cleared before session 5 starts**, and they are stop conditions rather
+than warnings: the capture surface must have been used on a physical device with
+`fieldnote-xjs` updated, and `docs/TESTING-ON-DEVICE.md` must be corrected with what
+actually happened on hardware.
+
 Three things session 4 hands it. Everything crossing to the model goes through
 `createPseudonymizer` and then `assertPseudonymized`; the guard is an internal invariant,
 so session 5 owns making a throw surface as a defect report to the developer rather than as
@@ -293,6 +308,11 @@ migrating ESLint to flat config and upgrading `eslint-config-next` to 16.x. It i
 on a migration rather than a version bump, and Dependabot registered an ignore for the
 version when PR #3 was closed, so it will not resurface on its own. PR #5 (TypeScript
 6.0.3) was closed the same way and has the same problem.
+
+**Session prompts — what was asked.** `docs/prompts/`, one file per session with the
+prompt verbatim and a note on how it went. Neither the handoff nor the beads record what was
+*asked for*, and the difference between that and what was built is where three of four
+sessions found a false premise. Read the relevant one before starting a session.
 
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`. Records are immutable
 once accepted: superseded by a new record when a decision changes, amended in place with
