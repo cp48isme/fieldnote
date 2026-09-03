@@ -149,10 +149,31 @@ way wherever it is cited rather than as proof of the property. Revisit it in ses
 when the threat model is written, and consider whether a CSP `connect-src` assertion
 against a live response covers more ground than the grep does.
 
+**Plus an adversarial case for every guardrail written here.**
+
+> **Amended 2026-09-02.** `CLAUDE.md` requires the eval case before the guardrail — "a
+> guardrail with no adversarial test is unverified" — while this guide put guardrails in
+> session 5 and the eval suite in session 7. As written those cannot both hold. Resolved:
+> `CLAUDE.md` wins on principle, this guide wins on sequencing. **Session 5 writes the
+> adversarial cases alongside each guardrail it builds, so nothing ships unverified.**
+> Session 7 builds the runner and the CI integration that execute them at scale, and adds
+> the rest of the corpus. See the matching note on session 7.
+
+**On claim-bearing text, which has no library yet.** Plan §4.2 and `CLAUDE.md` are absolute
+that claim-bearing text is selected from the approved content library and never authored,
+and that unmatched output is blocked rather than flagged. That library is session 9. The
+consequence here is deliberate and should not be designed around: with nothing to match
+against, **everything claim-bearing is unmatched, so session 5 blocks all of it.** Drafts
+come back with gratitude and logistics and a gap where product language would go. That is
+§4.2 working, observed early — not a defect, and not a reason to let the model author claims
+until the library exists.
+
 **Done when:** drafts generate end to end with names tokenized in the API payload and
-correct in the UI, a CI test asserts the security headers on a real response, and a CI
-check fails when a network destination other than the model route is introduced —
-verified by adding one temporarily and watching the build go red.
+correct in the UI, every guardrail written here has an adversarial case that fails when the
+guardrail is weakened, claim-bearing output is blocked with the gap visible in the draft, a
+CI test asserts the security headers on a real response, and a CI check fails when a network
+destination other than the model route is introduced — verified by adding one temporarily
+and watching the build go red.
 
 ### Session 6 — Audit log and review gate
 *~2–3 hours*
@@ -171,6 +192,13 @@ state, and the audit log exports to CSV.
 
 The adversarial corpus from plan §4.5, the runner, and CI integration with a pass
 threshold.
+
+> **Amended 2026-09-02.** Session 5 now writes an adversarial case alongside each guardrail
+> it builds, so this session inherits cases rather than starting from none. What lands here
+> is the **runner, the CI integration, and the rest of the corpus** — the classes session 5
+> had no guardrail for, and the breadth plan §4.5 describes. The reason for the split is
+> that `CLAUDE.md` forbids shipping a guardrail without a test, so the cases cannot all wait
+> until this session; the runner can.
 
 Budget more time than feels right. Writing assertions that catch a real violation
 without firing on acceptable output is genuinely fiddly, and you'll rewrite several
