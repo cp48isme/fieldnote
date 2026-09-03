@@ -241,6 +241,13 @@ Read `docs/BUILD-GUIDE.md` session 5 in full before starting; this is a pointer,
 substitute. Budgeted at ~3.5 hours, of which about 45 minutes is the security headers and
 about 30 the egress check.
 
+**That budget is now understated, deliberately.** The eval-ordering resolution below moves
+work forward into this session: an adversarial case is written alongside every guardrail
+built here, rather than the whole corpus waiting for session 7. The trade was made with
+that cost visible — session 5 running over is better than two sessions of untested
+guardrails — but the number in the guide has not been changed, so expect it to run long
+rather than discovering it mid-session.
+
 A server-side route handler, prompt templates and guardrail rulesets as versioned modules,
 per-person batching with accumulated openings, and the retry and truncation handling from
 the prototype fix. Plus CSP, SRI, and strict security headers, asserted in a test against a
