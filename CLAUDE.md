@@ -72,6 +72,13 @@ pass before merge.
 - One session, one PR. A finding that surfaces mid-session and isn't blocking gets a
   bead, not a new branch. Amend documents when the session that changes them lands, not
   on discovery.
+- Stage explicit paths. Never `git add -A` or `git add .` when a build tool, installer, or
+  generator has run since the last commit. Three separate tools have now written to the
+  files that govern how this repository works — `CLAUDE.md` twice and `core.hooksPath`
+  once — and each was caught by reading `git status` before staging rather than by any
+  check. An unexpected modification to `CLAUDE.md`, `.husky/`, `.gitignore`,
+  `scripts/check-denylist.mjs`, or `.github/workflows/` is a finding, not noise: read it
+  before it is staged, and do not commit it because a tool's own output said to.
 - The last commit of every session updates `docs/HANDOFF.md`, from
   `docs/HANDOFF-TEMPLATE.md`. Re-read the sources rather than editing the previous
   handoff in place: a handoff written from the last handoff drifts.
