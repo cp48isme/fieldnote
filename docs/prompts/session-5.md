@@ -51,6 +51,10 @@ summary and the guide is the source of truth.
    rest applies: whether a self-signed *leaf* certificate can be trusted through iOS's
    Certificate Trust Settings, or whether a small CA is needed instead.
 
+   > **Answered 2026-09-08.** A leaf cannot be trusted on iOS; a CA is needed, and
+   > `scripts/serve-https.mjs` now generates one. The document was corrected in #28 and
+   > #29 and has a *Verified on hardware* section. **Met.**
+
 Check both against the repository rather than assuming. `bd show fieldnote-xjs`, and read
 the document's "Still unverified" section.
 
@@ -104,9 +108,15 @@ stop and tell me. That is not pedantry, it is the single habit that has paid off
   needs — `createPseudonymizer`, `assertPseudonymized`, and what the mapping actually
   holds. Do not infer it from ADR-0006's prose.
 - **The API key.** `ANTHROPIC_API_KEY` is in `.env.local` and as a repository secret. Do
-  not read, print, or echo its value anywhere.
-- **Model identifiers.** Do not write a model id from memory. Check the current ones before
-  choosing, and record the choice where the audit schema will need it.
+  not read, print, or echo its value anywhere — not in a log line, a test, a commit, or
+  your report. Checking that it is *defined* is different and is expected: a boolean test
+  on `process.env.ANTHROPIC_API_KEY` at route start-up, and a startup failure that names
+  the variable and nothing else, are both fine. The distinction is between the name and
+  the value.
+- **Model identifier.** Use `claude-opus-5`, exactly that string, no date suffix. Do not
+  write a model id from memory and do not substitute: if the API rejects that id, stop and
+  ask rather than trying another. Record the id where the audit schema's `model` field
+  will need it, and put it in one module-level constant so changing it later is one line.
 
 ## What to build
 
@@ -128,9 +138,10 @@ Per the build guide, ~3.5 hours:
   destination. The guide is explicit that this catches the careless case rather than the
   determined one, and that it must be described that way wherever it is cited.
 
-## Two resolved conflicts — build to these, do not re-litigate them
+## Three resolved conflicts — build to these, do not re-litigate them
 
-Both were found while writing this prompt and both have been decided.
+The first two were found while writing this prompt. The third was decided by the owner
+afterwards, on 2026-09-08, so that this session opens with work rather than a stop.
 
 **1. Eval ordering.** CLAUDE.md says "write the eval case before the guardrail; a guardrail
 with no adversarial test is unverified." The build guide puts guardrails here and the eval
@@ -153,6 +164,22 @@ observed early. Do not resolve it by letting the model author claims until sessi
 and do not soften the block to a flag. If the gap looks wrong in a draft, that is the
 control working.
 
+**3. Roles.** `fieldnote-q0h`: the tokenizer does not see role references, and in a
+single-institution note "the Biomed Director" identifies a person as surely as a surname. A
+role reaching the model is the same failure as a name reaching it, and this session wires
+generation to the boundary, so it had to be decided first.
+
+*Resolution, decided by the owner:* **tokenize roles, matched against `AttendeeRecord.role`
+for the attendees at this event.** Where the role matches a rostered person, the role
+**shares that person's token** — "Dr. Okafor" and "the Biomed Director" are one `[HCP_1]`,
+because two mentions being one person is information the draft needs. A role that matches
+nobody on the roster **gets its own token** (`[ROLE_1]`), fail-closed, on the same
+asymmetry ADR-0006 already records: an over-tokenized noun costs an odd sentence, a role
+that passes through sends identity. What is *not* decided, and is yours to design and
+record in the ADR-0006 amendment this implies: how an unmatched role-shaped phrase is
+recognised at all, since roles are an open set — the bead's suggestion is a determiner
+followed by a role-shaped phrase, and it names why that is harder than the title rule.
+
 ## What session 4 handed you
 
 - Everything crossing to the model goes through `createPseudonymizer` and then
@@ -165,14 +192,11 @@ control working.
   You own making that surface as a defect report to the developer rather than as a failure
   to the representative. A tool that refuses to draft in a car park is one she stops using.
 
-## One decision still owed — raise it before building past it
+## Roles — decided, see resolved conflict 3
 
-**`fieldnote-q0h`, roles.** The tokenizer does not see role references, and four of the
-seven notes in the corpus name nobody any other way. In a single-institution note "the
-Biomed Director" identifies a person as surely as a surname. **A role reaching the model is
-the same failure as a name reaching it**, so decide this before generation is wired to the
-boundary, not after. `bd show fieldnote-q0h` has the design shape, including that
-`AttendeeRecord.role` already makes roles-present-at-this-event a bounded set.
+`bd show fieldnote-q0h` has the design shape and the decision. Four of the seven notes in
+the corpus name nobody any other way, so this is not an edge case. Build it before
+generation is wired to the boundary, not after.
 
 ## Scope guard — do not build any of this
 
@@ -202,8 +226,8 @@ tempts you toward a shortcut rather than taking it. The last commit regenerates
 ## Stop conditions
 
 Stop and report rather than deciding, if: **gate 1a or gate 2 is unmet** (1b is owed, not
-blocking — see the amendment above); the roles
-decision is reached; anything requires a schema change, a new dependency, or a second
+blocking — see the amendment above); the roles implementation needs a decision resolved
+conflict 3 does not make; anything requires a schema change, a new dependency, or a second
 network destination; the pre-commit hook fires; `core.hooksPath` is not `.husky/_`; or a
 premise in this prompt turns out not to match the repository.
 
@@ -222,7 +246,7 @@ control this project has shipped was proved by removing it and watching somethin
 ## Report back
 
 (1) Verified versus assumed, with the command or file for each, including both pre-session
-gates. (2) The roles decision, with a recommendation and the reasoning, before you build
-past it. (3) What you built, file by file. (4) Where you were tempted toward a shortcut and
+gates. (2) How the roles decision was implemented — the unmatched-role detection you
+designed, and its counterfactual — before you build past it. (3) What you built, file by file. (4) Where you were tempted toward a shortcut and
 what you did instead. (5) Beads created or closed. (6) Flags last — including anything in
 the plan, the guide, the handoff, or this prompt that turned out to be wrong.
