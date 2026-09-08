@@ -194,9 +194,10 @@ offline behaviour by design; and whether the generated `public/sw.js` and
 `public/precache.json` survive a Vercel deploy is **unverified** — `fieldnote-6x5`.
 
 **Device testing works, and is still owed.** `pnpm serve:https` serves the production
-build over HTTPS on the LAN address, with a certificate whose SAN covers it — verified end
-to end: secure context, service worker activated, capture working, offline reload returning
-the note. `docs/TESTING-ON-DEVICE.md` is the runbook.
+build over HTTPS on the LAN address, behind a locally generated certificate authority whose
+signed certificate covers that address — verified end to end: secure context, service worker
+activated, capture working, offline reload returning the note.
+`docs/TESTING-ON-DEVICE.md` is the runbook.
 
 Two traps it records, both found by running things rather than reading about them.
 `next dev --experimental-https` is not the answer: it is `next dev` only, so it can never
@@ -207,11 +208,36 @@ exact origin the app rejects. And ignoring a certificate error is not the same a
 the certificate: the first verification run did the former and `serviceWorker.ready` never
 resolved, which is precisely the iOS failure mode the runbook warns about.
 
-**Nothing has been run on a physical device.** All of the above is the same origin
-classification reached headlessly. `fieldnote-xjs` (is the capture layout right) and
-`fieldnote-bdw` (does it install, and does iOS keep the data) both still need hardware, and
-`fieldnote-bdw` additionally needs the iOS certificate trust steps, which are documented and
-unrun.
+**The first thing run on a physical device was the certificate trust flow, and it
+failed.** The runbook's steps were followed on an iPhone: the configuration profile
+installs, and then Settings → General → About → Certificate Trust Settings shows nothing to
+enable. `serve-https.mjs` was generating a single self-signed leaf, and that screen
+enumerates trust anchors — a certificate asserting `CA:FALSE` is not one, so full trust can
+never be granted to it. No error, no warning, no entry. This is exactly the leaf-versus-CA
+case the runbook had flagged as the open risk, now decided by hardware rather than left
+open.
+
+`fieldnote-zxo` carries it. `serve-https.mjs` now generates a small CA, signs the server
+certificate with it, and the CA is what goes on the phone; it also sets
+`extendedKeyUsage=serverAuth`, which the old leaf lacked entirely and which Apple requires,
+and reissues the leaf when the LAN address changes — free now that the phone's trust is in
+the authority rather than in the leaf. `docs/TESTING-ON-DEVICE.md` leads with the CA flow
+and records the leaf attempt as a hardware result rather than a hypothetical.
+
+Verification of the CA version was deliberately split, and the split is worth carrying
+forward. Chromium's `--ignore-certificate-errors-spki-list` matches the **served
+certificate's** key only and does not walk the chain — handed the authority's key it still
+gives `ERR_CERT_AUTHORITY_INVALID` — so a browser run cannot show that the leaf chains to
+the CA. The chain and its counterfactuals were proved at the TLS layer instead (refused
+without the authority; refused for an address outside the SAN), and the browser run proved
+secure context, service worker activation, and the offline reload separately. Neither half
+was allowed to stand in for the other. Trusting the CA inside Chromium would mean writing
+to the macOS keychain, which this setup deliberately does not do.
+
+**The rest still has not been run on a physical device**, and the positive half of the
+trust flow has not either — installing the CA, trusting it, and loading the app is
+documented and unwalked. `fieldnote-xjs` (is the capture layout right) and `fieldnote-bdw`
+(does it install, and does iOS keep the data) both still need hardware.
 
 **Project inputs.** Plan §7 items 1 and 2 have arrived and live at `private/`, which is
 gitignored: eight writing samples and seven uncorrected dictated notes. Item 3 is
@@ -401,11 +427,14 @@ Stated rather than smoothed over.
   resolved and nothing about what was described or approved, because that was not
   supplied. §2 gates the private build on the substance, so "resolved" is not yet enough
   to act on.
-- **No part of this has run on a physical device.** Everything about phone behaviour —
+- **Almost nothing has run on a physical device.** The one exception is the certificate
+  trust flow, the project's first hardware result and a negative one — see "The first thing
+  run on a physical device" under *Where we are*. Everything else about phone behaviour —
   the `dvh` column, the dock above the software keyboard, iOS zoom, the install path — is
   reached headlessly at the same origin classification, which is not the same as holding
-  the hardware. `fieldnote-xjs` and `fieldnote-bdw` both still want a device, and the iOS
-  certificate trust steps in `docs/TESTING-ON-DEVICE.md` are documented and unrun.
+  the hardware. `fieldnote-xjs` and `fieldnote-bdw` both still want a device, and the
+  positive half of the iOS trust flow in `docs/TESTING-ON-DEVICE.md` — install the
+  authority, trust it, load the app — is documented and unrun.
 - **There is no automated control against a tool writing to the governance files**, after
   three instances. The mitigation is a working agreement — stage explicit paths, never
   `git add -A` after a tool has run, treat an unexpected modification as a finding — and it
