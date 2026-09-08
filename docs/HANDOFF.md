@@ -323,14 +323,14 @@ should be made visibly and recorded in the guardrail version notes.
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — internal build state.** Findings, deferred decisions, open questions. 38
-issues: 25 open, 9 closed, 4 deferred, with 13 ready and 12 blocked (`bd stats`). Run
+**Beads — internal build state.** Findings, deferred decisions, open questions. 39
+issues: 26 open, 9 closed, 4 deferred, with 14 ready and 12 blocked (`bd stats`). Run
 `bd ready` for what is actionable and `bd blocked` for what is waiting and on what.
 Session-container beads exist only to hang dependency edges from and are deferred so they
 do not compete with real work. This handoff deliberately does not list them: a handoff that
 copies the tracker drifts from it.
 
-Eight are worth naming because they qualify claims made above. `fieldnote-n8z` — three
+Nine are worth naming because they qualify claims made above. `fieldnote-n8z` — three
 tools have written to the files that govern how the agent behaves, and no automated
 control was added, deliberately, with four rejected options recorded. `fieldnote-q0h` —
 role references identify people and the tokenizer does not see them, the largest remaining
@@ -343,6 +343,13 @@ clinical-vocabulary dictation class, new. `fieldnote-ijg` — nothing is deploye
 representative can only use the app beside the machine serving it, new. `fieldnote-v2s` —
 the private fork has no session in the build guide, new; the same defect class as
 retention and the voice-profile intake, work the plan depends on that no session owns.
+`fieldnote-dps` — considered and deliberately not built, in the shape of `fieldnote-n8z`:
+an on-device terminology similarity check for the vocabulary class. Rejected for now
+because the sample is two terms, the build is large and must stay on-device to keep §4.1
+true, and a threshold loose enough to catch a plausible mishearing fires on correct input.
+It records the path instead — measure first, then check whether session 9's library can
+serve as a bounded near-miss check, and only then revisit — and finds, from the schema and
+§7 item 4, that the library option is real only in a bounded form.
 
 **GitHub issues — public record.** Anything a public reader should see. One open: **#11**,
 migrating ESLint to flat config and upgrading `eslint-config-next` to 16.x. It is blocked
