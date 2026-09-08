@@ -1,6 +1,6 @@
 # Handoff
 
-Written 2026-09-02, at `4dd3af4` on `main`.
+Written 2026-09-08, at `77a7d66` on `main`.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -38,7 +38,7 @@ violates one is wrong regardless of how well it is implemented.
 
 ## Where we've been
 
-68 commits on `main`, 19 merged pull requests, none open. Verified with
+79 commits on `main`, 23 merged pull requests, two open. Verified with
 `git rev-list --count main` and `gh pr list`.
 
 **Phase 0 — foundation.** Build guide session 1. The Next.js 16 scaffold, CI, and the
@@ -87,6 +87,14 @@ built outside this repository, it was not retrieved, and the capture surface was
 from plan §3.1 instead. The guide and §3.1 were amended in the same PR, and the layout is
 tracked as unvalidated in `fieldnote-xjs`. Nothing here should describe it as ported.
 
+**Project inputs and the denylist.** Two small PRs after session 3, neither attached to a
+build guide session. **#16** recorded plan §7 items 1 to 3 as received or resolved and
+widened the rule governing how that material may be adapted into public eval cases —
+previously names only, now product and commercial detail as well. **#17** removed
+`public/` from the denylist's skip list, where a real name in a committed SVG would have
+gone unscanned, and wrote the term check's literal-match limitation into the script
+header. **#18** regenerated this handoff.
+
 **Session 4 — the privacy boundary.** **#19**, four commits, merged at `8445e5f`.
 `src/lib/privacy/` with roster matching, structural name detection, and a guard on the API
 client; dictation fixtures in their own commit with per-case provenance; and ADR-0006
@@ -98,70 +106,80 @@ construction — it cannot catch a name it was never told about, and dictation r
 produces exactly that. ADR-0006 carries the reasoning, the rejected alternatives, and the
 residual risk.
 
-**The first device run, and what it found.** Three PRs after session 4, none of them
-session work. Running the app on a phone over `http://<LAN-IP>:3000` produced an
-indefinite "Loading…" and an unhandled rejection: `crypto.randomUUID` is secure-context
-only, so `beginSession` threw while reads succeeded, and `ready` gated the screen on both.
+**The first device run, and what it found.** Running the app on a phone over
+`http://<LAN-IP>:3000` produced an indefinite "Loading…" and an unhandled rejection:
+`crypto.randomUUID` is secure-context only, so `beginSession` threw while reads succeeded,
+and `ready` gated the screen on both. **#20** made data-layer failures visible — a
+session-marker failure degrades to capture without crash recovery, a failing read or write
+reaches a terminal state naming the fault and the action, and an insecure origin is refused
+up front rather than run anyway. No fallback id generator: it would leave permanently
+unexercised code in the tree and make device tests run against a build differing from
+production in the data layer. **#21** added `pnpm serve:https`, which is what makes device
+testing possible at all. **#22** stopped `next dev` writing to `CLAUDE.md`.
 
-**#20** made data-layer failures visible — a session-marker failure degrades to capture
-without crash recovery, a failing read or write reaches a terminal state naming the fault
-and the action, and an insecure origin is refused up front rather than run anyway. No
-fallback id generator: it would leave permanently unexercised code in the tree and make
-device tests run against a build differing from production in the data layer. **#21** added
-`pnpm serve:https`, which is what makes device testing possible at all. **#22** stopped
-`next dev` writing to `CLAUDE.md`.
+**Between sessions 4 and 5.** **#23** regenerated this handoff. **#24** moved the session
+prompts into `docs/prompts/` and resolved two conflicts between `CLAUDE.md` and the build
+guide before session 5 could resolve them silently — eval ordering, and claim-bearing text
+with no library to select from. **#25** recorded that session 5's budget is understated
+as a consequence.
 
-**Project inputs and the denylist.** Two small PRs after session 3, neither attached to a
-build guide session. **#16** recorded plan §7 items 1 to 3 as received or resolved and
-widened the rule governing how that material may be adapted into public eval cases —
-previously names only, now product and commercial detail as well. **#17** removed
-`public/` from the denylist's skip list, where a real name in a committed SVG would have
-gone unscanned, and wrote the term check's literal-match limitation into the script
-header.
+**The certificate trust flow, tried on hardware and fixed.** **#28**. The runbook's
+single-certificate steps were followed on an iPhone and offered nothing to trust:
+Certificate Trust Settings enumerates trust anchors, and a leaf asserting `CA:FALSE` is
+not one. `scripts/serve-https.mjs` now generates a small certificate authority and signs
+the server certificate with it; the authority goes on the phone. That was the first
+finding in this project to come from a physical device.
+
+**The first full hardware run.** The PR carrying this handoff, documentation only. The
+owner walked the whole flow on a physical iPhone and the representative dictated into
+the capture surface. What passed, what it corrected, and what it opened are under *Where
+we are*; the runbook, the build guide, and seven beads changed as a result.
 
 ---
 
 ## Where we are
 
-`main` is at `4dd3af4` with a clean working tree and no open pull requests. CI green on
-the last three merges (`gh run list --branch main`).
+`main` is at `77a7d66` with a clean working tree. Two pull requests are open, both from
+Dependabot: **#26**, the minor-and-patch group, and **#27**, `eslint-config-next` 16.3.4 —
+the same major that #3 was closed for and that issue #11 tracks as a migration rather than
+a bump. CI green on the last merge (`gh run list --branch main`).
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
 suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
 branches, required conversation resolution, and force pushes disabled. Required approving
 reviews: **0**, which is deliberate for a single-maintainer repository but worth knowing:
-the gate is CI, not review. Required conversation resolution is not decorative — it
-blocked #15 on an unresolved CodeQL thread after every check was already green.
+the gate is CI, not review. Verified against the branch-protection API this session.
 
 **What the green checks actually mean.** `Verify` runs the denylist, lint, typecheck,
-unit tests, and build, and those are real. Four caveats matter more than the badge:
+unit tests, and build, and those are real. Five caveats matter more than the badge:
 
 - **The eval suite passes against zero cases.** `scripts/evals.mjs` prints
-  `evals: no cases defined yet (scaffold placeholder)` and exits 0. Every green
-  "Adversarial guardrail suite" check since PR #7 is evidence that the wiring works, not
-  that any guardrail holds. It is also a *required* check, so the gate currently proves
-  nothing about guardrails. Real cases land at session 7.
+  `evals: no cases defined yet (scaffold placeholder)` and exits 0 — still true this
+  session. Every green "Adversarial guardrail suite" check since PR #7 is evidence that
+  the wiring works, not that any guardrail holds. It is also a *required* check, so the
+  gate currently proves nothing about guardrails. Real cases begin at session 5 and the
+  runner lands at session 7.
 - **CI enforces structural denylist patterns only.** The literal-term list lives in
   `.denylist.local`, which is gitignored by design and therefore absent on a runner. CI
   cannot catch a real name in a diff; only the local pre-commit hook can.
 - **The local hook catches listed spellings, not names.** Terms compile to
   case-insensitive regexes with word boundaries, so a name split across words, missing a
-  letter, or carrying a trailing plural passes clean — verified, not assumed. Device
-  dictation mangles surnames by design, so text derived from `private/dictated-notes.md`
-  is precisely what this cannot see, and from session 4 the tokenizer fixtures and eval
-  corpus are made of that text. Human review of those diffs is the control; the hook is
-  the backstop. `fieldnote-ech`, which also owes session 15 a threat-model entry.
+  letter, or carrying a trailing plural passes clean — verified, not assumed. Text derived
+  from `private/dictated-notes.md` is precisely what this cannot see, and from session 4
+  the tokenizer fixtures and eval corpus are made of that text. Human review of those
+  diffs is the control; the hook is the backstop. `fieldnote-ech`, which also owes
+  session 15 a threat-model entry.
 - **The service worker's update path is not covered by any test.** Verified by hand
   twice; the worker's own header says so, and `fieldnote-unp` carries the procedure.
-- **The suite was structurally blind to an entire class until today.** Playwright runs
-  against `127.0.0.1`, a secure context, so no test could reach the failure a phone hit on
-  the first try. `tests/e2e/environment.spec.ts` now covers it by reproducing the *API
-  surface* — `Crypto.prototype.randomUUID` deleted, `isSecureContext` overridden — because
-  there is no Chromium flag to make an origin insecure and the alternatives put a network
-  dependency in the suite. Worth carrying forward as a habit rather than a fix: a green
-  suite says nothing about environments the harness cannot enter.
+- **The suite cannot enter every environment.** Playwright runs against `127.0.0.1`, a
+  secure context, so no test could reach the failure a phone hit on the first try.
+  `tests/e2e/environment.spec.ts` covers it by reproducing the *API surface* rather than
+  the origin. And no harness here can trust a certificate authority, install to a home
+  screen, or wait seven days for Safari's eviction window. Worth carrying forward as a
+  habit: a green suite says nothing about environments the harness cannot enter, and the
+  hardware run this session is the first time several of those were entered at all.
 
-**The privacy boundary now exists**, ahead of the route that will cross it. Names are
+**The privacy boundary exists**, ahead of the route that will cross it. Names are
 replaced by roster matching and by a structural rule — a token after a title is a name
 whether or not the roster knows it — and `assertPseudonymized` re-derives what a name looks
 like rather than trusting that the tokenizer ran, so removing the structural pass makes a
@@ -174,88 +192,83 @@ a decision. And fail-closed means tokenizing more, never refusing to draft — n
 module can surface an error to the representative, because a tool that errors in a car park
 is one that stops being used.
 
-**What the offline claim rests on.** Plan §5 non-negotiable 5 is met and was verified the
-hard way rather than by toggling a browser switch: with the app loaded and a note
-captured, the server process was killed, a page fetch to the origin was confirmed
-refused, the HTTP cache was disabled, and a full reload still rendered the capture screen
-with the note intact and accepted a new one. `tests/e2e/offline.spec.ts` is the automated
-form, and it was confirmed to fail when the worker is replaced with one that activates
-but caches nothing.
+**What the offline claim rests on.** Plan §5 non-negotiable 5 is met, and as of this
+session it is met on hardware rather than only in the harness. Headlessly, the standard
+was set early: with the app loaded and a note captured, the server process was killed, a
+page fetch to the origin was confirmed refused, the HTTP cache was disabled, and a full
+reload still rendered the capture screen with the note intact. `tests/e2e/offline.spec.ts`
+is the automated form, confirmed to fail when the worker is replaced with one that
+activates but caches nothing. On the phone, the equivalent was harsher: two notes
+captured, airplane mode on, the app killed from the switcher, reopened from the home-screen
+icon — both notes present, a third captured with no network.
 
-The update path was found broken under review and fixed in the same PR. The worker had
-been hand-written and byte-identical across builds, so a browser never re-installed it
-and a user stayed on whichever build they first loaded, indefinitely. `public/sw.js` is
-now generated from `src/sw/service-worker.js` with the build id stamped in, caches are
-named per build, and navigations fetch with `cache: "reload"` because the browser's own
-HTTP cache was a second, independent way to be pinned. Verified by deploying twice.
+The update path was found broken under review in session 3 and fixed in the same PR.
+`public/sw.js` is generated from `src/sw/service-worker.js` with the build id stamped in,
+caches are named per build, and navigations fetch with `cache: "reload"`. Two limits
+remain: the worker registers in production builds only, so `next dev` has no offline
+behaviour by design; and whether the generated `public/sw.js` and `public/precache.json`
+survive a Vercel deploy is **unverified** — `fieldnote-6x5`, which is now load-bearing
+rather than theoretical because nothing is deployed and real use needs it to be
+(`fieldnote-ijg`).
 
-Two limits remain: the worker registers in production builds only, so `next dev` has no
-offline behaviour by design; and whether the generated `public/sw.js` and
-`public/precache.json` survive a Vercel deploy is **unverified** — `fieldnote-6x5`.
-
-**Device testing works, and is still owed.** `pnpm serve:https` serves the production
+**Device testing works, and has now been done.** `pnpm serve:https` serves the production
 build over HTTPS on the LAN address, behind a locally generated certificate authority whose
-signed certificate covers that address — verified end to end: secure context, service worker
-activated, capture working, offline reload returning the note.
-`docs/TESTING-ON-DEVICE.md` is the runbook.
+signed certificate covers that address. `docs/TESTING-ON-DEVICE.md` is the runbook, and
+its *Verified on hardware* section now records a walk of the whole flow on a physical
+iPhone rather than a documented procedure:
 
-Two traps it records, both found by running things rather than reading about them.
-`next dev --experimental-https` is not the answer: it is `next dev` only, so it can never
-produce the service worker, its certificate hard-codes `localhost`/`127.0.0.1`/`::1` and so
-never covers the LAN address, and when `mkcert -install` cannot prompt for a password it
-**logs a failure and falls back to plain HTTP while continuing to serve** — advertising the
-exact origin the app rejects. And ignoring a certificate error is not the same as trusting
-the certificate: the first verification run did the former and `serviceWorker.ready` never
-resolved, which is precisely the iOS failure mode the runbook warns about.
+- The authority installs, appears under Certificate Trust Settings, can be fully trusted,
+  and the LAN HTTPS URL loads in Safari with no interstitial. `fieldnote-zxo` closed.
+- Add to Home Screen renders the Fieldnote mark from the SVG manifest icon and opens
+  standalone. `fieldnote-lkm` closed; there is no `apple-touch-icon`, and none is needed.
+- The offline shell holds after a full kill, as above.
+- A word inserted mid-sentence into an existing note, typing continuously, held the caret
+  through autosave — the dictation-correction case the textarea was built for, never
+  before exercised against a real software keyboard.
 
-**The first thing run on a physical device was the certificate trust flow, and it
-failed.** The runbook's steps were followed on an iPhone: the configuration profile
-installs, and then Settings → General → About → Certificate Trust Settings shows nothing to
-enable. `serve-https.mjs` was generating a single self-signed leaf, and that screen
-enumerates trust anchors — a certificate asserting `CA:FALSE` is not one, so full trust can
-never be granted to it. No error, no warning, no entry. This is exactly the leaf-versus-CA
-case the runbook had flagged as the open risk, now decided by hardware rather than left
-open.
+Three traps the runbook records, all found by running things. `next dev
+--experimental-https` is not the answer: it is `next dev` only, its certificate never
+covers the LAN address, and when `mkcert -install` cannot prompt it falls back to plain
+HTTP while continuing to serve. Ignoring a certificate error is not trusting the
+certificate: `serviceWorker.ready` never resolves. And a self-signed leaf can never be
+trusted on iOS at all, which is why the setup is an authority plus a signed certificate.
+Verification of that setup is split in two halves, TLS chain and browser behaviour, because
+Chromium's key-pinning flag does not walk the chain; the runbook says why so it does not
+read as an omission.
 
-`fieldnote-zxo` carries it. `serve-https.mjs` now generates a small CA, signs the server
-certificate with it, and the CA is what goes on the phone; it also sets
-`extendedKeyUsage=serverAuth`, which the old leaf lacked entirely and which Apple requires,
-and reissues the leaf when the LAN address changes — free now that the phone's trust is in
-the authority rather than in the leaf. `docs/TESTING-ON-DEVICE.md` leads with the CA flow
-and records the leaf attempt as a hardware result rather than a hypothetical.
+**The dictation evidence, restated.** The build guide's session 3 entry says OS dictation
+"will mangle surnames". After this session the evidence shows two failure classes, and a
+dated amendment in the guide now says so:
 
-Verification of the CA version was deliberately split, and the split is worth carrying
-forward. Chromium's `--ignore-certificate-errors-spki-list` matches the **served
-certificate's** key only and does not walk the chain — handed the authority's key it still
-gives `ERR_CERT_AUTHORITY_INVALID` — so a browser run cannot show that the leaf chains to
-the CA. The chain and its counterfactuals were proved at the TLS layer instead (refused
-without the authority; refused for an address outside the SAN), and the browser run proved
-secure context, service worker activation, and the offline reload separately. Neither half
-was allowed to stand in for the other. Trusting the CA inside Chromium would mean writing
-to the macOS keychain, which this setup deliberately does not do.
+- **Surnames**: one phone test, five spoken, four clean, one severe (`Swali` → `Swelha`,
+  ADR-0006). The owner's own dictation on hardware has come through clean twice since.
+  Rare and severe, not constant and mild — which strengthens the case for the structural
+  rule, because rare means nobody is watching for it.
+- **Clinical and domain vocabulary**: the representative's dictation rendered two domain
+  terms as phonetically similar ordinary English words, producing plausible sentences
+  that would survive a quick proofread. That is data quality, not privacy. The tokenizer
+  must not touch it, and it reaches the model as fact. `fieldnote-dx0` carries it and
+  records, from what is written rather than by decision, that plan §4.2 does not answer it
+  by construction: a note's own words are relational text and pass freely. It lands on
+  session 5's classifier and session 15's threat model.
 
-**The rest still has not been run on a physical device**, and the positive half of the
-trust flow has not either — installing the CA, trusting it, and loading the app is
-documented and unwalked. `fieldnote-xjs` (is the capture layout right) and `fieldnote-bdw`
-(does it install, and does iOS keep the data) both still need hardware.
+One literal pair from the vocabulary class is held back from the public documents because
+it narrows the device category; the owner holds it and the bead says so.
 
-**Project inputs.** Plan §7 items 1 and 2 have arrived and live at `private/`, which is
-gitignored: eight writing samples and seven uncorrected dictated notes. Item 3 is
-resolved; item 4 — what approved content actually exists, needed by session 9 — is the
-only one still open. Two caveats travel with the material. The email samples' three-line
-preambles are not filled in, so they teach register but not personalisation, which is the
-ceiling the build guide already names for session 5. And per §7 as amended, anything
-adapted from either file into public eval cases has names **and product and commercial
-detail** replaced — product characteristics, pricing comparisons, and indication status
-each identify the manufacturer to an industry reader with every name already gone.
+**Project inputs.** Plan §7 items 1 and 2 live at `private/`, which is gitignored and
+holds two files: writing samples and uncorrected dictated notes. Item 3 is recorded as
+resolved; item 4 — what approved content actually exists, needed by session 9 — is still
+open. Per §7 as amended, anything adapted from either file into public eval cases has
+names **and product and commercial detail** replaced.
 
-**Documentation set.** `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md`, five ADRs with an
-index at `docs/adr/README.md`, this handoff and its template, plus `CHANGELOG.md` and
-`SECURITY.md`. Plan §4.6 also specifies `README.md`, `docs/ARCHITECTURE.md`,
-`docs/AI-SYSTEM-CARD.md`, `docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, and
-`docs/COMPLIANCE-MAP.md` — **none of which exist yet.** Most are scheduled for Phase 4.
-The README is not: session 1's stated done-when includes "both badges render in the
-README", and there is no README, so that criterion is unmet.
+**Documentation set.** `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md`,
+`docs/TESTING-ON-DEVICE.md`, six ADRs with an index at `docs/adr/README.md`,
+`docs/prompts/`, this handoff and its template, plus `CHANGELOG.md` and `SECURITY.md`.
+Plan §4.6 also specifies `README.md`, `docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`,
+`docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, and `docs/COMPLIANCE-MAP.md` — **none
+of which exist yet.** Most are scheduled for Phase 4. The README is not: session 1's stated
+done-when includes "both badges render in the README", and there is no README, so that
+criterion is unmet (`fieldnote-7zo`).
 
 ---
 
@@ -264,101 +277,92 @@ README", and there is no README, so that criterion is unmet.
 ### Session 5 — Generation route, guardrails, and headers
 
 Read `docs/BUILD-GUIDE.md` session 5 in full before starting; this is a pointer, not a
-substitute. Budgeted at ~3.5 hours, of which about 45 minutes is the security headers and
-about 30 the egress check.
-
-**That budget is now understated, deliberately.** The eval-ordering resolution below moves
-work forward into this session: an adversarial case is written alongside every guardrail
-built here, rather than the whole corpus waiting for session 7. The trade was made with
-that cost visible — session 5 running over is better than two sessions of untested
-guardrails — but the number in the guide has not been changed, so expect it to run long
-rather than discovering it mid-session.
+substitute. The prompt is at `docs/prompts/session-5.md`. Budgeted at ~3.5 hours, and
+**understated deliberately**: the eval-ordering resolution moves work forward into this
+session, so an adversarial case is written alongside every guardrail built here. Expect it
+to run long rather than discovering it mid-session.
 
 A server-side route handler, prompt templates and guardrail rulesets as versioned modules,
-per-person batching with accumulated openings, and the retry and truncation handling from
-the prototype fix. Plus CSP, SRI, and strict security headers, asserted in a test against a
-live response rather than left in a config nobody reads. Plus the single-egress check in
-CI — a grep over `src/` with the model route as the only allowed destination, which catches
-the careless case rather than the determined one and should be cited with that limit
-attached.
+per-person batching, and retry and truncation handling. Plus CSP, SRI, and strict security
+headers asserted against a live response, and the single-egress check in CI, which catches
+the careless case rather than the determined one and should be cited with that limit.
 
 **Done when** drafts generate end to end with names tokenised in the API payload and
 correct in the UI, a test asserts the headers on a real response, and the egress check goes
 red when a second destination is added — verified by adding one temporarily.
 
-**Two conflicts were resolved before this session starts**, both found while writing its
-prompt, both amended into the build guide. On eval ordering: `CLAUDE.md` requires the case
-before the guardrail while the guide put guardrails in session 5 and the suite in session 7,
-which cannot both hold — session 5 now writes an adversarial case alongside each guardrail
-it builds, and session 7 builds the runner and CI integration that execute them at scale.
-On claim-bearing text: the approved content library is session 9, so with nothing to match
-against, everything claim-bearing is unmatched and session 5 blocks all of it. Drafts come
-back with gratitude and logistics and a gap where product language would go. That is §4.2
-working, observed early, and not a defect to design around.
+**Two conflicts were resolved before this session starts**, both amended into the build
+guide. Eval ordering: session 5 writes an adversarial case alongside each guardrail it
+builds; session 7 builds the runner. Claim-bearing text: the library is session 9, so
+everything claim-bearing is unmatched and session 5 blocks all of it — that is §4.2
+working, observed early, not a defect to design around.
 
-**Two gates must be cleared before session 5 starts**, and they are stop conditions rather
-than warnings: the capture surface must have been used on a physical device with
-`fieldnote-xjs` updated, and `docs/TESTING-ON-DEVICE.md` must be corrected with what
-actually happened on hardware.
+**The two pre-session gates, and where they stand.** The prompt carries them as stop
+conditions.
 
-Three things session 4 hands it. Everything crossing to the model goes through
+1. *The capture surface has been used on a physical device, with `fieldnote-xjs`
+   updated.* Literally met: it was used on an iPhone by the owner and by the
+   representative, and the bead records that. Not met in the sense it was written for:
+   nobody produced the finding the bead asks for — whether the layout is right for her,
+   where she hesitates, what she reaches for that is not there. The bead stays open and
+   says so. **Which reading governs is the owner's call, and it should be made before the
+   session starts rather than by the session.**
+2. *`docs/TESTING-ON-DEVICE.md` corrected with what actually happened on hardware.* Met
+   by the PR carrying this handoff.
+
+Four things earlier sessions hand it. Everything crossing to the model goes through
 `createPseudonymizer` and then `assertPseudonymized`; the guard is an internal invariant,
-so session 5 owns making a throw surface as a defect report to the developer rather than as
-a failure to the representative. Token stability across a batch comes from reusing one
-pseudonymizer instance, which is what per-person batching needs. And `fieldnote-q0h` —
-roles are not tokenised — should be decided before generation is wired up, because a role
-reaching the model is the same failure as a name reaching it.
+so session 5 owns making a throw surface as a defect report rather than as a failure to
+the representative. Token stability across a batch comes from reusing one pseudonymizer
+instance. `fieldnote-q0h` — roles are not tokenised — should be decided before generation
+is wired up. And `fieldnote-dx0` — a mangled clinical term reaches the model as fact — is a
+decision the classifier has to make about clinical vocabulary in relational text, and it
+should be made visibly and recorded in the guardrail version notes.
 
 ### Where outstanding work lives
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — internal build state.** Findings, deferred decisions, open questions. 33
-issues: 23 open, 6 closed, 4 deferred, with 10 ready. Run `bd ready` for what is
-actionable and `bd blocked` for what is waiting and on what. Session-container beads
-exist only to hang dependency edges from and are deferred so they do not compete with
-real work. This handoff deliberately does not list them: a handoff that copies the
-tracker drifts from it.
+**Beads — internal build state.** Findings, deferred decisions, open questions. 38
+issues: 25 open, 9 closed, 4 deferred, with 13 ready and 12 blocked (`bd stats`). Run
+`bd ready` for what is actionable and `bd blocked` for what is waiting and on what.
+Session-container beads exist only to hang dependency edges from and are deferred so they
+do not compete with real work. This handoff deliberately does not list them: a handoff that
+copies the tracker drifts from it.
 
-Five are worth naming because they qualify claims made above. `fieldnote-n8z` — three
-separate tools have now written to the files that govern how the agent behaves: an
-installer rewrote instructions in `CLAUDE.md` (`fieldnote-rrv`), an installer repointed
-`core.hooksPath` and silently disabled the pre-commit gate (`fieldnote-vmj`), and a build
-tool appended to `CLAUDE.md` on every dev run. The last is the sharpest — the text it
-appends is addressed to the agent and advises committing it, which is a path into the
-governance layer rather than a formatting nuisance. Closed at source with `agentRules:
-false`; **no automated control was added**, deliberately, and the four rejected options and
-their reasoning are in the bead. `fieldnote-q0h` — role
-references identify people and the tokenizer does not see them, which is the largest
-remaining hole in §4.1. `fieldnote-xjs` — the capture layout is unvalidated.
-`fieldnote-bdw` — the iOS install path and Safari's storage eviction are unverified and the
-availability argument rests on them; it blocks `fieldnote-tcq`, because a retention policy
-cannot be chosen without knowing whether eviction deletes first. `fieldnote-ech` — the
-denylist matches listed spellings only.
+Eight are worth naming because they qualify claims made above. `fieldnote-n8z` — three
+tools have written to the files that govern how the agent behaves, and no automated
+control was added, deliberately, with four rejected options recorded. `fieldnote-q0h` —
+role references identify people and the tokenizer does not see them, the largest remaining
+hole in §4.1. `fieldnote-xjs` — the capture layout is unvalidated, and a hardware run is
+not validation. `fieldnote-bdw` — narrowed this session to Safari storage durability
+across the seven-day eviction window, with a cheap `navigator.storage.persisted()` check
+recorded as the first step; it still blocks `fieldnote-tcq`, the retention decision.
+`fieldnote-ech` — the denylist matches listed spellings only. `fieldnote-dx0` — the
+clinical-vocabulary dictation class, new. `fieldnote-ijg` — nothing is deployed and the
+representative can only use the app beside the machine serving it, new. `fieldnote-v2s` —
+the private fork has no session in the build guide, new; the same defect class as
+retention and the voice-profile intake, work the plan depends on that no session owns.
 
 **GitHub issues — public record.** Anything a public reader should see. One open: **#11**,
 migrating ESLint to flat config and upgrading `eslint-config-next` to 16.x. It is blocked
-on a migration rather than a version bump, and Dependabot registered an ignore for the
-version when PR #3 was closed, so it will not resurface on its own. PR #5 (TypeScript
-6.0.3) was closed the same way and has the same problem.
+on a migration rather than a version bump. Dependabot PR **#27** is that upgrade arriving
+again at a later patch; it should be closed the way #3 was, not merged.
 
-**Session prompts — what was asked.** `docs/prompts/`, one file per session with the
-prompt verbatim and a note on how it went. Neither the handoff nor the beads record what was
-*asked for*, and the difference between that and what was built is where three of four
-sessions found a false premise. Read the relevant one before starting a session.
+**Session prompts — what was asked.** `docs/prompts/`, one file per build-guide session
+with the prompt verbatim and a note on how it went. Read the relevant one before starting
+a session. The between-session PRs, including #28 and this one, have no prompt file; that
+is the convention, and it means their instructions live only in the PR bodies.
 
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`. Records are immutable
 once accepted: superseded by a new record when a decision changes, amended in place with
-a dated note when a consequence is added. Session 2 deferred one ADR that is now a bead —
-audit records surviving event deletion. **ADR-0006** landed in session 4, recording that
-the pseudonymization boundary is roster matching plus structural detection plus a
-fail-closed guard, with the over-tokenizing asymmetry and the rejected alternatives. Two
-more are owed but not yet due. When
-`fieldnote-bdw` resolves, ADR-0004 gains a dated note, because that record accepted
-residual risk at rest on confidentiality grounds and storage eviction is a second
-residual risk in the same territory on the availability axis. And the substance of the §2
-conversation, when it exists, likely belongs in an ADR rather than a §7 status line,
-because it constrains what the private fork may do.
+a dated note when a consequence is added. Three amendments are owed or worth considering.
+When `fieldnote-bdw` resolves, ADR-0004 gains a dated note, because storage eviction is a
+second residual risk on the availability axis beside the confidentiality risk it accepted.
+ADR-0006's residual-risk section says the mangling evidence is five names; that is still
+true of the name evidence, but the record does not know about the second failure class,
+and whether to amend it is the owner's call. And the substance of the plan §2 conversation,
+when it exists, likely belongs in an ADR rather than a §7 status line.
 
 ---
 
@@ -367,32 +371,32 @@ because it constrains what the private fork may do.
 - **Read the build guide session in full before writing prompts for it.** The guide is
   the source of truth for scope and for what "done" means. A session brief is a summary
   of it, and summaries drop the constraint that mattered.
-- **Verify the guide's premises before building on them.** Session 3's instruction to
-  port a validated prototype rested on an artifact that no longer existed. A guide entry
-  is a plan written earlier, not a fact about the repository now, and where the two
-  disagree the repository wins and the guide gets amended in the session that found it.
+- **Verify the guide's and the prompt's premises before building on them.** Session 3's
+  instruction to port a validated prototype rested on an artifact that no longer existed;
+  the CA fix arrived in a prompt describing work a previous session had already committed.
+  A plan is written earlier than the repository it describes, and where the two disagree
+  the repository wins and the document gets amended in the session that found it.
 - **A control that is not tested is not a control, and one that reads as tested is
-  worse.** Session 3 shipped a service worker whose commit message described cache
-  versioning that in practice never ran a second time. Where something genuinely cannot
-  be covered, say so in the file itself rather than letting a green suite imply otherwise.
+  worse.** Where something genuinely cannot be covered, say so in the file itself rather
+  than letting a green suite imply otherwise.
+- **Verify by running, not by reasoning.** Every hardware and TLS finding in this
+  repository contradicted something a document said would happen. The standard is to
+  demonstrate a control by removing it and watching something fail.
 - **Check existence and ignore status separately.** `git check-ignore` is a pattern
-  query: it reports a match whether or not the file exists. Used alone it will "confirm"
-  files that are not there, which happened once already when material turned out to be a
-  directory deeper than expected.
+  query: it reports a match whether or not the file exists.
 - **The constraints in `CLAUDE.md` are not optional.** If a task requires violating one,
   stop and say so rather than finding a way around it. The constraint is the point.
-- **Never `--no-verify`.** If the pre-commit hook fires, stop and show the output. The
-  hook has caught real leaks more than once, and it is the only gate that sees the
-  literal-term denylist. Check `git config core.hooksPath` still reads `.husky/_` after
-  any tool that installs hooks of its own.
+- **Never `--no-verify`.** If the pre-commit hook fires, stop and show the output. Check
+  `git config core.hooksPath` still reads `.husky/_` after any tool that installs hooks of
+  its own, including every `bd` command.
 - **`gh pr create`, never `--fill`.** `--fill` skips `PULL_REQUEST_TEMPLATE.md`, whose
-  checkboxes carry the CLAUDE.md constraints, and the PR then has to be rewritten by hand.
+  checkboxes carry the CLAUDE.md constraints.
+- **Stage explicit paths.** Never `git add -A` after a tool has run. An unexpected
+  modification to a governance file is a finding, not noise.
 - **One session, one PR.** A finding that surfaces mid-session and is not blocking gets a
-  bead, not a new branch. Amend documents when the session that changes them lands, not
-  on discovery. Work not attached to a session — #16 and #17 — gets its own small PR.
+  bead, not a new branch. Work not attached to a session gets its own small PR.
 - **Separate commits per logical change.** Merge with a merge commit rather than a
-  squash: the commit history is part of the artifact, and squashing flattens the
-  reasoning into one line.
+  squash: the commit history is part of the artifact.
 
 ---
 
@@ -400,67 +404,50 @@ because it constrains what the private fork may do.
 
 Stated rather than smoothed over.
 
-- **The capture layout has never been used by anyone.** It was built from a four-sentence
-  feature list, not ported from the validated prototype, and every decision behind it —
-  what sits where, how attribution is reached, what a log row shows — was invented in
-  session 3 and is listed in the #15 body. `fieldnote-xjs` tracks getting it in front of
-  the representative. Treat "capture works" here as "capture functions", not as "capture
-  is right".
-- **Nothing here has read the material in `private/`.** The counts and paths above come
-  from the session brief and a filesystem check, not from the contents. Whether the
-  samples have the range §7 asks for, and whether the notes carry the artifacts sessions
-  4, 7, and 15 need, is unverified by this document.
-- **The service worker update path has no automated coverage.** Verified manually, twice,
-  and the procedure is written out in `fieldnote-unp`. Playwright's `webServer` builds
-  once per run, so a two-build test needs a harness this repository does not have.
-- **The Vercel deploy path for the offline shell is untested.** Both `public/sw.js` and
-  `public/precache.json` are written after `next build` finishes, and nothing here
-  confirms Vercel collects them. Verified locally and under Playwright only.
-  `fieldnote-6x5`.
-- **The backgrounded-tab e2e emulates `visibilitychange` rather than producing it.** A
-  headless browser will not reliably background a tab, so the event is dispatched. The
-  state machine underneath is covered directly in `tests/unit/session-lifecycle.test.ts`.
-- **`useDebouncedAutosave` has no unit test.** Session 3 fixed a real race in it — `flush`
-  resolving while a write was still in flight — and covered it only through an e2e,
-  because a hook test needs a React testing library this repository does not have.
+- **The capture layout has been used but not validated.** It was built from a
+  four-sentence feature list, not ported from the validated prototype. It has now been
+  used on hardware by the representative and it functions; nobody observed whether it is
+  right for her. `fieldnote-xjs` stays open and session 5's first gate turns on which
+  reading of "used" the owner accepts. Treat "capture works" here as "capture functions".
+- **The iOS version of the hardware run is not recorded.** Two beads asked for it and the
+  runbook has a place for it. Everything under *Verified on hardware* is true of one
+  phone on one day, and the version should be added before it is cited elsewhere.
+- **Storage durability across Safari's eviction window is untested**, because testing it
+  means seven days without opening the app. `fieldnote-bdw` is now exactly this, and it
+  gates the retention decision and an ADR-0004 amendment.
+- **Nothing is deployed, and nothing about the deployed path is verified.** Every hardware
+  result came over the LAN from the machine serving it. `fieldnote-6x5` (does the offline
+  shell survive a Vercel build) and `fieldnote-ijg` (real use needs a deployment) are the
+  same fact seen from two sides.
+- **The private fork has no session and this handoff has no visibility into it.** Whether
+  one exists or what state it is in is unknown here. `fieldnote-v2s` records the gap in
+  the guide.
+- **Nothing here has read the material in `private/`.** The file names come from a
+  filesystem check, not from the contents.
+- **The dictation evidence is two small samples.** Five surnames for the name class; one
+  representative, one session, two terms for the vocabulary class. Both establish that a
+  failure exists and what shape it has. Neither supports a rate, and the guide's amendment
+  says so.
+- **One observed dictation pair is deliberately not in the public documents.** It is an
+  anatomical term that narrows the device category, which plan §7 as amended treats the
+  same way as a product characteristic. The bead names the decision; the owner can
+  overrule it.
+- **The service worker update path has no automated coverage.** Verified manually, twice;
+  `fieldnote-unp` has the procedure.
+- **The backgrounded-tab e2e emulates `visibilitychange` rather than producing it**, and
+  **`useDebouncedAutosave` has no unit test**; both are covered indirectly and the reasons
+  are in the specs.
 - **Plan §7 item 3 records a status with no substance.** It says the §2 conversation is
-  resolved and nothing about what was described or approved, because that was not
-  supplied. §2 gates the private build on the substance, so "resolved" is not yet enough
-  to act on.
-- **Almost nothing has run on a physical device.** The one exception is the certificate
-  trust flow, the project's first hardware result and a negative one — see "The first thing
-  run on a physical device" under *Where we are*. Everything else about phone behaviour —
-  the `dvh` column, the dock above the software keyboard, iOS zoom, the install path — is
-  reached headlessly at the same origin classification, which is not the same as holding
-  the hardware. `fieldnote-xjs` and `fieldnote-bdw` both still want a device, and the
-  positive half of the iOS trust flow in `docs/TESTING-ON-DEVICE.md` — install the
-  authority, trust it, load the app — is documented and unrun.
-- **There is no automated control against a tool writing to the governance files**, after
-  three instances. The mitigation is a working agreement — stage explicit paths, never
-  `git add -A` after a tool has run, treat an unexpected modification as a finding — and it
-  depends on whoever is staging actually reading. A checksum, tool-run-time detection, a
-  marker scan, and a loud non-blocking diff were each considered and rejected with reasons
-  in `fieldnote-n8z`. Session 15 owes this a threat-model entry stating the residual risk
-  plainly.
-- **Role references are not pseudonymised, and four of the seven available notes name
-  nobody any other way.** In a single-institution note "the Biomed Director" identifies a
-  person as certainly as a surname. The tokenizer does not see it, the tests say so
-  explicitly rather than passing over it, and `fieldnote-q0h` carries the design shape. This
-  is the largest remaining hole in plan §4.1's claim and it should be closed before
-  generation is wired to the boundary.
-- **The evidence for dictation mangling surnames is five names.** One severe failure
-  (`Swali` → `Swelha`), four transcribed correctly. That establishes the failure exists and
-  what shape it has — rare, so nobody is watching, and severe, so nothing approximate
-  recovers it — and it cannot support a claim about frequency. The build guide states the
-  behaviour more strongly than the evidence does; amending it is the owner's call.
+  resolved and nothing about what was described or approved. §2 gates the private build on
+  the substance.
+- **There is no automated control against a tool writing to the governance files.** The
+  mitigation is a working agreement and it depends on whoever is staging actually reading.
+  `fieldnote-n8z` has the four rejected options. Session 15 owes it a threat-model entry.
+- **Role references are not pseudonymised.** `fieldnote-q0h`; the largest remaining hole
+  in §4.1, to be closed before generation is wired to the boundary.
 - **A name with neither a title nor a roster entry is still missed.** The structural rule
   closes the common case, not the general one.
-- **Session-to-PR attribution before session 2 is partly inferred.** Commits and PRs are
-  quoted from `git log` and `gh pr list` and are accurate, but the build guide does not
-  record which PR closed which session, so the grouping under *Where we've been* is a
-  reading of commit messages rather than a recorded fact.
-- **Hours in the build guide's phase table are estimates, not measurements.** Nothing in
-  this repository records actual time spent, so no claim is made about whether any session
-  landed within its budget.
-- **This handoff does not verify the private fork.** It has no visibility into whether one
-  exists or what state it is in.
+- **Session-to-PR attribution before session 2 is partly inferred** from commit messages;
+  the build guide does not record which PR closed which session.
+- **Hours in the build guide are estimates, not measurements.** Nothing here records
+  actual time spent.
