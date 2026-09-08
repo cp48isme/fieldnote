@@ -201,8 +201,8 @@ happened, not as what the procedure says should happen:
   textarea was designed around, and it had never been exercised against a real software
   keyboard before.
 
-The **iOS version was not recorded** at the time. Add it here when known; `fieldnote-bdw`
-and `fieldnote-lkm` both asked for it.
+**iOS 26.6.1.** Everything above is true of that version on one phone on one day, and
+should be cited that way.
 
 ### Still unverified
 
