@@ -139,6 +139,11 @@ that on the phone. Tried on an iPhone, it fails: the configuration profile insta
 normally, and then **Settings → General → About → Certificate Trust Settings shows nothing
 to enable.** No error, no warning, no entry.
 
+That was the first finding in this project to come from a physical device. Everything
+before it — the secure-context classification, the service worker, the offline reload — was
+reached headlessly, and the first thing hardware decided was that this runbook's own
+procedure did not work. It is recorded here as a result, not a hypothesis, for that reason.
+
 The reason is that Certificate Trust Settings enumerates **trust anchors**. A server
 certificate is not one — it carries `basicConstraints: CA:FALSE`, which is precisely the
 assertion "I am not an authority" — so it can never appear on that screen, and full trust
@@ -160,7 +165,8 @@ the server certificate with it, and the authority is what goes on the phone.
    `lan.pem`.** That is the mistake this whole section exists to prevent.
    - iOS is fussy about extensions: a `.pem` may open as text rather than offering to
      install. Sending it as `.cer` is more reliable —
-     `openssl x509 -in certificates/ca.pem -outform der -out ~/Desktop/fieldnote-ca.cer`.
+     `openssl x509 -in certificates/ca.pem -outform der -out certificates/fieldnote-ca.cer`,
+     which keeps the copy inside the gitignored directory.
 4. On the phone: **Settings → General → VPN & Device Management**, and install the
    downloaded profile.
 5. **Then, separately: Settings → General → About → Certificate Trust Settings**, and

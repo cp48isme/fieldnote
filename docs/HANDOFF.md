@@ -427,11 +427,14 @@ Stated rather than smoothed over.
   resolved and nothing about what was described or approved, because that was not
   supplied. §2 gates the private build on the substance, so "resolved" is not yet enough
   to act on.
-- **No part of this has run on a physical device.** Everything about phone behaviour —
+- **Almost nothing has run on a physical device.** The one exception is the certificate
+  trust flow, the project's first hardware result and a negative one — see "The first thing
+  run on a physical device" under *Where we are*. Everything else about phone behaviour —
   the `dvh` column, the dock above the software keyboard, iOS zoom, the install path — is
   reached headlessly at the same origin classification, which is not the same as holding
-  the hardware. `fieldnote-xjs` and `fieldnote-bdw` both still want a device, and the iOS
-  certificate trust steps in `docs/TESTING-ON-DEVICE.md` are documented and unrun.
+  the hardware. `fieldnote-xjs` and `fieldnote-bdw` both still want a device, and the
+  positive half of the iOS trust flow in `docs/TESTING-ON-DEVICE.md` — install the
+  authority, trust it, load the app — is documented and unrun.
 - **There is no automated control against a tool writing to the governance files**, after
   three instances. The mitigation is a working agreement — stage explicit paths, never
   `git add -A` after a tool has run, treat an unexpected modification as a finding — and it
