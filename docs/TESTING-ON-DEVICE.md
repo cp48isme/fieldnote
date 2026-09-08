@@ -177,20 +177,50 @@ the server certificate with it, and the authority is what goes on the phone.
 6. Confirm in Safari that the URL loads with no interstitial before concluding anything
    about the app.
 
+### Verified on hardware
+
+Walked end to end on a physical iPhone on 2026-09-08, by the owner. Recorded here as what
+happened, not as what the procedure says should happen:
+
+- **The trust flow.** The profile installed as *Fieldnote local device testing CA*, the
+  authority appeared under Settings → General → About → Certificate Trust Settings, full
+  trust was enabled, and the LAN HTTPS URL loaded in Safari with no interstitial. That is
+  the positive half `fieldnote-zxo` was waiting on, and it closed the bead. Both halves of
+  the leaf-versus-CA question are now hardware results: a leaf offers nothing to trust, an
+  authority does.
+- **Add to Home Screen.** The icon renders the Fieldnote mark from the SVG manifest icon,
+  not a screenshot — there is no `apple-touch-icon` in the tree for it to have used instead
+  — and the app opens standalone, with no address bar or toolbar. `fieldnote-lkm`, which
+  carried the SVG-icon question, closed on this.
+- **Offline, the hard way.** Two notes captured, airplane mode on, the app fully killed
+  from the app switcher, reopened from the home-screen icon. The capture screen rendered,
+  both notes were there, and a third was captured and saved with no network. Plan §5
+  non-negotiable 5 holds on a real device, not only in the headless harness.
+- **Correcting dictated text.** A word inserted mid-sentence into an existing note, typing
+  continuously, with the caret held through autosave. That is the correction case the
+  textarea was designed around, and it had never been exercised against a real software
+  keyboard before.
+
+The **iOS version was not recorded** at the time. Add it here when known; `fieldnote-bdw`
+and `fieldnote-lkm` both asked for it.
+
 ### Still unverified
 
-Steps 3 to 6 have not been completed on a physical iOS device **for the authority**. What
-has been established on hardware is the negative result in the section above: the
-single-certificate version was installed on an iPhone and offered nothing to trust. The
-positive path — install the CA, trust it, load the app — is the documented flow and has not
-yet been walked end to end on a phone.
+- **Storage durability across Safari's eviction window.** ITP deletes script-writable
+  storage after seven days of Safari use without interaction, home-screen web apps are
+  exempt by having their own counter, and none of that has been tested because it needs
+  seven days without opening the app. `fieldnote-bdw` is now narrowed to exactly this, and
+  records a cheap check worth doing first: evaluate `navigator.storage.persisted()` in the
+  installed app through Safari's Web Inspector, which says which of two worlds the wait is
+  confirming.
+- **Whether the layout is right.** The app was used on hardware by the representative and
+  it functions. Nobody observed where she hesitates or what she reaches for that is not
+  there, which is the finding `fieldnote-xjs` asks for. A passing hardware run is not that.
+- **Anything off this network.** Everything above ran over the LAN from the machine
+  serving it, which is a test rig. Real use needs a deployment, and `fieldnote-ijg`
+  records that nothing has been deployed and what that leaves unchecked.
 
-Everything that path depends on *has* been verified off-device, and in the two halves
-described under "The setup": the leaf chains to the CA and is refused without it, and with
-the certificate accepted the service worker registers and the offline shell works. What
-remains genuinely open is iOS's own behaviour once the anchor is trusted.
-
-Correct this section with what actually happens, on the session that first does it.
+Correct this section with what actually happens, on the session that first does any of it.
 
 ## Why this is a document rather than a bead
 

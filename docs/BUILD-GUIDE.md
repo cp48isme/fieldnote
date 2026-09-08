@@ -92,6 +92,28 @@ knows nothing about dictation — but the textarea has to be comfortable to *cor
 in, one-handed, standing up, because OS dictation will mangle surnames and punctuation
 and there is no source recording to fall back on.
 
+> **Amended 2026-09-08, after the first hardware run.** "Will mangle surnames" is stated
+> more strongly than the evidence supports, and the evidence now shows two failure classes
+> where this paragraph names one. What has actually been observed, with its size:
+>
+> - **Surnames.** One phone test, five spoken, four transcribed clean, one rendered
+>   severely wrong (`Swali` → `Swelha`; ADR-0006 records it). The owner's own dictation on
+>   hardware has come through clean twice since. So the shape is *rare and severe*, not
+>   constant and mild. That strengthens the case for ADR-0006's structural rule rather than
+>   weakening it: rare means the representative is not watching for it, and severe means
+>   nothing approximate recovers it.
+> - **Clinical and domain vocabulary.** The representative's dictation on 2026-09-08
+>   rendered two domain terms as phonetically similar ordinary English words —
+>   "ergonomics" became "economics" — producing plausible sentences that read as real and
+>   would survive a quick proofread in a car park. This is a different problem from the
+>   mangled name. It is data quality, not privacy: the tokenizer has no reason to touch it
+>   and must not, but it reaches the model as fact. `fieldnote-dx0` carries it, including
+>   whether plan §4.2 already answers it by construction — on what is written, it does not,
+>   because a note's own words are relational text under §4.2 and pass freely.
+>
+> Neither class has a rate. The sample is one representative, one session, and it should
+> be cited that way.
+
 **Done when:** capture works after a hard reload with the network disabled — not merely
 with the network toggled off on an already-loaded page, which passes without a service
 worker and proves nothing.
