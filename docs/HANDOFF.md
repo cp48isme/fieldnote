@@ -301,12 +301,13 @@ working, observed early, not a defect to design around.
 conditions.
 
 1. *The capture surface has been used on a physical device, with `fieldnote-xjs`
-   updated.* Literally met: it was used on an iPhone by the owner and by the
-   representative, and the bead records that. Not met in the sense it was written for:
-   nobody produced the finding the bead asks for — whether the layout is right for her,
-   where she hesitates, what she reaches for that is not there. The bead stays open and
-   says so. **Which reading governs is the owner's call, and it should be made before the
-   session starts rather than by the session.**
+   updated.* Decided by the owner on 2026-09-08 and split in two in the prompt itself.
+   **1a**, the app runs on a phone, installs standalone, and holds offline: met. **1b**, an
+   observed session with the representative on whether the layout is right for her: not
+   met, and not a blocker for session 5 specifically, because the layout decisions are
+   shallow by design and generation does not depend on where the dock sits. It becomes a
+   blocker before anything builds on top of the layout. `fieldnote-xjs` stays open and
+   carries the decision.
 2. *`docs/TESTING-ON-DEVICE.md` corrected with what actually happened on hardware.* Met
    by the PR carrying this handoff.
 
@@ -414,11 +415,11 @@ Stated rather than smoothed over.
 - **The capture layout has been used but not validated.** It was built from a
   four-sentence feature list, not ported from the validated prototype. It has now been
   used on hardware by the representative and it functions; nobody observed whether it is
-  right for her. `fieldnote-xjs` stays open and session 5's first gate turns on which
-  reading of "used" the owner accepts. Treat "capture works" here as "capture functions".
-- **The iOS version of the hardware run is not recorded.** Two beads asked for it and the
-  runbook has a place for it. Everything under *Verified on hardware* is true of one
-  phone on one day, and the version should be added before it is cited elsewhere.
+  right for her. `fieldnote-xjs` stays open; the owner has split session 5's first gate
+  so that this is owed but not blocking there. Treat "capture works" here as "capture functions".
+- **The hardware run is one phone, one day, iOS 26.6.1.** The version is now recorded in
+  the runbook and the two beads that asked for it. Everything under *Verified on hardware*
+  is true of that phone and should be cited with the version attached.
 - **Storage durability across Safari's eviction window is untested**, because testing it
   means seven days without opening the app. `fieldnote-bdw` is now exactly this, and it
   gates the retention decision and an ADR-0004 amendment.

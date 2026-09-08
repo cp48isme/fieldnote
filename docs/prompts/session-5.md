@@ -16,12 +16,34 @@ summary and the guide is the source of truth.
 **Do not begin work until both are satisfied. If either is not, stop and say so.**
 
 1. **The capture surface has been used on a physical device**, and `fieldnote-xjs` has been
-   updated with what happened. Everything the repository says about phone behaviour — the
-   `dvh` column, the dock above the software keyboard, iOS zoom on focus, hit targets under
-   a thumb — was reached headlessly at the same origin classification, which is not the
-   same as holding the hardware. The capture layout was built from a feature list rather
-   than ported from the validated prototype, so nobody has yet seen it in the hand it was
-   designed for.
+   updated with what happened.
+
+   > **Amended 2026-09-08, by the owner, after the first hardware run.** This gate was one
+   > sentence and hardware answered half of it, so it is now two.
+   >
+   > **1a — answered.** The app runs on a phone, installs standalone, and holds offline
+   > after a full kill; the representative dictated into it and corrected text against a
+   > real keyboard. iOS 26.6.1. `docs/TESTING-ON-DEVICE.md` under *Verified on hardware*
+   > is the record. **Met.**
+   >
+   > **1b — still owed.** An observed session with the representative: whether the layout
+   > is right for her, where she hesitates, what she reaches for that is not there.
+   > `fieldnote-xjs`'s own words are that her reaction is the validation that was
+   > deferred, and that has not happened. Dictating into the surface tested the input
+   > path, not the design. **Not met**, and the owner's reading is that it is not.
+   >
+   > **1b does not block session 5 specifically.** The gate exists to stop work building on
+   > a layout nobody has evaluated. The layout decisions are shallow by design — where the
+   > dock sits, what a log row shows — and generation does not depend on any of them: the
+   > route, the guardrails, and the headers touch nothing the representative's reaction
+   > could change. **It becomes a blocker before anything builds on top of the layout** —
+   > the review surface in session 6 is the first candidate — and whichever session that
+   > is must check `fieldnote-xjs` rather than this note.
+   >
+   > The paragraph this replaces said everything about phone behaviour had been reached
+   > headlessly. That is no longer true and it is kept only as history: the `dvh` column,
+   > the dock above the software keyboard, and iOS zoom on focus have now been met on
+   > hardware; hit targets under a thumb have not been assessed.
 
 2. **`docs/TESTING-ON-DEVICE.md` has been corrected with what actually happened on
    hardware.** The iOS certificate trust steps in it are the documented flow, not a
@@ -179,7 +201,8 @@ tempts you toward a shortcut rather than taking it. The last commit regenerates
 
 ## Stop conditions
 
-Stop and report rather than deciding, if: **either pre-session gate is unmet**; the roles
+Stop and report rather than deciding, if: **gate 1a or gate 2 is unmet** (1b is owed, not
+blocking — see the amendment above); the roles
 decision is reached; anything requires a schema change, a new dependency, or a second
 network destination; the pre-commit hook fires; `core.hooksPath` is not `.husky/_`; or a
 premise in this prompt turns out not to match the repository.
