@@ -54,6 +54,7 @@ function answering(text: (request: GenerateRequest) => string) {
         blocked: null,
         model: MODEL_ID,
         promptTemplateVersion: "1.0.0",
+        flagsFired: [],
       };
     },
   );
@@ -200,6 +201,7 @@ describe("blocks and failures, one recipient at a time", () => {
       blocked: r.recipientKind === "HCP" ? "truncated" : "refusal",
       model: MODEL_ID,
       promptTemplateVersion: "1.0.0",
+      flagsFired: [],
     }));
     const { drafts } = await generateDrafts({
       event: EVENT,
@@ -222,6 +224,7 @@ describe("blocks and failures, one recipient at a time", () => {
         blocked: null,
         model: MODEL_ID,
         promptTemplateVersion: "1.0.0",
+        flagsFired: [],
       };
     });
     const { drafts } = await generateDrafts({
@@ -252,6 +255,7 @@ describe("blocks and failures, one recipient at a time", () => {
       blocked: null,
       model: MODEL_ID,
       promptTemplateVersion: "1.0.0",
+      flagsFired: [],
     }));
     const { drafts } = await generateDrafts({
       event: EVENT,

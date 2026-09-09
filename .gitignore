@@ -52,6 +52,12 @@
 .denylist.local*
 !.denylist.local.example
 
+# Private guardrail terms: site- and product-specific vocabulary the model must never
+# write, loaded by the generation route at start-up. Same reasoning and same wildcard as
+# the denylist above; the template is committed, the list never is.
+.guardrail-terms.local*
+!.guardrail-terms.local.example
+
 # Private, non-public material: plan §7's writing samples and dictated notes, and any
 # other pre-de-branding source read for reference and never committed. NEVER COMMIT —
 # this material predates ADR-0001 and is expected to contain real manufacturer, product,

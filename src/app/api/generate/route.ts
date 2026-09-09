@@ -30,6 +30,8 @@ import {
   MODEL_ID,
   TRUNCATION_RETRY_MULTIPLIER,
 } from "@/lib/generation/model";
+import { applyGuardrails } from "@/lib/generation/guardrails";
+import { loadPrivateTerms } from "@/lib/generation/private-terms";
 import {
   buildSystemPrompt,
   buildUserMessage,
@@ -53,6 +55,20 @@ const GenerateRequestSchema = z.object({
 }) satisfies z.ZodType<GenerateRequest>;
 
 const KEY_VARIABLE = "ANTHROPIC_API_KEY";
+
+/**
+ * The private-term rule, loaded once. Absent on every public clone and every CI runner,
+ * and said so here rather than assumed: an inactive control that looks active is worse
+ * than none. See the header of `private-terms.ts`.
+ */
+const privateTerms = loadPrivateTerms();
+console.info(
+  JSON.stringify({
+    route: "generate",
+    privateTerms: privateTerms.status,
+    count: privateTerms.count,
+  }),
+);
 
 /** Metadata only. Every field here is a number, an enum, or an identifier. */
 function log(entry: Record<string, string | number | boolean | null>): void {
@@ -141,6 +157,11 @@ export async function POST(request: Request): Promise<NextResponse> {
           ? "refusal"
           : null;
 
+    // The one rule the server owns: private terms the public ruleset cannot carry.
+    const guarded = blocked
+      ? { text: "", flagsFired: [] }
+      : applyGuardrails(textOf(message), [privateTerms.rule]);
+
     log({
       status: 200,
       model: message.model,
@@ -153,14 +174,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       outputTokens: message.usage.output_tokens,
       notes: parsed.data.notes.length,
       priorOpenings: parsed.data.priorOpenings.length,
+      privateTermsFired: guarded.flagsFired.length > 0,
       durationMs: Date.now() - startedAt,
     });
 
     const response: GenerateResponse = {
-      text: blocked ? "" : textOf(message),
+      text: guarded.text,
       blocked,
       model: message.model,
       promptTemplateVersion: PROMPT_TEMPLATE_VERSION,
+      flagsFired: guarded.flagsFired,
     };
     return NextResponse.json(response);
   } catch (cause) {

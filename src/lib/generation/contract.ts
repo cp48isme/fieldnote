@@ -40,6 +40,8 @@ export interface GenerateResponse {
   /** The model that answered, as reported by the API. */
   model: string;
   promptTemplateVersion: string;
+  /** Rules the route applied to the text before returning it: the private-term rule. */
+  flagsFired: string[];
 }
 
 /** Whether a parsed JSON body is a `GenerateResponse`. */
@@ -52,7 +54,9 @@ export function isGenerateResponse(value: unknown): value is GenerateResponse {
       candidate.blocked === "truncated" ||
       candidate.blocked === "refusal") &&
     typeof candidate.model === "string" &&
-    typeof candidate.promptTemplateVersion === "string"
+    typeof candidate.promptTemplateVersion === "string" &&
+    Array.isArray(candidate.flagsFired) &&
+    candidate.flagsFired.every((flag) => typeof flag === "string")
   );
 }
 

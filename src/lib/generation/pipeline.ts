@@ -194,7 +194,9 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
     }
 
     const guarded = applyGuardrails(response.text);
-    const flagsFired = [...guarded.flagsFired];
+    // The route's own flags first — the private-term rule it applied before answering —
+    // then the public ruleset's.
+    const flagsFired = [...response.flagsFired, ...guarded.flagsFired];
     for (const token of guarded.text.match(TOKEN_PATTERN) ?? []) {
       if (!pseudonymizer.mapping.has(token) && !flagsFired.includes(UNKNOWN_TOKEN_FLAG)) {
         // Left in place rather than failed, per ADR-0006: one odd string, not a lost draft.

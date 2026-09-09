@@ -103,6 +103,7 @@ describe("the generation route", () => {
       blocked: null,
       model: "claude-opus-5",
       promptTemplateVersion: expect.stringMatching(/^\d+\.\d+\.\d+$/),
+      flagsFired: [],
     });
     expect(create).toHaveBeenCalledTimes(1);
     expect(create.mock.calls[0]![0].max_tokens).toBe(MAX_OUTPUT_TOKENS);
