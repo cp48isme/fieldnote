@@ -91,6 +91,13 @@ export interface Pseudonymizer {
    * left alone rather than failing.
    */
   rehydrate(text: string): string;
+  /**
+   * The token a rostered attendee is known by in this instance, issued if it has not been
+   * yet. This is how a draft's recipient is named to the model: a display name that is
+   * only a title and an initial has no roster form to match, so it cannot be recovered
+   * from `pseudonymize` of the name alone.
+   */
+  tokenForAttendee(attendee: AttendeeRecord): string;
   /** Token to its canonical form: a rostered person's name, or the phrase as first written. */
   readonly mapping: ReadonlyMap<string, string>;
 }
@@ -360,7 +367,11 @@ export function createPseudonymizer(attendees: readonly AttendeeRecord[]): Pseud
     return text.replace(TOKEN_PATTERN, (token) => mapping.get(token) ?? token);
   }
 
-  return { pseudonymize, rehydrate, mapping };
+  function tokenForAttendee(attendee: AttendeeRecord): string {
+    return tokenFor(attendeeIdentity(attendee));
+  }
+
+  return { pseudonymize, rehydrate, tokenForAttendee, mapping };
 }
 
 /**
