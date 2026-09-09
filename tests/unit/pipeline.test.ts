@@ -237,19 +237,11 @@ describe("blocks and failures, one recipient at a time", () => {
     expect(drafts[1]!.blocked).toBeNull();
   });
 
-  it("turns a guard failure into a defect report, not a user-facing error", async () => {
-    // The guard fires only if the tokenizer has a defect. Simulate one by giving the
-    // batch an attendee whose name the tokenizer cannot see but the guard can: the guard
-    // checks roster forms case-insensitively with a capital, and a display name that is
-    // itself a title-less single word of one letter has no roster form — so instead the
-    // defect is simulated the honest way, with a request function that inspects what it
-    // was given and a spy on the console.
+  it("withholds a draft in which the model invented a roster name, and does not call it a defect", async () => {
+    // The model cannot know a roster name, so a bare one in its output is a hallucination
+    // or an echo. Neither is a tokenizer defect, and the draft is withheld under its own
+    // outcome rather than reported to the developer as an invariant failure.
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { assertPseudonymized } = await import("@/lib/privacy/pseudonymize");
-    const { PseudonymizationError } = await import("@/lib/privacy/pseudonymize");
-    // A prior opening that somehow carries a name is the one input the pipeline guards
-    // that did not come through the tokenizer. Reach it by making the first draft's
-    // opening line a name-shaped string the ruleset does not catch.
     const requestDraft = vi.fn(async (r: GenerateRequest): Promise<GenerateResponse> => ({
       text: `Dear ${r.recipientToken},\n\nOkonjo-Baptiste sends regards.`,
       blocked: null,
@@ -260,18 +252,60 @@ describe("blocks and failures, one recipient at a time", () => {
     const { drafts } = await generateDrafts({
       event: EVENT,
       attendees: ROSTER,
-      notes: [note("att-2", "Keen."), note("att-5", "Also keen.")],
+      notes: [note("att-2", "Keen.")],
       requestDraft,
     });
-    // The first draft is fine; its opening carried a roster name, so the second
-    // recipient's guard fired before anything was sent.
-    expect(drafts[0]!.blocked).toBeNull();
-    expect(drafts[1]!.blocked).toBe("defect");
-    expect(drafts[1]!.explanation).toMatch(/defect report/);
-    expect(requestDraft).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledTimes(1);
-    // The report carries lengths, never the name.
-    expect(String(error.mock.calls[0])).not.toContain("Okonjo-Baptiste");
+    expect(drafts[0]!.blocked).toBe("output-blocked");
+    expect(drafts[0]!.body).toBe("");
+    expect(drafts[0]!.explanation).toMatch(/not in the notes/);
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it("keeps drafting after a hallucinated name: the bad opening is not carried forward", async () => {
+    // Before this test, recipient 2's invented name rode into `priorOpenings`, the
+    // next recipient's guard threw on it, and every draft after that was lost. Now
+    // recipient 2 is withheld and recipients 3 and 4 get drafts.
+    let calls = 0;
+    const requestDraft = vi.fn(async (r: GenerateRequest): Promise<GenerateResponse> => {
+      calls += 1;
+      return {
+        text:
+          calls === 2
+            ? `Dear ${r.recipientToken},\n\nOkonjo-Baptiste sends regards.`
+            : email(r),
+        blocked: null,
+        model: MODEL_ID,
+        promptTemplateVersion: "1.0.0",
+        flagsFired: [],
+      };
+    });
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [
+        note("att-1", "Keen."),
+        note("att-2", "Also keen."),
+        note("att-3", "Wants more notice."),
+        note("att-4", "Confirmed the dates."),
+      ],
+      requestDraft,
+    });
+    expect(drafts.map((d) => d.blocked)).toEqual([null, "output-blocked", null, null]);
+    expect(requestDraft).toHaveBeenCalledTimes(4);
+    // The invented name never reached a later request.
+    for (const call of requestDraft.mock.calls.slice(2)) {
+      expect(JSON.stringify(call[0])).not.toContain("Okonjo-Baptiste");
+    }
+  });
+
+  it("reports a genuine tokenizer defect as a defect, and only then", async () => {
+    // `defect` is reserved for input we pseudonymized failing the guard, which means the
+    // tokenizer is wrong. The only way to reach it is to hand the pipeline text the
+    // tokenizer cannot see but the guard can, and there is no such text by construction —
+    // so the reservation is asserted the other way round: the guard throwing on a raw name
+    // is the condition, and no draft outcome other than `defect` is ever produced from it.
+    const { assertPseudonymized, PseudonymizationError } =
+      await import("@/lib/privacy/pseudonymize");
     expect(() => assertPseudonymized("Okonjo-Baptiste sends regards.", ROSTER)).toThrow(
       PseudonymizationError,
     );

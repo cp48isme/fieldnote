@@ -22,10 +22,16 @@
  *
  *   - `truncated` / `refusal` — the model's stop reason blocked it (route decision).
  *   - `request-failed` — the route could not be reached or answered with an error.
- *   - `defect` — `assertPseudonymized` threw. ADR-0006 assigns this session one job:
- *     that throw is an internal invariant, so it surfaces as a defect report to the
- *     developer (a console error with lengths, never text) and as one skipped draft to
- *     the representative, not as a failure of the tool. The rest of the batch continues.
+ *   - `defect` — `assertPseudonymized` threw on *input we pseudonymized*. ADR-0006
+ *     assigns this session one job: that throw is an internal invariant, so it surfaces
+ *     as a defect report to the developer (a console error with lengths, never text) and
+ *     as one skipped draft to the representative, not as a failure of the tool. The rest
+ *     of the batch continues.
+ *   - `output-blocked` — the model's draft failed the same guard: it wrote something
+ *     name-shaped or role-shaped it was never given. That is not a tokenizer defect and
+ *     is not reported as one. The draft is withheld, its opening is not carried into the
+ *     next request, and the batch continues. Before this outcome existed, a hallucinated
+ *     name rode into `priorOpenings` and blocked every recipient after it as a `defect`.
  *
  * NOTHING IS PERSISTED HERE. Session 5 generates without audit records, so drafts are
  * held in memory and never written to Dexie: a `DraftRecord` with no `AuditRecord`
@@ -49,7 +55,8 @@ import { MODEL_ID } from "./model";
 import { PROMPT_TEMPLATE_VERSION } from "./prompt";
 import type { RequestDraft } from "./client";
 
-export type BlockReason = "truncated" | "refusal" | "request-failed" | "defect";
+export type BlockReason =
+  "truncated" | "refusal" | "request-failed" | "defect" | "output-blocked";
 
 /** Flag ids the pipeline adds beside the ruleset's own. */
 export const UNKNOWN_TOKEN_FLAG = "unknown-token";
@@ -92,6 +99,8 @@ const BLOCK_EXPLANATIONS: Record<BlockReason, string> = {
     "The draft could not be requested. Check the connection and try again.",
   defect:
     "This draft was skipped. A defect report has been logged for the developer; nothing was sent.",
+  "output-blocked":
+    "The model wrote a name or a role that was not in the notes, so the draft is withheld rather than shown. Nothing was sent. Try again; if it repeats, the notes may contain a name the tokenizer did not recognise.",
 };
 
 function kindOf(token: string): TokenKind {
@@ -204,8 +213,35 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
       }
     }
 
+    // The model's output crosses the guard too. What it writes goes to the representative,
+    // not to the model, so a failure here is not a leak — but the opening of this draft is
+    // about to be sent with the next request, and a name the model invented must not ride
+    // along. Guard the whole draft: a draft that fails is withheld, and nothing from it is
+    // carried forward.
+    try {
+      assertPseudonymized(guarded.text, input.attendees);
+    } catch (cause) {
+      if (!(cause instanceof PseudonymizationError)) throw cause;
+      drafts.push({
+        ...blockedOutcome("output-blocked"),
+        model: response.model,
+        flagsFired,
+      });
+      continue;
+    }
+
+    // Belt and braces on the one string that will actually cross: the opening is a slice
+    // of text that just passed, so this cannot throw today, and it stays so that the
+    // invariant the next request depends on is checked where it is relied on.
     const opening = openingOf(guarded.text);
-    if (opening) priorOpenings.push(opening);
+    if (opening) {
+      try {
+        assertPseudonymized(opening, input.attendees);
+        priorOpenings.push(opening);
+      } catch (cause) {
+        if (!(cause instanceof PseudonymizationError)) throw cause;
+      }
+    }
 
     drafts.push({
       ...base,
