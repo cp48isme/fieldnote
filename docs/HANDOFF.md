@@ -97,7 +97,7 @@ iPhone, iOS 26.6.1. **#30** split session 5's first gate into what hardware answ
 **#31** fixed the session 5 prompt before it was sent.
 
 **Session 5 — generation route, guardrails, and headers.** The PR carrying this handoff,
-twenty-two commits on `feat/session-5-generation`. In order:
+twenty-four commits on `feat/session-5-generation`. In order:
 
 - The prompt file replaced with the version actually sent, after the session's
   verification pass stopped the first version on four premises the repository could not
@@ -151,7 +151,7 @@ hand, one through the UI with the request intercepted to show that only tokens c
 ## Where we are
 
 `main` is at `5f84da8` with a clean working tree; the session 5 branch sits on it with
-twenty-two commits and no conflicts. Two pull requests are open, both from Dependabot:
+twenty-four commits and no conflicts. Two pull requests are open, both from Dependabot:
 **#26**, the minor-and-patch group, and **#27**, `eslint-config-next` 16.3.4 — the same
 major that #3 was closed for and that issue #11 tracks as a migration rather than a
 bump. CI green on the last merge to `main` (`gh run list --branch main`).
@@ -424,8 +424,11 @@ Stated rather than smoothed over.
   this document says no more than that, by the working agreement in `CLAUDE.md`. Two
   commit messages on the branch predate the agreement and describe it a little more
   closely; they are history and the bead names them.
-- **The `Verify` job's cost with the end-to-end suite is measured on one run**, recorded
-  in the session 5 PR; the minute it took before is the comparison.
+- **The `Verify` job's cost with the end-to-end suite is measured on two runs**, recorded
+  in the session 5 PR; the minute it took before is the comparison. The first run found
+  that one headers test had only ever seen a machine with the API key present: on a
+  runner the route refuses a malformed body before reading it, by design, and the test
+  now accepts both documented statuses.
 - **A name with neither a title nor a roster entry is still missed**, and so is a role
   whose head noun is outside the closed list or that is written mid-sentence without a
   determiner. ADR-0006 and ADR-0007 state both.
