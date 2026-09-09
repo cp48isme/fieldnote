@@ -1,7 +1,6 @@
 # Handoff
 
-Written 2026-09-09, at `5f84da8` on `main`, from the branch carrying session 5 and its
-review follow-up.
+Written 2026-09-10, at `077b64c` on `main`, between sessions 5 and 6.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -40,8 +39,8 @@ violates one is wrong regardless of how well it is implemented.
 
 ## Where we've been
 
-89 commits on `main`, 26 merged pull requests, two open, plus the session 5 branch this
-document ships on. Verified with `git rev-list --count main` and `gh pr list`.
+118 commits on `main`, 27 merged pull requests, one open. Verified with
+`git rev-list --count main` and `gh pr list`.
 
 **Phase 0 — foundation.** Build guide session 1. The Next.js 16 scaffold, CI, and the
 security baseline landed first as two direct commits (`989d459`, `d509dca`), then
@@ -96,8 +95,8 @@ iPhone, iOS 26.6.1. **#30** split session 5's first gate into what hardware answ
 (1a, met) and what is still owed (1b, an observed session with the representative).
 **#31** fixed the session 5 prompt before it was sent.
 
-**Session 5 — generation route, guardrails, and headers.** The PR carrying this handoff,
-twenty-four commits on `feat/session-5-generation`. In order:
+**Session 5 — generation route, guardrails, and headers.** **#32**, twenty-four commits,
+merged at `077b64c` on 2026-09-09. In order:
 
 - The prompt file replaced with the version actually sent, after the session's
   verification pass stopped the first version on four premises the repository could not
@@ -123,7 +122,7 @@ twenty-four commits on `feat/session-5-generation`. In order:
   a second destination and green on removing it.
 - A **throwaway generation UI** — one button, one in-memory list — as the pipeline's
   proof, with `fieldnote-aev` recording that session 6 deletes it.
-- Guide amendments for sessions 5, 6, and 7; the how-it-went note on the prompt; this
+- Guide amendments for sessions 5, 6, and 7; the how-it-went note on the prompt; the
   handoff.
 - **Review follow-up**, three commits. The guardrail ruleset moved to **1.1.0**: an
   attributed question passes, an attributed assertion does not, and the sender answering
@@ -140,8 +139,18 @@ twenty-four commits on `feat/session-5-generation`. In order:
   second working agreement: findings about the private material are recorded in beads,
   with the public record pointing at them — the detail of the denylist collision moved
   into `fieldnote-quj` under it. Both owner decisions from the review are closed. One
-  slip in the record: the two agreements landed in one commit rather than two, and that
-  commit is pushed history.
+  slip in the record: the two agreements landed in one commit rather than two.
+- **Containment, in the same PR.** The beads database was found to be publishing to the
+  public remote on every write. The remote was removed, the ref deleted, the agreement
+  that had assumed beads were private replaced, and the exposure inventoried. The
+  amendment under *Known gaps* is the record.
+
+**Between sessions 5 and 6.** The PR carrying this handoff. Gate 1b closed:
+`fieldnote-xjs` now carries the owner's note that the representative was observed using
+the capture surface and found the layout right, and is closed; the one thing she reached
+for that is not there is a feature, `fieldnote-g7d`. The changelog backfill for sessions 2
+to 4 and the first device run landed (`fieldnote-dus` closed). Dependabot PR **#27** was
+closed with the reason on it. Every merged branch was deleted on both sides.
 
 Two live calls were made against the model, both accepted by the API: one to the route by
 hand, one through the UI with the request intercepted to show that only tokens crossed.
@@ -150,11 +159,11 @@ hand, one through the UI with the request intercepted to show that only tokens c
 
 ## Where we are
 
-`main` is at `5f84da8` with a clean working tree; the session 5 branch sits on it with
-twenty-four commits and no conflicts. Two pull requests are open, both from Dependabot:
-**#26**, the minor-and-patch group, and **#27**, `eslint-config-next` 16.3.4 — the same
-major that #3 was closed for and that issue #11 tracks as a migration rather than a
-bump. CI green on the last merge to `main` (`gh run list --branch main`).
+`main` is at `077b64c` with a clean working tree. One pull request is open, Dependabot's
+**#26**, the minor-and-patch group. **#27**, `eslint-config-next` 16.3.4, was closed on
+2026-09-10 with the reason on it: it is the flat-config migration issue #11 tracks, not a
+version bump, and PR #3 was the same upgrade earlier. CI green on the last merge to `main`
+(`gh run list --branch main`). The only branches on the remote are `main` and #26's.
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
 suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
@@ -265,15 +274,22 @@ display name only, so anyone added there classifies as `STAFF` and has no role f
 roster-role pass to match; roster import (session 8) is where roles and specialties
 arrive.
 
+**The capture layout is validated.** Gate 1b, owed since session 3, is met: the
+representative was observed using the surface and confirmed the layout — log above, dock
+below, row contents, where attribution sits. `fieldnote-xjs` carries the owner's note and
+is closed. What she reached for that is not there is the pre-meeting briefing package,
+`fieldnote-g7d`, a feature rather than a layout problem, and the first feature request the
+project has had from its user. It needs an ADR before anything is built, because the
+briefing is a document that leaves the device.
+
 **Documentation set.** `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md`,
 `docs/TESTING-ON-DEVICE.md`, seven ADRs with an index at `docs/adr/README.md`,
 `docs/prompts/`, this handoff and its template, plus `CHANGELOG.md` and `SECURITY.md`.
 Plan §4.6's `README.md`, `docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`,
 `docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, and `docs/COMPLIANCE-MAP.md` do not
-exist yet. `CHANGELOG.md` has not been touched since Phase 0's documentation commits;
-sessions 2 to 4 did not update it. It now tracks sessions, as a working agreement in
-`CLAUDE.md`: one entry per merged session PR, written with the handoff. Session 5's entry
-is in; sessions 2 to 4 are owed a backfill in their own PR, `fieldnote-dus`.
+exist yet. `CHANGELOG.md` tracks sessions, as a working agreement in `CLAUDE.md`: one entry per
+merged session PR, written with the handoff. Sessions 2 to 5 and the first device run are
+all in.
 
 ---
 
@@ -292,10 +308,11 @@ state, and the audit log exports to CSV.
 **Three things session 5 hands it.** Draft persistence and the audit record land
 together, in one change, restoring the no-silent-generations agreement; the versions and
 flag ids the schema needs are already produced by the pipeline. The throwaway UI is
-deleted and replaced by the review surface (`fieldnote-aev`). And **gate 1b blocks the
-review surface**: `fieldnote-xjs` records the owner's decision that nothing builds on the
-capture layout until the representative has been observed using it, and the review
-surface is the first thing that would. Check the bead, not this note.
+deleted and replaced by the review surface (`fieldnote-aev`). And **gate 1b no longer
+blocks the review surface**: it was met on the observed session recorded in
+`fieldnote-xjs`, closed. The review surface can build on the capture layout as it stands;
+what it should read first is `fieldnote-g7d`, so that the pre-meeting path she asked for
+is designed against rather than discovered again.
 
 ### Where outstanding work lives
 
@@ -305,21 +322,21 @@ Three places, deliberately. Do not duplicate between them.
 questions — but see the containment amendment under *Known gaps*: until that day the
 database pushed to the public remote on every write, and nothing private may go into a
 bead until a private place is verified to exist. 42
-issues: 30 open, 10 closed, 4 deferred, with 18 ready and 12 blocked (`bd stats`). Run
+issues: 30 open, 11 closed, 4 deferred, with 18 ready and 12 blocked (`bd stats`). Run
 `bd ready` for what is actionable and `bd blocked` for what is waiting and on what.
 Session-container beads exist only to hang dependency edges from and are deferred so they
 do not compete with real work. This handoff deliberately does not list them.
 
-Fourteen are worth naming because they qualify claims made above. `fieldnote-quj` — the
-public and private guardrail rulesets differ, and session 17's compliance map should say
-so; it also holds the one finding about the private material this session produced.
-`fieldnote-dus` — the changelog backfill, owed before session 6. `fieldnote-aev` — the throwaway UI, deleted by session 6. `fieldnote-08m` — model-level guardrail behaviour is
+Thirteen are worth naming because they qualify claims made above. `fieldnote-g7d` — the
+pre-meeting briefing package, the representative's own request, P1 because the document
+leaves the device and needs an ADR first. `fieldnote-quj` — the public and private
+guardrail rulesets differ, and session 17's compliance map should say so. `fieldnote-aev`
+— the throwaway UI, deleted by session 6. `fieldnote-08m` — model-level guardrail behaviour is
 unverified until session 7's runner exists. `fieldnote-9gp` — SRI does not cover
 client-component chunks. `fieldnote-034` — the eval suite passes against zero cases.
 `fieldnote-dx0` — mangled clinical terms reach the model as fact; the classifier's
 decision is now recorded in the bead and in the ruleset's version notes, and it stays
-open for session 15 and session 9. `fieldnote-xjs` — the capture layout is unvalidated
-and gate 1b is owed. `fieldnote-n8z` — three tools have written to governance files and
+open for session 15 and session 9. `fieldnote-xjs` — closed; the layout is validated and the note is the record. `fieldnote-n8z` — three tools have written to governance files and
 no automated control was added, with four rejected options recorded. `fieldnote-bdw` —
 Safari storage durability across the seven-day eviction window. `fieldnote-ech` — the
 denylist matches listed spellings only. `fieldnote-ijg` — nothing is deployed.
@@ -329,8 +346,8 @@ on-device terminology check, considered and not built. `fieldnote-q0h`, roles, i
 
 **GitHub issues — public record.** One open: **#11**, migrating ESLint to flat config and
 upgrading `eslint-config-next` to 16.x, blocked on a migration rather than a version
-bump. Dependabot PR **#27** is that upgrade arriving again; it should be closed the way
-#3 was, not merged.
+bump. Dependabot will offer the 16.x bump again at each patch; #27 was closed on those
+grounds with the reason on it, and the next one should be too until #11 lands.
 
 **Session prompts — what was asked.** `docs/prompts/`, one file per build-guide session
 with the prompt verbatim and a note on how it went. Session 5's file carries the second
@@ -450,8 +467,9 @@ Stated rather than smoothed over.
 - **Drafts are not persisted and no audit record is written.** Deliberate, per the owner,
   and restored by session 6 — but until then every generation is silent in exactly the
   sense `CLAUDE.md` forbids.
-- **The capture layout has been used but not validated.** `fieldnote-xjs`; gate 1b is
-  owed and blocks session 6's review surface.
+- **The layout validation is one observed session.** `fieldnote-xjs` records it and is
+  closed; it is one representative on one day, and the finding is hers, recorded in the
+  owner's words without her name.
 - **The hardware run is one phone, one day, iOS 26.6.1.** Everything under the runbook's
   *Verified on hardware* is true of that phone. Nothing built in session 5 has been run on
   hardware at all.
@@ -473,7 +491,7 @@ Stated rather than smoothed over.
   above. The bead names no word, and the corrected `CLAUDE.md` agreement now sends such
   findings to the owner directly rather than to any location the repository controls.
 - **The `Verify` job's cost with the end-to-end suite is measured on two runs**, recorded
-  in the session 5 PR; the minute it took before is the comparison. The first run found
+  in PR #32; the minute it took before is the comparison. The first run found
   that one headers test had only ever seen a machine with the API key present: on a
   runner the route refuses a malformed body before reading it, by design, and the test
   now accepts both documented statuses.
