@@ -3,6 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-09-02
 - **Deciders:** cp48isme (owner)
+- **Amended:** 2026-09-09 — the roles residual risk is now addressed by ADR-0007. The
+  decision is unchanged.
 
 ## Context
 
@@ -161,6 +163,12 @@ egress, which §4.1 does not permit.
   notes in the available corpus name nobody any other way. This is the largest remaining
   hole in §4.1's claim and it is tracked as `fieldnote-q0h`, to be decided before session 5
   wires generation to this boundary.
+
+  > **Amended 2026-09-09.** Decided and built. ADR-0007 adds a third pass: roles on the
+  > roster share the rostered person's token, roles the roster does not know are
+  > tokenized fail-closed, plurals and indefinite references are left alone, and
+  > rehydration is per occurrence. The residual risks that remain are ADR-0007's, not this
+  > one's. `fieldnote-q0h` is closed.
 - **A name with no title and no roster entry is not detected.** A mangled surname written
   without `Dr.` in front of it passes both passes. The structural rule closes the common
   case, not the general one.

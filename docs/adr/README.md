@@ -16,7 +16,8 @@ the artifact.
 | [0003](0003-spreadsheet-parsing-library.md) | `read-excel-file` for spreadsheet parsing, replacing `xlsx` (SheetJS) | Accepted, amended 2026-09-01 | 2026-08-28 |
 | [0004](0004-encryption-at-rest.md) | Encryption seam in the data layer; passphrase-derived encryption deferred to the private fork | Accepted, amended 2026-09-01 | 2026-09-01 |
 | [0005](0005-dictation-input.md) | Device dictation only; no audio capture, storage, or transcription | Accepted, amended 2026-09-01 | 2026-09-01 |
-| [0006](0006-structural-name-detection.md) | Structural name detection at the pseudonymization boundary | Accepted | 2026-09-02 |
+| [0006](0006-structural-name-detection.md) | Structural name detection at the pseudonymization boundary | Accepted, amended 2026-09-09 | 2026-09-02 |
+| [0007](0007-role-references.md) | Role references at the pseudonymization boundary | Accepted | 2026-09-09 |
 
 ## What each one settles
 
@@ -43,6 +44,14 @@ detection plus a fail-closed guard, rather than roster matching alone, which can
 a name it was never told about. It records a deliberate asymmetry — over-tokenizing is
 preferred to under-tokenizing — and is explicit that fail-closed means tokenizing more,
 never refusing to draft.
+
+**0007** closes 0006's largest residual risk. A role reference — "the Biomed Director" —
+identifies a person in a single-institution note as surely as a surname, so the boundary
+gains a third pass: roles on the roster share the rostered person's token, roles the roster
+does not know are tokenized fail-closed on a closed list of head nouns, plurals and
+indefinite references are left alone, and rehydration puts back the form that was written
+at each position. It records why the model's placement of a role token is a review-gate
+matter rather than a boundary failure.
 
 ## Numbering
 
