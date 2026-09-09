@@ -16,6 +16,15 @@ const nextConfig: NextConfig = {
    * the pre-commit gate), and this. See `fieldnote-n8z`.
    */
   agentRules: false,
+
+  /**
+   * Subresource Integrity on every script tag Next emits, beside the nonce the proxy
+   * applies. Plan §5 non-negotiable 4. Verified in the served HTML by
+   * `tests/e2e/headers.spec.ts`, not assumed from this line.
+   */
+  experimental: {
+    sri: { algorithm: "sha256" },
+  },
 };
 
 export default nextConfig;
