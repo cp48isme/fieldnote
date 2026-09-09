@@ -38,7 +38,10 @@ describe("roster matching", () => {
     const out = p.pseudonymize(caseById("constructed-possessive"));
 
     expect(out).not.toMatch(/Okonjo-Baptiste/i);
-    expect(out).toMatch(/\[HCP_\d+\]'s registrar/);
+    // `registrar` was left in place until ADR-0007. "Dr. Okonjo-Baptiste's registrar" is a
+    // definite reference to one person, and the roster has a registrar, so it now shares
+    // that attendee's token — the role pass at work, not a regression.
+    expect(out).toMatch(/\[HCP_\d+\]'s \[HCP_\d+\]/);
     // The possessive is preserved outside the token, so rehydration restores the prose.
     expect(p.rehydrate(out)).toBe(caseById("constructed-possessive"));
   });
@@ -107,12 +110,20 @@ describe("the structural rule", () => {
     expect(p.pseudonymize(caseById("adapted-5"))).toMatch(/Dr\. \[PERSON_\d+\] was/);
   });
 
-  it("leaves 'the doctor said' alone", () => {
+  it("does not treat lowercase 'doctor' as a title", () => {
     // `Doctor` is an ordinary noun, so it only counts as a title when capitalised.
-    // Without that rule this fires on every note in the corpus.
+    // Without that rule this fires on every note in the corpus and tokenizes `said`.
+    //
+    // Until ADR-0007 this test asserted the sentence came through untouched. It no longer
+    // does: "the doctor" is a definite role reference and the role pass tokenizes it,
+    // deliberately. What the title rule must still guarantee is that the word *after* the
+    // noun survives — the role pass replaces the reference, never the verb.
     const p = createPseudonymizer(ROSTER);
-    const source = caseById("constructed-title-as-noun");
-    expect(p.pseudonymize(source)).toBe(source);
+    const out = p.pseudonymize(caseById("constructed-title-as-noun"));
+    expect(out).toMatch(
+      /^\[ROLE_1\] said the room was too small and \[ROLE_1\] recommended/,
+    );
+    expect(out).not.toMatch(/\[PERSON_/);
   });
 });
 
@@ -159,12 +170,17 @@ describe("the adapted corpus", () => {
     }
   });
 
-  it("leaves role references untokenized, which is a known gap", () => {
-    // Recorded rather than hidden: `fieldnote-q0h`. In a single-institution note a role
-    // identifies a person as surely as a surname, and neither pass sees one.
+  it("tokenizes role references, which was a known gap until ADR-0007", () => {
+    // This test asserted the opposite from session 4 to session 5, recording
+    // `fieldnote-q0h` as a gap rather than hiding it. The gap is now closed: in a
+    // single-institution note a role identifies a person as surely as a surname, so a
+    // role the roster does not know gets its own token, and the plural "the surgeons",
+    // which refers to nobody, is left alone. Both directions are asserted on purpose.
     const p = createPseudonymizer(ROSTER);
     const out = p.pseudonymize(caseById("adapted-6"));
-    expect(out).toContain("The chief executive");
+    expect(out).not.toContain("The chief executive");
+    expect(out).toMatch(/^\[ROLE_1\] appreciated/);
+    expect(out.match(/the surgeons/g)).toHaveLength(2);
   });
 
   it("preserves the dictation artifacts, which is why the fixtures exist", () => {
@@ -239,5 +255,161 @@ describe("the guard", () => {
     // And the real tokenizer passes the same guard on the same input.
     const p = createPseudonymizer(ROSTER);
     expect(() => assertPseudonymized(p.pseudonymize(source), ROSTER)).not.toThrow();
+  });
+});
+
+describe("role references (ADR-0007)", () => {
+  const tokensIn = (text: string) => text.match(/\[\w+_\d+\]/g) ?? [];
+
+  it("gives a name and a roster role for the same person one token", () => {
+    const p = createPseudonymizer(ROSTER);
+    const source = caseById("role-name-and-role-same-person");
+    const out = p.pseudonymize(source);
+
+    expect(out).not.toMatch(/Piper|biomedical engineer/i);
+    const tokens = tokensIn(out);
+    expect(tokens).toHaveLength(2);
+    expect(tokens[0]).toBe(tokens[1]);
+    expect(tokens[0]).toMatch(/^\[STAFF_/);
+  });
+
+  it("rehydrates per occurrence: the name where the name was, the role where the role was", () => {
+    // The hard part of the roles decision. One token stands for two forms in this note,
+    // and `mapping` alone cannot say which form goes where. The round-trip is exact.
+    const p = createPseudonymizer(ROSTER);
+    const source = caseById("role-name-and-role-same-person");
+    const out = p.pseudonymize(source);
+    expect(p.rehydrate(out)).toBe(source);
+  });
+
+  it("rehydrates a draft, which it did not produce, with the canonical form", () => {
+    // The model places tokens where it likes; there is no "form written there". The token
+    // comes back as the rostered person's name without titles.
+    const p = createPseudonymizer(ROSTER);
+    const out = p.pseudonymize(caseById("role-name-and-role-same-person"));
+    const token = tokensIn(out)[0]!;
+    expect(p.rehydrate(`Dear ${token}, thank you for your time.`)).toBe(
+      "Dear Tomas Piper, thank you for your time.",
+    );
+  });
+
+  it("gives every form of one rostered person the same token", () => {
+    // Full name, surname, and role are one identity. Before ADR-0007 the full name and the
+    // surname were keyed on their text and got two tokens, which told the model two people
+    // were in the room.
+    const p = createPseudonymizer(ROSTER);
+    const out = p.pseudonymize(
+      "Amara Okonjo-Baptiste opened the session. Okonjo-Baptiste then asked about the port.",
+    );
+    const tokens = tokensIn(out);
+    expect(tokens).toHaveLength(2);
+    expect(tokens[0]).toBe(tokens[1]);
+  });
+
+  it("keeps a token stable across a batch when one instance is reused", () => {
+    // Per-person batching depends on this: the role in the second note is the person named
+    // in the first, and the model has to be told so.
+    const p = createPseudonymizer(ROSTER);
+    const first = p.pseudonymize("Piper asked about the cable run.");
+    const second = p.pseudonymize("The biomedical engineer will measure the room.");
+    expect(tokensIn(first)[0]).toBe(tokensIn(second)[0]);
+    expect(p.rehydrate(first)).toBe("Piper asked about the cable run.");
+    expect(p.rehydrate(second)).toBe("The biomedical engineer will measure the room.");
+  });
+
+  it("tokenizes a roster role two attendees share against the text as written", () => {
+    // Two consultants on the roster. Which one "the consultant" means is not knowable, so
+    // it gets a text-keyed token that rehydrates to the phrase — the shared-surname rule.
+    const p = createPseudonymizer(ROSTER);
+    const source = caseById("role-shared-roster-role");
+    const out = p.pseudonymize(source);
+    expect(out).toMatch(/^\[HCP_\d+\] asked/);
+    expect(p.rehydrate(out)).toBe(source);
+    // In a draft, a shared roster form rehydrates to the roster's own form.
+    expect(p.rehydrate(`${tokensIn(out)[0]} will call.`)).toBe("Consultant will call.");
+  });
+
+  it("tokenizes a definite role the roster does not know, and leaves an indefinite one", () => {
+    // adapted-3: "The director of finance and procurement" is nobody on the roster and is
+    // fail-closed into a ROLE token; "a local engineer" in the same note picks out nobody.
+    const p = createPseudonymizer(ROSTER);
+    const out = p.pseudonymize(caseById("adapted-3"));
+    expect(out).toMatch(/^\[ROLE_1\] liked the flexibility/);
+    expect(out).toContain("having a local engineer");
+    expect(p.rehydrate(out)).toBe(caseById("adapted-3"));
+  });
+
+  it("tokenizes a capitalised role opening a sentence", () => {
+    // adapted-2 opens "Clinical Engineering Lead really likes" with no determiner, which
+    // is how the corpus writes a role used as a name.
+    const p = createPseudonymizer(ROSTER);
+    const out = p.pseudonymize(caseById("adapted-2"));
+    expect(out).toMatch(/^\[ROLE_1\] really likes/);
+  });
+
+  it("leaves indefinite references alone", () => {
+    const p = createPseudonymizer(ROSTER);
+    const source = caseById("role-indefinite");
+    expect(p.pseudonymize(source)).toBe(source);
+  });
+
+  it("stops the of-tail before the verb", () => {
+    const p = createPseudonymizer(ROSTER);
+    const out = p.pseudonymize(caseById("role-with-tail"));
+    expect(out).toBe("[ROLE_1] said the quote needs two signatures.");
+  });
+
+  it("keeps the possessive outside the token", () => {
+    const p = createPseudonymizer(ROSTER);
+    const out = p.pseudonymize(caseById("role-possessive"));
+    expect(out).toBe("We left the sample kit in [ROLE_1]'s office.");
+  });
+
+  it("leaves `Nurse` in the title position to pass 2, and tokenizes `the nurse` as a role", () => {
+    // The collision the prompt named. `Nurse` is both a word title and a role head noun.
+    // Pass 2 runs first and owns the title position, so the name after it is tokenized and
+    // the title stays — a profession, which §4.1 lets through. Lowercase `the nurse` is not
+    // a title under ADR-0006's case rule and is a definite role reference here.
+    const p = createPseudonymizer(ROSTER);
+    const out = p.pseudonymize(caseById("role-nurse-title-position"));
+    expect(out).toBe(
+      "Nurse [PERSON_1] said the room was fine but [ROLE_1] on the late shift disagreed.",
+    );
+    expect(p.rehydrate(out)).toBe(caseById("role-nurse-title-position"));
+  });
+
+  it("the guard sees roles: a role-only tokenizer is not enough", () => {
+    // The counterfactual, in the shape of the existing one for the structural rule. This
+    // is what the tokenizer produced before ADR-0007 — names replaced, roles passed — and
+    // the guard now refuses it.
+    const namesOnly = (text: string): string => text.replace(/\bPiper\b/g, "[STAFF_1]");
+
+    const source = caseById("role-name-and-role-same-person");
+    const weakened = namesOnly(source);
+    expect(weakened).toContain("the biomedical engineer");
+    expect(() => assertPseudonymized(weakened, ROSTER)).toThrow(PseudonymizationError);
+
+    // An unmatched role survives the same way.
+    expect(() => assertPseudonymized(caseById("adapted-6"), ROSTER)).toThrow(
+      PseudonymizationError,
+    );
+
+    // And the real tokenizer passes the guard on both.
+    const p = createPseudonymizer(ROSTER);
+    expect(() => assertPseudonymized(p.pseudonymize(source), ROSTER)).not.toThrow();
+    expect(() =>
+      assertPseudonymized(p.pseudonymize(caseById("adapted-6")), ROSTER),
+    ).not.toThrow();
+  });
+
+  it("names the length of a caught role, never the role", () => {
+    try {
+      assertPseudonymized(caseById("adapted-6"), ROSTER);
+      expect.unreachable("guard should have thrown");
+    } catch (error) {
+      const message = (error as Error).message;
+      expect(message).not.toContain("chief executive");
+      expect(message).toContain("role reference");
+    }
   });
 });

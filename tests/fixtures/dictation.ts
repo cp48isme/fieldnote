@@ -87,8 +87,9 @@ export const ROSTER: readonly AttendeeRecord[] = [
  * Adapted from the real corpus. Seven notes, one per source note, in source order.
  *
  * Every person in the source was an initial or a role, and that is preserved: it is the
- * honest shape of the material and it is also why `ROLE_REFERENCE` below is a known gap
- * rather than a solved case.
+ * honest shape of the material. When these were written the tokenizer did not see roles
+ * and the role cases here recorded a known gap (`fieldnote-q0h`); since ADR-0007 they are
+ * the cases the role pass is tested against.
  */
 export const ADAPTED_NOTES: readonly DictationCase[] = [
   {
@@ -222,8 +223,58 @@ export const CONSTRUCTED_CASES: readonly DictationCase[] = [
   },
 ];
 
+/**
+ * Role references, per ADR-0007. Constructed, because the adapted corpus already carries
+ * the natural cases — a role after a determiner, a role as a sentence opener, a plural
+ * generic — and what is missing is the edges: a name and a role for the same person in one
+ * note, a roster role shared by two attendees, the indefinite article, and `Nurse` sitting
+ * in the title position.
+ */
+export const ROLE_CASES: readonly DictationCase[] = [
+  {
+    id: "role-name-and-role-same-person",
+    provenance: "constructed",
+    covers:
+      "a rostered person referred to by name and then by roster role in one note; both forms share a token and each rehydrates to what was written",
+    text: "Piper wants the tooling kit costed separately and the biomedical engineer will confirm the room size on Monday.",
+  },
+  {
+    id: "role-shared-roster-role",
+    provenance: "constructed",
+    covers:
+      "a roster role two attendees hold; tokenized against the text as written, like a shared surname",
+    text: "The consultant asked whether the heads can be swapped mid-session.",
+  },
+  {
+    id: "role-indefinite",
+    provenance: "constructed",
+    covers: "an indefinite reference identifies nobody and is left alone",
+    text: "A nurse asked about the cables and any coordinator could answer that.",
+  },
+  {
+    id: "role-nurse-title-position",
+    provenance: "constructed",
+    covers:
+      "`Nurse` before a name is a title and belongs to pass 2; the same word after `the` is a role",
+    text: "Nurse Swelha said the room was fine but the nurse on the late shift disagreed.",
+  },
+  {
+    id: "role-possessive",
+    provenance: "constructed",
+    covers: "a role reference carrying a possessive",
+    text: "We left the sample kit in the director's office.",
+  },
+  {
+    id: "role-with-tail",
+    provenance: "constructed",
+    covers: "an of-tail that stops before the verb",
+    text: "Their head of procurement said the quote needs two signatures.",
+  },
+];
+
 export const ALL_CASES: readonly DictationCase[] = [
   ...ADAPTED_NOTES,
   ...OBSERVED_CASES,
   ...CONSTRUCTED_CASES,
+  ...ROLE_CASES,
 ];
