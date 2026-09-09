@@ -205,3 +205,50 @@ counterfactual — before building past it. (3) The truncation ceiling you chose
 did instead. (6) Beads created or closed, and the amendments made to the guide and the ADRs.
 (7) Flags last, including anything in the plan, guide, handoff, or this prompt that turned
 out to be wrong.
+
+---
+
+## How it actually went, for whoever reuses this
+
+**The verification pass stopped the first version of this prompt**, on four premises
+recorded at the top of this file. The second version is what is above. That is the fifth
+time a prompt has asserted something the repository could not support and the first time
+the prompt itself was re-issued rather than patched mid-session; it is the better shape.
+
+**The roles design held, with one refinement found by the corpus.** `Head` and `Lead` were
+to match only when capitalised, because lowercase they are equipment in a device corpus;
+"their head of procurement" showed that an `of`-tail makes a lowercase head a person, and
+the rule says so now. The exclusion list that bounds the modifier slot had to carry its own
+capitalised forms, because the sentence-initial pattern cannot use the case-insensitive
+flag — a detail worth knowing before touching that regex.
+
+**The per-occurrence rehydration mechanism is exact-output memory, not positional tokens.**
+The instance remembers, for each string it produced, what each token replaced in order;
+anything it did not produce gets canonical forms. Tokens are issued per identity, which
+also fixed a defect nobody had named: the full name and the surname of the same person
+used to get two tokens.
+
+**Three things the plan of this session did not anticipate:**
+
+- **The pre-commit denylist fired on the guardrail ruleset.** Two generic English nouns in
+  the claim-bearing classifier's word lists are also terms on the local denylist. The
+  hook was not bypassed; the two words were removed from the lists by position, without
+  being printed, and the commit message says so without naming them. The private fork's
+  ruleset may want site vocabulary the public one cannot hold.
+- **zod in the client bundle violated the CSP and bloated the precache.** Sharing the
+  request schema between route and client put zod's browser build in the page, which
+  probes for `Function` at load — a `script-src` violation — and ships every locale. The
+  contract module is now plain types with a hand-written response guard; zod stays in the
+  route.
+- **Next's SRI does not cover client-component chunks.** Verified by building with both
+  Turbopack and webpack and reading the served HTML. `fieldnote-9gp`; the e2e spec asserts
+  what is covered rather than claiming full coverage.
+
+**A stale server nearly hid all of the above.** Playwright reuses an existing server on
+port 3000 outside CI, and one from the previous day was still listening. The first e2e run
+went entirely red against a build that predated the branch. Check `lsof -iTCP:3000` before
+believing a red or a green suite.
+
+**Live calls made:** two, both against `claude-opus-5`, both accepted — one to the route by
+hand, one through the UI with the request intercepted to show tokens only in the payload.
+The eval workflow still runs the placeholder and still passes against zero cases.
