@@ -97,7 +97,7 @@ iPhone, iOS 26.6.1. **#30** split session 5's first gate into what hardware answ
 **#31** fixed the session 5 prompt before it was sent.
 
 **Session 5 — generation route, guardrails, and headers.** The PR carrying this handoff,
-seventeen commits on `feat/session-5-generation`. In order:
+twenty-two commits on `feat/session-5-generation`. In order:
 
 - The prompt file replaced with the version actually sent, after the session's
   verification pass stopped the first version on four premises the repository could not
@@ -134,6 +134,14 @@ seventeen commits on `feat/session-5-generation`. In order:
   the model's output withholds that one draft under its own outcome, `output-blocked`,
   instead of riding into the next request and blocking every recipient after it as a
   tokenizer defect.
+- **Second pass, four commits.** The end-to-end suite joined the `Verify` job.
+  `CHANGELOG.md` tracks sessions, as a working agreement in `CLAUDE.md`, and session 5's
+  entry is in it; the backfill for sessions 2 to 4 is `fieldnote-dus`, its own PR. And a
+  second working agreement: findings about the private material are recorded in beads,
+  with the public record pointing at them — the detail of the denylist collision moved
+  into `fieldnote-quj` under it. Both owner decisions from the review are closed. One
+  slip in the record: the two agreements landed in one commit rather than two, and that
+  commit is pushed history.
 
 Two live calls were made against the model, both accepted by the API: one to the route by
 hand, one through the UI with the request intercepted to show that only tokens crossed.
@@ -143,7 +151,7 @@ hand, one through the UI with the request intercepted to show that only tokens c
 ## Where we are
 
 `main` is at `5f84da8` with a clean working tree; the session 5 branch sits on it with
-seventeen commits and no conflicts. Two pull requests are open, both from Dependabot:
+twenty-two commits and no conflicts. Two pull requests are open, both from Dependabot:
 **#26**, the minor-and-patch group, and **#27**, `eslint-config-next` 16.3.4 — the same
 major that #3 was closed for and that issue #11 tracks as a migration rather than a
 bump. CI green on the last merge to `main` (`gh run list --branch main`).
@@ -155,7 +163,10 @@ reviews: **0**, deliberate for a single-maintainer repository: the gate is CI, n
 Verified against the branch-protection API this session.
 
 **What the green checks actually mean.** `Verify` runs the denylist, lint, typecheck,
-unit tests, and build, and those are real. The caveats matter more than the badge:
+unit tests, build, and — since the session 5 review — the end-to-end suite: the security
+headers asserted on a live response, the offline shell after a hard reload with the
+network gone, capture, persistence, crash recovery, and the environment gates. Those are
+real. The caveats matter more than the badge:
 
 - **The eval suite passes against zero cases.** `scripts/evals.mjs` still prints
   `evals: no cases defined yet (scaffold placeholder)` and exits 0. Every green
@@ -183,18 +194,15 @@ unit tests, and build, and those are real. The caveats matter more than the badg
   will misclassify in both directions, its false-negative rate is unmeasured, and the
   review gate reads every draft. Session 9's library matcher replaces it.
 - **The public ruleset is generic; the private fork's is not, and the difference is not
-  reviewable here.** Two generic words were removed from the public word lists before
-  the first ruleset was committed because they collide with the local denylist, and they
-  are not named anywhere. Measured cost: a sentence whose only trigger was one of them
-  no longer blocks. The route now loads site- and product-specific terms at runtime from
+  reviewable here.** A finding about the private material sits in `fieldnote-quj`, per the
+  working agreement in `CLAUDE.md`; the public record says only that it exists. The route now loads site- and product-specific terms at runtime from
   a gitignored file and blocks any sentence carrying one; absent on every public clone
   and CI runner, and logged as absent at start-up. `fieldnote-quj`.
-- **Two asserted controls run only by hand.** `.github/workflows/ci.yml` does not run
-  `pnpm test:e2e`, so `tests/e2e/headers.spec.ts` (plan §5 non-negotiable 4) and
-  `tests/e2e/offline.spec.ts` (non-negotiable 5) execute only when someone runs them.
-  Whether to add them to the `Verify` job or to record them as hand-verified is the
-  owner's open decision from the session 5 review; until it is made, read a green
-  `Verify` as saying nothing about either.
+- **The end-to-end suite runs on `127.0.0.1`, a secure context, in one browser.** It
+  enters no environment that needs a trusted certificate authority, a home-screen
+  install, or seven days of Safari's eviction window, and it says nothing about WebKit.
+  Every hardware finding in this repository came from an environment the suite cannot
+  reach.
 - **CI enforces structural denylist patterns only.** The literal-term list lives in
   `.denylist.local`, gitignored by design and absent on a runner. Only the local
   pre-commit hook can catch a real name — and this session it caught two generic English
@@ -263,10 +271,9 @@ arrive.
 Plan §4.6's `README.md`, `docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`,
 `docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, and `docs/COMPLIANCE-MAP.md` do not
 exist yet. `CHANGELOG.md` has not been touched since Phase 0's documentation commits;
-sessions 2 to 5 did not update it. Nothing in `CLAUDE.md` or the handoff template names
-it as a per-session duty; its own header commits to Keep a Changelog under an
-`[Unreleased]` heading. Whether it tracks sessions is the owner's open decision from the
-session 5 review.
+sessions 2 to 4 did not update it. It now tracks sessions, as a working agreement in
+`CLAUDE.md`: one entry per merged session PR, written with the handoff. Session 5's entry
+is in; sessions 2 to 4 are owed a backfill in their own PR, `fieldnote-dus`.
 
 ---
 
@@ -295,14 +302,15 @@ surface is the first thing that would. Check the bead, not this note.
 Three places, deliberately. Do not duplicate between them.
 
 **Beads — internal build state.** Findings, deferred decisions, open questions. 42
-issues: 29 open, 10 closed, 4 deferred, with 17 ready and 12 blocked (`bd stats`). Run
+issues: 30 open, 10 closed, 4 deferred, with 18 ready and 12 blocked (`bd stats`). Run
 `bd ready` for what is actionable and `bd blocked` for what is waiting and on what.
 Session-container beads exist only to hang dependency edges from and are deferred so they
 do not compete with real work. This handoff deliberately does not list them.
 
-Thirteen are worth naming because they qualify claims made above. `fieldnote-quj` — the
+Fourteen are worth naming because they qualify claims made above. `fieldnote-quj` — the
 public and private guardrail rulesets differ, and session 17's compliance map should say
-so. `fieldnote-aev` — the throwaway UI, deleted by session 6. `fieldnote-08m` — model-level guardrail behaviour is
+so; it also holds the one finding about the private material this session produced.
+`fieldnote-dus` — the changelog backfill, owed before session 6. `fieldnote-aev` — the throwaway UI, deleted by session 6. `fieldnote-08m` — model-level guardrail behaviour is
 unverified until session 7's runner exists. `fieldnote-9gp` — SRI does not cover
 client-component chunks. `fieldnote-034` — the eval suite passes against zero cases.
 `fieldnote-dx0` — mangled clinical terms reach the model as fact; the classifier's
@@ -364,6 +372,9 @@ conversation, which likely belongs in an ADR rather than a §7 status line.
   query: it reports a match whether or not the file exists.
 - **The constraints in `CLAUDE.md` are not optional.** If a task requires violating one,
   stop and say so rather than finding a way around it. The constraint is the point.
+- **A finding about the private material goes in a bead.** The public record says one
+  exists and points at it. The category is the one place the repository's habit of
+  documenting everything works against ADR-0001.
 - **Never `--no-verify`.** If the pre-commit hook fires, stop and show the output. Check
   `git config core.hooksPath` still reads `.husky/_` after any tool that installs hooks of
   its own, including every `bd` command.
@@ -409,12 +420,12 @@ Stated rather than smoothed over.
 - **The crash-recovery e2e flaked once this session** — one of three persistence tests
   failed on a full-suite run and passed three times in isolation. Not investigated
   beyond that; `fieldnote-2o9` already records the spec as Chromium-only.
-- **Two words were removed from the classifier's lists and are not named anywhere.** The
-  denylist hook caught them; the ruleset's version note records what the removal
-  measurably cost, by effect rather than by word. The private fork's term file is where
-  they return.
-- **Two owner decisions are open from the session 5 review**: whether the e2e specs join
-  the `Verify` job, and whether `CHANGELOG.md` tracks sessions. Neither is decided here.
+- **One finding about the private material is held in a bead**, `fieldnote-quj`, and
+  this document says no more than that, by the working agreement in `CLAUDE.md`. Two
+  commit messages on the branch predate the agreement and describe it a little more
+  closely; they are history and the bead names them.
+- **The `Verify` job's cost with the end-to-end suite is measured on one run**, recorded
+  in the session 5 PR; the minute it took before is the comparison.
 - **A name with neither a title nor a roster entry is still missed**, and so is a role
   whose head noun is outside the closed list or that is written mid-sentence without a
   determiner. ADR-0006 and ADR-0007 state both.
