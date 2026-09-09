@@ -88,17 +88,21 @@ pass before merge.
   and is regenerated. A finding, a caveat, or an open question belongs in the handoff or
   a bead, not the changelog.
 - A finding about the private material — `private/`, `.denylist.local`,
-  `.guardrail-terms.local`, or anything derived from them — is recorded in a bead, not
-  in a commit message, a PR body, an ADR, or any committed document. The public artifact
-  says that a finding exists and points at the bead; the bead carries what it was. This
-  repository's habit is to document every finding honestly, and that habit works against
-  ADR-0001 in exactly this one category: a description precise enough to be useful is a
-  description of the material. The case that produced this rule was the denylist
-  collision in session 5 — a commit message and a prompt note said which public word
-  lists two private terms had been removed from, and a reader who knows the lists learned
-  the category of the terms. Thin, that time. The failure this prevents is the next one
-  being a term, a spelling, or a phrase that identifies the manufacturer to an industry
-  reader, published in the record of having kept it out.
+  `.guardrail-terms.local`, or anything derived from them — is not written down in any
+  location this repository controls until there is a private place to put it. The public
+  artifact says that a finding exists and nothing more; the substance goes to the owner
+  directly. This repository's habit is to document every finding honestly, and that habit
+  works against ADR-0001 in exactly this one category: a description precise enough to be
+  useful is a description of the material. What happened: on 2026-09-09 an agreement was
+  written here sending such findings to beads, on the assumption that beads are internal
+  build state. The assumption was never checked. The beads database was configured to
+  push to this repository's public GitHub URL on every write, under a ref no one looked
+  for, and a term deliberately held out of the public documents had been on GitHub for a
+  day before anyone knew. Three documents described beads as internal; none had verified
+  it. So the rule names no replacement location — inventing one repeats the error — and
+  the corollary is the one the rest of this file already lives by: "internal" is a claim
+  about where data goes, and a claim is verified by looking, not read off a tool's
+  description of itself.
 - Prefer the plainly correct implementation over the clever or convenient one. No inline
   data that belongs in a module, no magic values, no shortcut that would need explaining
   in review. If a task tempts you toward one, say so rather than taking it.
