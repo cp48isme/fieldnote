@@ -301,7 +301,10 @@ surface is the first thing that would. Check the bead, not this note.
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — internal build state.** Findings, deferred decisions, open questions. 42
+**Beads — build state, local since 2026-09-09.** Findings, deferred decisions, open
+questions — but see the containment amendment under *Known gaps*: until that day the
+database pushed to the public remote on every write, and nothing private may go into a
+bead until a private place is verified to exist. 42
 issues: 30 open, 10 closed, 4 deferred, with 18 ready and 12 blocked (`bd stats`). Run
 `bd ready` for what is actionable and `bd blocked` for what is waiting and on what.
 Session-container beads exist only to hang dependency edges from and are deferred so they
@@ -372,9 +375,11 @@ conversation, which likely belongs in an ADR rather than a §7 status line.
   query: it reports a match whether or not the file exists.
 - **The constraints in `CLAUDE.md` are not optional.** If a task requires violating one,
   stop and say so rather than finding a way around it. The constraint is the point.
-- **A finding about the private material goes in a bead.** The public record says one
-  exists and points at it. The category is the one place the repository's habit of
-  documenting everything works against ADR-0001.
+- **A finding about the private material is not written into any location the
+  repository controls.** The public record says one exists; the substance goes to the
+  owner. Beads were assumed private and were publishing on every write, so "internal" is
+  a claim to verify by looking at where the data goes, never a tool's description of
+  itself.
 - **Never `--no-verify`.** If the pre-commit hook fires, stop and show the output. Check
   `git config core.hooksPath` still reads `.husky/_` after any tool that installs hooks of
   its own, including every `bd` command.
@@ -392,6 +397,39 @@ conversation, which likely belongs in an ADR rather than a §7 status line.
 ## Known gaps in this document
 
 Stated rather than smoothed over.
+
+> **Amended 2026-09-09, containment.** Beads were treated as private and were not. The
+> issue tracker that this document, its template, and `CLAUDE.md` all described as
+> internal build state was configured by its own `bd init` to push the whole database to
+> this repository's public GitHub URL on every write, under `refs/dolt/data`, a ref
+> nobody looked for. Four sessions, the owner, and the reviewing instance read "internal"
+> as a property of the tool rather than a claim to verify. It was found when a real name
+> was about to be written into a bead and the writer checked where beads go first.
+>
+> **Contained the same day.** The Dolt remote was removed from the embedded repo state,
+> the git blobstore cache removed, the backup's git push disabled in `.beads/config.yaml`,
+> and the ref deleted from GitHub by the owner. Verified by doing: a bead write after the
+> change produced no `refs/dolt/*` on the remote and did not advance
+> `.beads/push-state.json`, and a commit through the pre-commit hook, which chains
+> `bd hooks run pre-commit`, produced neither either. **The objects remain on GitHub until
+> garbage collection**, which the owner is requesting separately; treat everything below
+> as disclosed until then.
+>
+> **What the ref carried, from the local database, by id and category only.** 45 beads,
+> created 2026-09-01 to 2026-09-09, with their Dolt history. Searched against the local
+> denylist terms, the two private files in 8-word runs not otherwise public, a real first
+> name, and price or percentage figures. Findings: `fieldnote-dps` holds the anatomical
+> term deliberately kept out of the public documents; `fieldnote-dx0` held the same term
+> in its 2026-09-08 note until a 2026-09-09 update replaced that note instead of
+> appending to it — the earlier text is in Dolt history, which the ref carried, and the
+> owner can restore it locally; `fieldnote-quj` holds the position-and-length record of
+> the two words removed from the classifier's lists, which names no word; `fieldnote-bdw`
+> holds a non-commercial percentage. No bead holds a denylist term, a real first name, or an
+> unsubstituted run of either private file. **What assumed beads were private and is now
+> wrong:** the `CLAUDE.md` agreement of the same morning, replaced; the use of
+> `fieldnote-dx0` as a holding place for a held-back term; and this document's own
+> description of beads, corrected above. The threat-model entry this owes is in
+> `fieldnote-loh`, which is local now.
 
 - **The model's behaviour under the prompt is unverified.** Two live calls were made and
   both behaved; that is a demonstration, not a measurement. Prompt injection inside a note
@@ -420,10 +458,10 @@ Stated rather than smoothed over.
 - **The crash-recovery e2e flaked once this session** — one of three persistence tests
   failed on a full-suite run and passed three times in isolation. Not investigated
   beyond that; `fieldnote-2o9` already records the spec as Chromium-only.
-- **One finding about the private material is held in a bead**, `fieldnote-quj`, and
-  this document says no more than that, by the working agreement in `CLAUDE.md`. Two
-  commit messages on the branch predate the agreement and describe it a little more
-  closely; they are history and the bead names them.
+- **One finding about the private material was written into a bead**, `fieldnote-quj`,
+  under an agreement that assumed beads were private. They were not; see the amendment
+  above. The bead names no word, and the corrected `CLAUDE.md` agreement now sends such
+  findings to the owner directly rather than to any location the repository controls.
 - **The `Verify` job's cost with the end-to-end suite is measured on two runs**, recorded
   in the session 5 PR; the minute it took before is the comparison. The first run found
   that one headers test had only ever seen a machine with the API key present: on a
