@@ -27,7 +27,47 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   destination appears, and the end-to-end suite added to CI's `Verify` job.
 - A throwaway generation button and draft list, deleted by session 6.
 
-*Sessions 2 to 4 are owed a backfill entry in their own PR; see the handoff.*
+### Between sessions 4 and 5 — the first device run
+
+- Data-layer failures reach a visible terminal state instead of an indefinite
+  "Loading…": a session-marker failure degrades to capture without crash recovery, a
+  failing read or write replaces the screen with what failed and what to do, and an
+  insecure origin is refused up front rather than run without a service worker (#20).
+- `pnpm serve:https` serves a production build over HTTPS on the LAN address for device
+  testing, with no plain-HTTP listener beside it (#21).
+- The device HTTPS setup generates a small local certificate authority and a server
+  certificate signed by it, because iOS will not trust a self-signed leaf; the runbook
+  `docs/TESTING-ON-DEVICE.md` records the walk on a physical iPhone (#28).
+
+### Session 4 — the privacy boundary
+
+- `src/lib/privacy/`: roster matching with stable tokens, possessives, initials, and
+  shared surnames; structural name detection, so a token after a title is a name whether
+  or not the roster knows it; and a guard on the API client that re-derives what a name
+  looks like and throws with lengths, never text. ADR-0006 records the decision and the
+  deliberate asymmetry toward over-tokenizing.
+- Dictation fixtures with per-case provenance: observed, adapted from the private corpus
+  with names and product detail substituted, or constructed.
+
+### Session 3 — capture surface and offline shell
+
+- The capture dock and log on the session 2 data layer: a fixed-height textarea built for
+  correcting dictated text one-handed, attribution from the dock, a newest-first log, and
+  a dismissible recovery notice. Built from plan §3.1 rather than ported from the
+  prototype, which was not retrieved.
+- A PWA manifest and a hand-written service worker with a precache manifest generated
+  after the build, so capture survives a hard reload with no network.
+- A gitignored `private/` path for pre-de-branding material.
+
+### Session 2 — data layer and persistence
+
+- A Dexie schema for the eight entities in plan §5 plus an internal session-marker table,
+  with `createdAt`, `updatedAt`, and a schema version on every record and migration
+  scaffolding from version 1.
+- A single data-access layer under `src/lib/db/`, the only place Dexie is imported, with
+  `encrypt`/`decrypt` hooks as identity pass-throughs and every field classified
+  encryption-eligible or clear, enforced by the type system.
+- Debounced autosave and explicit crash recovery with a recovered-session state.
 
 ---
 
