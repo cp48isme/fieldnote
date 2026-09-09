@@ -32,13 +32,11 @@
  *           half is read as the sender's — over-blocking, in the accepted direction.
  *           Decided by the owner.
  *
- *           Also from the follow-up: the word lists below are generic English only, and
- *           two generic words were removed from them before 1.0.0 was committed because
- *           they collide with the local denylist. They are not named anywhere. The
- *           measured cost: a sentence whose only trigger was one of those words no longer
- *           blocks; any other trigger present, it still does. Site- and product-specific
- *           terms now load at runtime in the route from a gitignored file — see
- *           `private-terms.ts` — and that is where those words belong, as outright blocks.
+ *           Also from the follow-up: the word lists below are generic English only.
+ *           Site- and product-specific terms load at runtime in the route from a
+ *           gitignored file — see `private-terms.ts`. A finding about what the public
+ *           lists do and do not hold is recorded in `fieldnote-quj`, per the working
+ *           agreement in `CLAUDE.md` on findings about the private material.
  *
  *   1.0.0 — 2026-09-09, session 5. First ruleset. Six rules, listed below.
  *

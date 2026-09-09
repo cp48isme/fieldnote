@@ -230,11 +230,9 @@ used to get two tokens.
 
 **Three things the plan of this session did not anticipate:**
 
-- **The pre-commit denylist fired on the guardrail ruleset.** Two generic English nouns in
-  the claim-bearing classifier's word lists are also terms on the local denylist. The
-  hook was not bypassed; the two words were removed from the lists by position, without
-  being printed, and the commit message says so without naming them. The private fork's
-  ruleset may want site vocabulary the public one cannot hold.
+- **The pre-commit denylist fired on the guardrail ruleset.** A finding about the private
+  material; the hook was not bypassed and `fieldnote-quj` carries what it was. This is the
+  case that produced the working agreement in `CLAUDE.md` that such findings live in beads.
 - **zod in the client bundle violated the CSP and bloated the precache.** Sharing the
   request schema between route and client put zod's browser build in the page, which
   probes for `Function` at load — a `script-src` violation — and ships every locale. The
@@ -260,4 +258,9 @@ ruleset moved to 1.1.0 so an attributed question passes while an attributed asse
 laundering case, and an answer given in the same sentence still block; and site-specific
 terms now load at runtime from a gitignored file so nothing from the private denylist is
 ever in the public ruleset. The other three were questions for the owner — e2e in CI, the
-changelog — and a report on what the two removed words cost, by length and position only.
+changelog — and a report on the finding in `fieldnote-quj`.
+
+**Second pass.** The two decisions closed: the end-to-end suite joins the `Verify` job,
+and the changelog tracks sessions, both now written into `CLAUDE.md` or CI. And a new
+working agreement, produced by the denylist collision above: findings about the private
+material go in beads, and the public record points at them.
