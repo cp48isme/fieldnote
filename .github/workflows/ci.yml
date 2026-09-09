@@ -60,3 +60,20 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # The two specs that make plan §5 non-negotiables 4 and 5 controls rather than
+      # config: security headers asserted on a live response, and capture after a hard
+      # reload with the network gone. Until 2026-09-09 nothing ran them but a person,
+      # which is the case CLAUDE.md names as worse than an untested control. One
+      # browser, because the Playwright config declares one project. The suite starts
+      # the server from the build the step above just made (see playwright.config.ts);
+      # this step must stay after Build.
+      #
+      # What a green run still does not say: the suite runs on 127.0.0.1, a secure
+      # context, so it enters no environment that needs a trusted certificate
+      # authority, a home-screen install, or seven days of Safari's eviction window.
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: pnpm test:e2e

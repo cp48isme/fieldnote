@@ -145,6 +145,33 @@ Server-side route handler. Prompt templates and guardrail rulesets as versioned
 modules. Per-person batching with accumulated openings. The retry and truncation
 handling from the prototype fix.
 
+> **Amended 2026-09-09, session 5.** Three corrections from the owner, made when the
+> session's verification pass found premises this entry rested on that the repository
+> could not support.
+>
+> **There was no prototype retry-and-truncation fix to port.** The prototype's drafts came
+> back cut off because `max_tokens` was set artificially low for a test, and the fix was
+> raising the number: a configuration correction with no logic in it. The handling was
+> built fresh — SDK retries with the count in one constant, one retry at a doubled ceiling
+> on truncation, and a block on a second truncation or a refusal — and lives in
+> `src/lib/generation/model.ts` and the route. Nobody should chase the prototype fix
+> again.
+>
+> **Accumulated openings, defined.** One request per attendee carrying that person's
+> notes; each finished draft's opening line is carried into the next request so a batch
+> does not open every email the same way. One pseudonymizer instance per batch keeps the
+> tokens stable across it.
+>
+> **The audit-record agreement is suspended in this session.** `CLAUDE.md` says every
+> model interaction writes an audit record and there are no silent generations; this
+> guide puts the records in session 6. The two cannot both hold here, and the resolution
+> is that session 5 generates without audit records **and does not persist drafts** —
+> they are held in memory. Not persisting is the point: a `DraftRecord` in Dexie with no
+> `AuditRecord` beside it is the shape the agreement forbids. Session 6 owes both, in one
+> change, and its entry says so. The generation UI built here — one button and a
+> read-only list — is the pipeline's proof, is marked throwaway, and is deleted by
+> session 6.
+
 **Plus CSP, SRI, and strict security headers** (plan §5, non-negotiable 4). This is the
 first session in which a server-side response exists, so it's the natural home. About 45
 minutes of the estimate. Assert them in a test against a live response rather than
@@ -181,6 +208,17 @@ against a live response covers more ground than the grep does.
 > Session 7 builds the runner and the CI integration that execute them at scale, and adds
 > the rest of the corpus. See the matching note on session 7.
 
+> **Amended 2026-09-09, session 5.** How that was done: `scripts/evals.mjs` is a
+> placeholder that exits 0 against zero cases, so nothing in the repository could execute
+> an eval case. Every guardrail written in session 5 therefore has its adversarial case
+> as an ordinary Vitest test under `pnpm test` — `tests/unit/guardrails.test.ts`,
+> `tests/unit/prompt.test.ts`, `tests/unit/generate-route.test.ts` — where the
+> counterfactual is demonstrable now: remove the rule, watch the case pass through.
+> What those tests cannot verify is the model's own behaviour under the prompt — whether
+> it obeys an instruction embedded in a note, whether it adopts an attendee's claim as its
+> own — and that is what session 7's runner is for. The cases are written in the shape it
+> will consume.
+
 **On claim-bearing text, which has no library yet.** Plan §4.2 and `CLAUDE.md` are absolute
 that claim-bearing text is selected from the approved content library and never authored,
 and that unmatched output is blocked rather than flagged. That library is session 9. The
@@ -209,6 +247,20 @@ the human is actually reviewing. Surface it as a small dashboard.
 **Done when:** every generation writes a record, export is impossible from `generated`
 state, and the audit log exports to CSV.
 
+> **Amended 2026-09-09, session 5.** This session owes three things the session 5
+> amendment above deferred to it. **Draft persistence and the audit record land
+> together**: session 5 held drafts in memory precisely so that no `DraftRecord` exists
+> without an `AuditRecord` beside it, and this session adds both in one change, restoring
+> `CLAUDE.md`'s no-silent-generations agreement. **The versions are ready**:
+> `PROMPT_TEMPLATE_VERSION`, `GUARDRAIL_RULESET_VERSION`, `MODEL_ID`, and the rule ids in
+> `flagsFired` are what the schema's fields already expect, and `DraftOutcome` in
+> `src/lib/generation/pipeline.ts` carries all of them. **Delete the throwaway UI** —
+> `src/components/capture/DraftList.tsx` and the button in `CaptureScreen` — and replace
+> it with the review surface; the bead that records this is named in the session 5 PR.
+> And before the review surface is designed, check `fieldnote-xjs`: gate 1b, an observed
+> session with the representative, blocks anything that builds on the capture layout, and
+> the review surface is the first thing that does.
+
 ### Session 7 — Eval suite
 *~4 hours, and this one runs long*
 
@@ -221,6 +273,15 @@ threshold.
 > had no guardrail for, and the breadth plan §4.5 describes. The reason for the split is
 > that `CLAUDE.md` forbids shipping a guardrail without a test, so the cases cannot all wait
 > until this session; the runner can.
+
+> **Amended 2026-09-09, session 5.** The cases session 5 wrote are Vitest tests under
+> `pnpm test`, not entries in a corpus, because there was no runner to execute a corpus.
+> This session ports them: the inputs in `tests/unit/guardrails.test.ts` are what a model
+> would write if the prompt failed, and the runner's job is to find out whether it does.
+> Two things only the runner can verify are already named there — prompt injection inside
+> a note delimiter, and an attendee's claim adopted as the sender's — and the ruleset's
+> claim-bearing classifier is a heuristic whose false-negative rate is unmeasured until
+> this session measures it.
 
 Budget more time than feels right. Writing assertions that catch a real violation
 without firing on acceptable output is genuinely fiddly, and you'll rewrite several

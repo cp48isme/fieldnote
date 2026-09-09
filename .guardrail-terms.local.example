@@ -1,0 +1,25 @@
+# Guardrail terms — template
+#
+# Copy this file to `.guardrail-terms.local` and list the site- and product-specific
+# terms the model must never write into a draft: product names, device categories,
+# competitor names, institution names, and any other vocabulary that identifies the
+# manufacturer or the site. One term per line. Blank lines and lines starting with #
+# are ignored. Matching is case-insensitive and word-boundary aware, so `Lantern`
+# catches `lantern` and `Lantern's` but not `Lanterns`; list plurals separately.
+#
+#     cp .guardrail-terms.local.example .guardrail-terms.local
+#
+# `.guardrail-terms.local` is gitignored and MUST STAY THAT WAY. The public ruleset in
+# src/lib/generation/guardrails.ts carries generic terms only, because a committed list
+# of product names would publish what the list exists to keep out of drafts, and
+# hashing them is not a fix. See the header of src/lib/generation/private-terms.ts.
+#
+# The route loads this file once at start-up and blocks any sentence of a draft that
+# contains a listed term, replacing it with the gap marker the public ruleset uses.
+# When the file is absent — every public clone, every CI runner — the rule is inert
+# and the route logs that at start-up. Nothing here is tested in public: the private
+# fork verifies its own list.
+#
+# The two lines below are synthetic placeholders. Replace them.
+Lantern
+Lantern Pro

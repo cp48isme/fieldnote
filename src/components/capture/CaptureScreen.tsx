@@ -45,11 +45,13 @@ import {
   type Id,
   type NoteRecord,
 } from "@/lib/db";
+import { generateDrafts, type BatchResult } from "@/lib/generation/pipeline";
 import { useDebouncedAutosave } from "@/lib/useDebouncedAutosave";
 import { useSessionLifecycle } from "@/lib/useSessionLifecycle";
 
 import { BlockingNotice } from "./BlockingNotice";
 import { CaptureDock } from "./CaptureDock";
+import { DraftList } from "./DraftList";
 import { EventSetup } from "./EventSetup";
 import { EventSwitcher } from "./EventSwitcher";
 import { NoteLog } from "./NoteLog";
@@ -72,6 +74,12 @@ export function CaptureScreen() {
   const [activeNote, setActiveNote] = useState<NoteRecord | null>(null);
   const [attendeeId, setAttendeeId] = useState<Id | null>(null);
   const [body, setBody] = useState("");
+  /**
+   * THROWAWAY, with `DraftList`. Drafts for this event, in memory only, until session 6
+   * persists them beside their audit records and replaces this with the review surface.
+   */
+  const [batch, setBatch] = useState<BatchResult | null>(null);
+  const [drafting, setDrafting] = useState(false);
 
   /**
    * In-flight `createNote`, so two saves racing on a brand-new note cannot each create
@@ -254,6 +262,29 @@ export function CaptureScreen() {
     [event, onAttributionChange],
   );
 
+  /**
+   * Generation, from what is on screen. The flush first is the same discipline as
+   * switching events: a note still sitting in the debounce is a note the batch should see.
+   */
+  const onDraft = useCallback(async () => {
+    if (!event || drafting) return;
+    setDrafting(true);
+    try {
+      await autosave.flush();
+      const [people, captured] = await Promise.all([
+        listAttendees(event.id),
+        listNotes(event.id),
+      ]);
+      setBatch(await generateDrafts({ event, attendees: people, notes: captured }));
+    } finally {
+      setDrafting(false);
+    }
+  }, [autosave, drafting, event]);
+
+  const canDraft = notes.some(
+    (note) => note.attendeeId !== null && note.body.trim() !== "",
+  );
+
   const ready = loaded && session.ready;
 
   if (loadError) {
@@ -296,14 +327,26 @@ export function CaptureScreen() {
             <h1 className="truncate text-base font-semibold">Fieldnote</h1>
           )}
           {event && (
-            <p className="shrink-0 text-xs opacity-60">
-              {/* The event name also lives here as text, so tests and screen readers have
-                  something stable to read that is not the select's own value. */}
-              <span data-testid="event-name-display" className="sr-only">
-                {event.name}
-              </span>
-              {notes.length} note{notes.length === 1 ? "" : "s"}
-            </p>
+            <div className="flex shrink-0 items-center gap-3">
+              <p className="text-xs opacity-60">
+                {/* The event name also lives here as text, so tests and screen readers have
+                    something stable to read that is not the select's own value. */}
+                <span data-testid="event-name-display" className="sr-only">
+                  {event.name}
+                </span>
+                {notes.length} note{notes.length === 1 ? "" : "s"}
+              </p>
+              {/* THROWAWAY: the pipeline's proof, replaced by session 6's review surface. */}
+              <button
+                type="button"
+                data-testid="draft-follow-ups"
+                onClick={() => void onDraft()}
+                disabled={!canDraft || drafting}
+                className="min-h-11 rounded-lg border px-3 text-sm disabled:opacity-40"
+              >
+                {drafting ? "Drafting…" : "Draft follow-ups"}
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -326,6 +369,14 @@ export function CaptureScreen() {
             <RecoveryNotice
               recovered={session.recovered}
               onDismiss={() => void session.dismissRecovery()}
+            />
+          )}
+
+          {batch && event && !startingNewEvent && (
+            <DraftList
+              batch={batch}
+              attendees={attendees}
+              onDismiss={() => setBatch(null)}
             />
           )}
 

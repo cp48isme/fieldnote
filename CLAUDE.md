@@ -82,6 +82,27 @@ pass before merge.
 - The last commit of every session updates `docs/HANDOFF.md`, from
   `docs/HANDOFF-TEMPLATE.md`. Re-read the sources rather than editing the previous
   handoff in place: a handoff written from the last handoff drifts.
+- `CHANGELOG.md` tracks sessions. One short entry per merged session PR, under
+  `[Unreleased]`, written in that PR's last documentation commit alongside the handoff.
+  The changelog is what shipped and stays as written; the handoff is where things stand
+  and is regenerated. A finding, a caveat, or an open question belongs in the handoff or
+  a bead, not the changelog.
+- A finding about the private material — `private/`, `.denylist.local`,
+  `.guardrail-terms.local`, or anything derived from them — is not written down in any
+  location this repository controls until there is a private place to put it. The public
+  artifact says that a finding exists and nothing more; the substance goes to the owner
+  directly. This repository's habit is to document every finding honestly, and that habit
+  works against ADR-0001 in exactly this one category: a description precise enough to be
+  useful is a description of the material. What happened: on 2026-09-09 an agreement was
+  written here sending such findings to beads, on the assumption that beads are internal
+  build state. The assumption was never checked. The beads database was configured to
+  push to this repository's public GitHub URL on every write, under a ref no one looked
+  for, and a term deliberately held out of the public documents had been on GitHub for a
+  day before anyone knew. Three documents described beads as internal; none had verified
+  it. So the rule names no replacement location — inventing one repeats the error — and
+  the corollary is the one the rest of this file already lives by: "internal" is a claim
+  about where data goes, and a claim is verified by looking, not read off a tool's
+  description of itself.
 - Prefer the plainly correct implementation over the clever or convenient one. No inline
   data that belongs in a module, no magic values, no shortcut that would need explaining
   in review. If a task tempts you toward one, say so rather than taking it.
