@@ -1,6 +1,7 @@
 # Handoff
 
-Written 2026-09-09, at `5f84da8` on `main`, from the branch carrying session 5.
+Written 2026-09-09, at `5f84da8` on `main`, from the branch carrying session 5 and its
+review follow-up.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -96,7 +97,7 @@ iPhone, iOS 26.6.1. **#30** split session 5's first gate into what hardware answ
 **#31** fixed the session 5 prompt before it was sent.
 
 **Session 5 — generation route, guardrails, and headers.** The PR carrying this handoff,
-twelve commits on `feat/session-5-generation`. In order:
+fifteen commits on `feat/session-5-generation`. In order:
 
 - The prompt file replaced with the version actually sent, after the session's
   verification pass stopped the first version on four premises the repository could not
@@ -124,6 +125,15 @@ twelve commits on `feat/session-5-generation`. In order:
   proof, with `fieldnote-aev` recording that session 6 deletes it.
 - Guide amendments for sessions 5, 6, and 7; the how-it-went note on the prompt; this
   handoff.
+- **Review follow-up**, three commits. The guardrail ruleset moved to **1.1.0**: an
+  attributed question passes, an attributed assertion does not, and the sender answering
+  in the same sentence blocks. Site- and product-specific terms the model must never write
+  now load at runtime in the route from a gitignored `.guardrail-terms.local` (template
+  committed), so nothing from the private denylist reaches the public ruleset;
+  `fieldnote-quj` records that the two rulesets differ. And a hallucinated roster name in
+  the model's output withholds that one draft under its own outcome, `output-blocked`,
+  instead of riding into the next request and blocking every recipient after it as a
+  tokenizer defect.
 
 Two live calls were made against the model, both accepted by the API: one to the route by
 hand, one through the UI with the request intercepted to show that only tokens crossed.
@@ -133,7 +143,7 @@ hand, one through the UI with the request intercepted to show that only tokens c
 ## Where we are
 
 `main` is at `5f84da8` with a clean working tree; the session 5 branch sits on it with
-twelve commits and no conflicts. Two pull requests are open, both from Dependabot:
+fifteen commits and no conflicts. Two pull requests are open, both from Dependabot:
 **#26**, the minor-and-patch group, and **#27**, `eslint-config-next` 16.3.4 — the same
 major that #3 was closed for and that issue #11 tracks as a migration rather than a
 bump. CI green on the last merge to `main` (`gh run list --branch main`).
@@ -168,9 +178,23 @@ unit tests, and build, and those are real. The caveats matter more than the badg
   it does not claim full coverage because that would be false.
 - **The claim-bearing classifier is a heuristic.** Product noun plus descriptor or a
   comparison, in the sender's voice, blocks the sentence; attribution to the recipient
-  passes it, except for comparisons. It will misclassify in both directions, its
-  false-negative rate is unmeasured, and the review gate reads every draft. Session 9's
-  library matcher replaces it.
+  passes it, and since 1.1.0 so does a comparison inside the recipient's own question,
+  while an attributed assertion and an answer given in the same sentence still block. It
+  will misclassify in both directions, its false-negative rate is unmeasured, and the
+  review gate reads every draft. Session 9's library matcher replaces it.
+- **The public ruleset is generic; the private fork's is not, and the difference is not
+  reviewable here.** Two generic words were removed from the public word lists before
+  the first ruleset was committed because they collide with the local denylist, and they
+  are not named anywhere. Measured cost: a sentence whose only trigger was one of them
+  no longer blocks. The route now loads site- and product-specific terms at runtime from
+  a gitignored file and blocks any sentence carrying one; absent on every public clone
+  and CI runner, and logged as absent at start-up. `fieldnote-quj`.
+- **Two asserted controls run only by hand.** `.github/workflows/ci.yml` does not run
+  `pnpm test:e2e`, so `tests/e2e/headers.spec.ts` (plan §5 non-negotiable 4) and
+  `tests/e2e/offline.spec.ts` (non-negotiable 5) execute only when someone runs them.
+  Whether to add them to the `Verify` job or to record them as hand-verified is the
+  owner's open decision from the session 5 review; until it is made, read a green
+  `Verify` as saying nothing about either.
 - **CI enforces structural denylist patterns only.** The literal-term list lives in
   `.denylist.local`, gitignored by design and absent on a runner. Only the local
   pre-commit hook can catch a real name — and this session it caught two generic English
@@ -211,6 +235,11 @@ Session 6 adds both in one change. The guide's session 5 and 6 entries record th
 `DraftOutcome` in `src/lib/generation/pipeline.ts` already carries `MODEL_ID`,
 `PROMPT_TEMPLATE_VERSION`, `GUARDRAIL_RULESET_VERSION`, and `flagsFired` for it.
 
+**Model output crosses the guard too.** A draft in which the model wrote a name or a role
+it was never given is withheld under `output-blocked`, with an explanation to the
+representative and nothing carried into the next request. `defect` is reserved for input
+the tokenizer failed on, which is unreachable by construction and stays as the invariant.
+
 **Truncation and refusal handling exists and has never fired live.** `MAX_OUTPUT_TOKENS`
 is 4096 — about ten times the longest writing sample, with room for low-effort thinking
 inside the same ceiling — chosen so that reaching it signals a runaway. Both blocks are
@@ -234,8 +263,10 @@ arrive.
 Plan §4.6's `README.md`, `docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`,
 `docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, and `docs/COMPLIANCE-MAP.md` do not
 exist yet. `CHANGELOG.md` has not been touched since Phase 0's documentation commits;
-sessions 2 to 5 did not update it, and whether it is meant to track sessions is
-undecided.
+sessions 2 to 5 did not update it. Nothing in `CLAUDE.md` or the handoff template names
+it as a per-session duty; its own header commits to Keep a Changelog under an
+`[Unreleased]` heading. Whether it tracks sessions is the owner's open decision from the
+session 5 review.
 
 ---
 
@@ -264,13 +295,14 @@ surface is the first thing that would. Check the bead, not this note.
 Three places, deliberately. Do not duplicate between them.
 
 **Beads — internal build state.** Findings, deferred decisions, open questions. 42
-issues: 28 open, 10 closed, 4 deferred, with 16 ready and 12 blocked (`bd stats`). Run
+issues: 29 open, 10 closed, 4 deferred, with 17 ready and 12 blocked (`bd stats`). Run
 `bd ready` for what is actionable and `bd blocked` for what is waiting and on what.
 Session-container beads exist only to hang dependency edges from and are deferred so they
 do not compete with real work. This handoff deliberately does not list them.
 
-Twelve are worth naming because they qualify claims made above. `fieldnote-aev` — the
-throwaway UI, deleted by session 6. `fieldnote-08m` — model-level guardrail behaviour is
+Thirteen are worth naming because they qualify claims made above. `fieldnote-quj` — the
+public and private guardrail rulesets differ, and session 17's compliance map should say
+so. `fieldnote-aev` — the throwaway UI, deleted by session 6. `fieldnote-08m` — model-level guardrail behaviour is
 unverified until session 7's runner exists. `fieldnote-9gp` — SRI does not cover
 client-component chunks. `fieldnote-034` — the eval suite passes against zero cases.
 `fieldnote-dx0` — mangled clinical terms reach the model as fact; the classifier's
@@ -378,7 +410,11 @@ Stated rather than smoothed over.
   failed on a full-suite run and passed three times in isolation. Not investigated
   beyond that; `fieldnote-2o9` already records the spec as Chromium-only.
 - **Two words were removed from the classifier's lists and are not named anywhere.** The
-  denylist hook caught them; the commit says so. A reader cannot tell what the lists lost.
+  denylist hook caught them; the ruleset's version note records what the removal
+  measurably cost, by effect rather than by word. The private fork's term file is where
+  they return.
+- **Two owner decisions are open from the session 5 review**: whether the e2e specs join
+  the `Verify` job, and whether `CHANGELOG.md` tracks sessions. Neither is decided here.
 - **A name with neither a title nor a roster entry is still missed**, and so is a role
   whose head noun is outside the closed list or that is written mid-sentence without a
   determiner. ADR-0006 and ADR-0007 state both.
