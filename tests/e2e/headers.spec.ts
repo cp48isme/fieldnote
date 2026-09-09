@@ -91,12 +91,16 @@ test.describe("security headers", () => {
 
   test("the generation route carries the headers too", async ({ request }) => {
     // A malformed body, so nothing reaches the model and no key is needed. What is under
-    // test is that the route's responses are covered, not what it generates.
+    // test is that the route's responses are covered, not what it generates. The status
+    // depends on the environment: with the key defined the route rejects the body (400);
+    // on a CI runner, where the key is deliberately absent, it refuses before reading the
+    // body and names the variable (500). Both are the route working, and both responses
+    // must carry the headers. The first CI run of this suite found the 500 path.
     const response = await request.post("/api/generate", {
       headers: { "content-type": "application/json" },
       data: "not json",
     });
-    expect(response.status()).toBe(400);
+    expect([400, 500]).toContain(response.status());
     expectStaticHeaders(response);
     expect(response.headers()["content-security-policy"]).toContain("connect-src 'self'");
   });
