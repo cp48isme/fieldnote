@@ -252,3 +252,12 @@ believing a red or a green suite.
 **Live calls made:** two, both against `claude-opus-5`, both accepted — one to the route by
 hand, one through the UI with the request intercepted to show tokens only in the payload.
 The eval workflow still runs the placeholder and still passes against zero cases.
+
+**Review follow-up, same branch, before merge.** Six items from the owner's review, three
+of them code: a hallucinated roster name in the model's output had blocked every recipient
+after it as a tokenizer defect, and now withholds one draft under its own outcome; the
+ruleset moved to 1.1.0 so an attributed question passes while an attributed assertion, the
+laundering case, and an answer given in the same sentence still block; and site-specific
+terms now load at runtime from a gitignored file so nothing from the private denylist is
+ever in the public ruleset. The other three were questions for the owner — e2e in CI, the
+changelog — and a report on what the two removed words cost, by length and position only.
