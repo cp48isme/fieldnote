@@ -75,10 +75,48 @@ describe("claim-bearing", () => {
   });
 
   it("does not let attribution launder a comparison", () => {
-    // "You said" plus "than" is still the sender comparing.
+    // Plan §4.5's laundering case: the recipient's voice carrying the sender's claim.
+    // "You said" is a reporting verb, not a question, so the comparison is the sender's.
     expect(
       isClaimBearing("You said you liked it and it is safer than the alternative."),
     ).toBe(true);
+    expect(isClaimBearing("You said it is faster than what you use today.")).toBe(true);
+  });
+
+  // Ruleset 1.1.0: an attributed question passes, an attributed assertion does not.
+  it("passes the recipient's own question, comparison and all", () => {
+    for (const question of [
+      "You asked whether it is faster than what you use today.",
+      "Your question about whether it would be safer than the current setup is a fair one.",
+      "You were curious whether it would be quicker than your current setup.",
+      "You asked whether it is faster than yours, and I want to give you a proper answer.",
+    ]) {
+      expect(isClaimBearing(question), question).toBe(false);
+      expect(applyGuardrails(question).text, question).toBe(question);
+    }
+  });
+
+  it("blocks a comparison the sender adds after the recipient's question", () => {
+    // The question clause ends at the clause break; what follows is the sender's voice.
+    for (const laundered of [
+      "You asked whether it is faster than yours, and it is.",
+      "You asked whether we could visit and it is safer than the alternative.",
+      "You asked if the room was big enough; it is faster than anything else too.",
+      "You asked whether it would reduce setup time, which it does.",
+    ]) {
+      expect(isClaimBearing(laundered), laundered).toBe(true);
+    }
+  });
+
+  it("is not decorative: 1.0.0 blocked the question, and the assertion still blocks", () => {
+    // The counterfactual for the narrowing: the rule before 1.1.0 was STRONG_CLAIM on the
+    // whole sentence, which blocks the question; the rule now blocks only the assertion.
+    const question = "You asked whether it is faster than what you use today.";
+    const assertion = "You said it is faster than what you use today.";
+    const before = (s: string) => /\bthan\b|\bfaster\b/i.test(s);
+    expect(before(question)).toBe(true);
+    expect(isClaimBearing(question)).toBe(false);
+    expect(isClaimBearing(assertion)).toBe(true);
   });
 
   it("passes gratitude and logistics that happen to name the system", () => {

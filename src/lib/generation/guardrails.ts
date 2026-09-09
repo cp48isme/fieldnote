@@ -17,12 +17,35 @@
  *
  * VERSION NOTES
  *
+ *   1.1.0 — 2026-09-09, session 5 follow-up. An attributed *question* passes the
+ *           claim-bearing rule; an attributed *assertion* does not. "You asked whether it
+ *           is faster than what you use today" is the recipient's own question and is
+ *           relational text under plan §4.2; 1.0.0 blocked it. "You said it is faster" is
+ *           still blocked, and so is "You said you liked it and it is safer than the
+ *           alternative" — the laundering case plan §4.5 names — because the signal is
+ *           the reporting verb and the interrogative framing, not attribution alone. The
+ *           comparison must sit inside the question clause, which ends at the first
+ *           clause break, and the sender must not answer it in the same sentence: "You
+ *           asked whether it is faster, and it is" is blocked, because "it is" after the
+ *           question is the sender's claim wearing the recipient's words. A compound
+ *           question ("whether X and whether Y") is cut at the conjunction and its second
+ *           half is read as the sender's — over-blocking, in the accepted direction.
+ *           Decided by the owner.
+ *
+ *           Also from the follow-up: the word lists below are generic English only, and
+ *           two generic words were removed from them before 1.0.0 was committed because
+ *           they collide with the local denylist. They are not named anywhere. The
+ *           measured cost: a sentence whose only trigger was one of those words no longer
+ *           blocks; any other trigger present, it still does. Site- and product-specific
+ *           terms now load at runtime in the route from a gitignored file — see
+ *           `private-terms.ts` — and that is where those words belong, as outright blocks.
+ *
  *   1.0.0 — 2026-09-09, session 5. First ruleset. Six rules, listed below.
  *
- *           Comparisons and performance words are blocked even when attributed to the
- *           recipient — "you said it is faster than yours" — because a relayed comparison
- *           in the sender's email reads as the sender's endorsement. Other product
- *           language attributed to the recipient passes as relational text.
+ *           Comparisons and performance words were blocked even when attributed to the
+ *           recipient, because a relayed comparison in the sender's email reads as the
+ *           sender's endorsement. Narrowed in 1.1.0, above. Other product language
+ *           attributed to the recipient passes as relational text.
  *
  *           Claim-bearing text is blocked, all of it, because the approved content library
  *           does not exist until session 9 and everything claim-bearing is therefore
@@ -53,7 +76,7 @@ import {
 
 import { GAP_MARKER } from "./prompt";
 
-export const GUARDRAIL_RULESET_VERSION = "1.0.0";
+export const GUARDRAIL_RULESET_VERSION = "1.1.0";
 
 export interface GuardrailRule {
   /** Stable id, recorded in `flagsFired`. */
@@ -88,11 +111,58 @@ const ATTRIBUTED =
   /\b(?:you|your)\b[^.!?]*\b(?:mention\w*|said|asked|rais\w*|not(?:ed|iced)|flag\w*|describ\w*|told|question\w*|concern\w*|feedback|thoughts?|interest\w*|comment\w*|observ\w*|point\w*|wonder\w*|felt|found|liked?|appreciat\w*|reaction|impression|curious|keen|view)\b|\b(?:mention\w*|said|asked|rais\w*|not(?:ed|iced)|flag\w*|describ\w*|told|question\w*|concern\w*|feedback|thoughts?|interest\w*|comment\w*|observ\w*|point\w*|wonder\w*|felt|found|liked?|appreciat\w*|reaction|impression|curious|keen|view)\b[^.!?]*\b(?:you|your)\b/i;
 
 /**
+ * The recipient asking something: "you asked whether", "your question about how". The
+ * verb has to be a question verb — `said`, `mentioned`, `felt` are not — and the
+ * interrogative word has to follow it. Group 1 is the interrogative, which is where the
+ * question clause starts.
+ */
+const ATTRIBUTED_QUESTION =
+  /\b(?:you|your)\b[^.!?]{0,40}?\b(?:ask(?:ed|s|ing)?|wonder(?:ed|s|ing)?|quer(?:y|ied|ies)|question(?:s|ed)?|enquir(?:ed|y|ies)|inquir(?:ed|y|ies)|wanted to know|want to know|curious)\b[^.!?]*?\b(whether|if|how|what|why|when|which|who|where)\b/i;
+
+/**
+ * Where a question clause ends: punctuation or a coordinating conjunction. What follows
+ * is the sender speaking again, and a claim there is the sender's.
+ */
+const CLAUSE_BREAK = /[,;:—]|\s(?:and|but|so|yet)\s/i;
+
+/**
+ * The sender answering the question in the same sentence: "…, and it is", "which it
+ * does", "— they are". An affirmation with no claim word of its own, whose meaning is the
+ * claim inside the question it answers.
+ */
+const ANSWER_IN_PLACE =
+  /\b(?:it|they|this|that|which|these|those)\s+(?:is|are|does|do|did|will|would|can|could|has|have|was|were)\b(?:\s+(?:indeed|certainly|absolutely))?\s*[.!,;]?/i;
+
+/**
+ * The sentence with the recipient's question clause removed, so what is left is what the
+ * sender says in their own voice. Null when there is no attributed question.
+ */
+function withoutAttributedQuestion(sentence: string): string | null {
+  const match = ATTRIBUTED_QUESTION.exec(sentence);
+  if (!match) return null;
+  const clauseStart = match.index + match[0].length;
+  const rest = sentence.slice(clauseStart);
+  const breakAt = CLAUSE_BREAK.exec(rest);
+  const clauseEnd = clauseStart + (breakAt ? breakAt.index : rest.length);
+  return sentence.slice(0, match.index) + sentence.slice(clauseEnd);
+}
+
+/**
  * Plan §4.2, mechanised. Relational text — including what the recipient said about the
  * product, attributed to them — passes. Product language in the sender's voice does not.
+ * A comparison inside the recipient's own question passes; the same comparison in the
+ * sender's voice, or reported as the recipient's assertion, does not.
  */
 export function isClaimBearing(sentence: string): boolean {
-  if (STRONG_CLAIM.test(sentence)) return true;
+  const senderVoice = withoutAttributedQuestion(sentence);
+  if (
+    senderVoice !== null &&
+    STRONG_CLAIM.test(sentence) &&
+    ANSWER_IN_PLACE.test(senderVoice)
+  ) {
+    return true;
+  }
+  if (STRONG_CLAIM.test(senderVoice ?? sentence)) return true;
   return (
     PRODUCT_NOUN.test(sentence) && DESCRIPTOR.test(sentence) && !ATTRIBUTED.test(sentence)
   );
