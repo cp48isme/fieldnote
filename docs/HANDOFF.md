@@ -411,9 +411,13 @@ Stated rather than smoothed over.
 > and the ref deleted from GitHub by the owner. Verified by doing: a bead write after the
 > change produced no `refs/dolt/*` on the remote and did not advance
 > `.beads/push-state.json`, and a commit through the pre-commit hook, which chains
-> `bd hooks run pre-commit`, produced neither either. **The objects remain on GitHub until
-> garbage collection**, which the owner is requesting separately; treat everything below
-> as disclosed until then.
+> `bd hooks run pre-commit`, produced neither either. **The unreachable objects remain on
+> GitHub until GitHub's own garbage collection, and no purge was requested.** That is the
+> owner's decision, not an oversight, and the reasoning is this: the exposure was one
+> term, on a non-branch ref that does not render on GitHub, is not indexed, and is not in
+> any clone or fork; finding it required knowing to look for a non-standard ref; nobody
+> is known to have fetched it, so nobody holds the object SHAs; and the owner judged the
+> residual risk acceptable. Treat what follows as disclosed in that sense.
 >
 > **What the ref carried, from the local database, by id and category only.** 45 beads,
 > created 2026-09-01 to 2026-09-09, with their Dolt history. Searched against the local
@@ -425,7 +429,13 @@ Stated rather than smoothed over.
 > owner can restore it locally; `fieldnote-quj` holds the position-and-length record of
 > the two words removed from the classifier's lists, which names no word; `fieldnote-bdw`
 > holds a non-commercial percentage. No bead holds a denylist term, a real first name, or an
-> unsubstituted run of either private file. **What assumed beads were private and is now
+> unsubstituted run of either private file.
+>
+> **A gap in that inventory, accepted rather than closed.** The search read each bead's
+> current state. The ref carried Dolt's commit history, so anything edited or deleted in
+> a bead between 2026-09-01 and 2026-09-09 was exposed and was not searched;
+> `fieldnote-dx0`'s overwritten 2026-09-08 note is the known instance. The owner judged
+> that acceptable on the same reasoning as the purge decision above. **What assumed beads were private and is now
 > wrong:** the `CLAUDE.md` agreement of the same morning, replaced; the use of
 > `fieldnote-dx0` as a holding place for a held-back term; and this document's own
 > description of beads, corrected above. The threat-model entry this owes is in
