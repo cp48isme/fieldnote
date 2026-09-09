@@ -54,7 +54,7 @@ test.describe("security headers", () => {
     const nonce = /'nonce-([^']+)'/.exec(csp!)?.[1];
     expect(nonce).toBeDefined();
     const html = await response.text();
-    const scriptTags = html.match(/<script\b[^>]*>/g) ?? [];
+    const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
     expect(scriptTags.length).toBeGreaterThan(0);
     const nonced = scriptTags.filter((tag) => tag.includes(`nonce="${nonce}"`));
     expect(nonced.length, "every script tag carries the request's nonce").toBe(
