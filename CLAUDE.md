@@ -82,6 +82,23 @@ pass before merge.
 - The last commit of every session updates `docs/HANDOFF.md`, from
   `docs/HANDOFF-TEMPLATE.md`. Re-read the sources rather than editing the previous
   handoff in place: a handoff written from the last handoff drifts.
+- `CHANGELOG.md` tracks sessions. One short entry per merged session PR, under
+  `[Unreleased]`, written in that PR's last documentation commit alongside the handoff.
+  The changelog is what shipped and stays as written; the handoff is where things stand
+  and is regenerated. A finding, a caveat, or an open question belongs in the handoff or
+  a bead, not the changelog.
+- A finding about the private material — `private/`, `.denylist.local`,
+  `.guardrail-terms.local`, or anything derived from them — is recorded in a bead, not
+  in a commit message, a PR body, an ADR, or any committed document. The public artifact
+  says that a finding exists and points at the bead; the bead carries what it was. This
+  repository's habit is to document every finding honestly, and that habit works against
+  ADR-0001 in exactly this one category: a description precise enough to be useful is a
+  description of the material. The case that produced this rule was the denylist
+  collision in session 5 — a commit message and a prompt note said which public word
+  lists two private terms had been removed from, and a reader who knows the lists learned
+  the category of the terms. Thin, that time. The failure this prevents is the next one
+  being a term, a spelling, or a phrase that identifies the manufacturer to an industry
+  reader, published in the record of having kept it out.
 - Prefer the plainly correct implementation over the clever or convenient one. No inline
   data that belongs in a module, no magic values, no shortcut that would need explaining
   in review. If a task tempts you toward one, say so rather than taking it.

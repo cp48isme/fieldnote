@@ -7,6 +7,30 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 5 — generation route, guardrails, and headers
+
+- Role references at the pseudonymization boundary (ADR-0007): a role on the roster
+  shares the rostered person's token, an unrecognised role is tokenized fail-closed,
+  plurals and indefinite references pass through, and rehydration is per occurrence.
+- A server-side generation route calling `claude-opus-5`: stateless, validated, retried
+  on transient failure, blocked on a second truncation or a refusal, metadata-only
+  logging. The key stays on the server.
+- A versioned prompt template and a versioned guardrail ruleset (1.1.0). Claim-bearing
+  text is blocked and replaced with a visible gap, because the approved content library
+  does not exist yet. Site- and product-specific terms load at runtime from a gitignored
+  file and are never committed.
+- Per-person batching with accumulated openings, on one pseudonymizer instance per batch.
+  Drafts are held in memory only; persistence and audit records land with session 6.
+- Content Security Policy with a per-request nonce and `connect-src 'self'`, Subresource
+  Integrity, and strict static headers, asserted against a live response.
+- A single-egress check over `src/` that fails the build when a second network
+  destination appears, and the end-to-end suite added to CI's `Verify` job.
+- A throwaway generation button and draft list, deleted by session 6.
+
+*Sessions 2 to 4 are owed a backfill entry in their own PR; see the handoff.*
+
+---
+
 Phase 0 — foundation. Scaffolding and governance skeleton. No feature code yet; the
 application does nothing beyond serving the default page.
 
