@@ -97,7 +97,7 @@ iPhone, iOS 26.6.1. **#30** split session 5's first gate into what hardware answ
 **#31** fixed the session 5 prompt before it was sent.
 
 **Session 5 — generation route, guardrails, and headers.** The PR carrying this handoff,
-fifteen commits on `feat/session-5-generation`. In order:
+seventeen commits on `feat/session-5-generation`. In order:
 
 - The prompt file replaced with the version actually sent, after the session's
   verification pass stopped the first version on four premises the repository could not
@@ -143,7 +143,7 @@ hand, one through the UI with the request intercepted to show that only tokens c
 ## Where we are
 
 `main` is at `5f84da8` with a clean working tree; the session 5 branch sits on it with
-fifteen commits and no conflicts. Two pull requests are open, both from Dependabot:
+seventeen commits and no conflicts. Two pull requests are open, both from Dependabot:
 **#26**, the minor-and-patch group, and **#27**, `eslint-config-next` 16.3.4 — the same
 major that #3 was closed for and that issue #11 tracks as a migration rather than a
 bump. CI green on the last merge to `main` (`gh run list --branch main`).
