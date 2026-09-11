@@ -50,6 +50,15 @@ export function canExport(state: DraftState): boolean {
   return canTransition(state, "exported");
 }
 
+/**
+ * Whether the body may still be edited: only while export is still ahead. An exported
+ * draft is the record of what was sent and is read-only; a blocked draft has no body.
+ * Derived from the table, so a new state inherits the right answer.
+ */
+export function canEdit(state: DraftState): boolean {
+  return reachableFrom(state).has("exported");
+}
+
 /** Every state reachable from `start` by following the table, `start` excluded. */
 export function reachableFrom(start: DraftState): Set<DraftState> {
   const seen = new Set<DraftState>();
