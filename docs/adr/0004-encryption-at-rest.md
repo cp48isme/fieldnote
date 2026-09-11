@@ -5,6 +5,10 @@
 - **Deciders:** cp48isme (owner)
 - **Amended:** 2026-09-01 — the full-disk-encryption premise under the threat table
   verified and dated. The decision is unchanged.
+- **Amended:** 2026-09-11 — the retention consequence under *Residual risk* gains a
+  second entry: audit records survive event deletion by design (ADR-0008), so the local
+  store holds hash-only records for events that no longer exist, and session 16's
+  retention policy must say what happens to them. The decision is unchanged.
 
 ## Context
 

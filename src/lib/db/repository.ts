@@ -5,8 +5,8 @@
  * ADR-0004 that is the single rule the encryption work depends on, and it is enforced
  * by `tests/unit/db-boundary.test.ts` rather than by discipline.
  *
- * Two schema decisions were made here rather than read from the plan. Both are recorded
- * in the session report and may deserve an ADR.
+ * Two schema decisions were made here rather than read from the plan. The first is
+ * recorded in the session 2 report; the second is ADR-0008.
  *
  * 1. `Note.attendeeId` is nullable.
  *
@@ -33,7 +33,8 @@
  *
  *    This has a retention consequence ADR-0004 gestures at — the local store does not
  *    shrink to nothing when events are deleted — which session 16's data-protection
- *    assessment should address rather than discover.
+ *    assessment should address rather than discover. ADR-0008 is the record, and it
+ *    states what a record must therefore carry.
  */
 
 import { editDistance } from "@/lib/review/edit-distance";
