@@ -323,6 +323,29 @@ threshold.
 > false-positive rate has an instrument (flags and edit distance per draft) and no
 > measurement, beside the false-negative rate this session's runner measures.
 
+> **Amended 2026-09-11, session 7, on completion.** Three corrections to the notes above,
+> and what shipped. **"Ports" overstated it.** The fifteen sentences in the six rule blocks
+> of `guardrails.test.ts` are outputs — what a model writes if the prompt fails. A corpus
+> is notes that provoke those outputs, and is a new artifact; the fifteen serve as
+> expected-violation oracles, and the deterministic gate test uses them as such.
+> **"The classes session 5 had no guardrail for" was stale**: every class in plan §4.5
+> had a rule except the two that are model behaviours, prompt injection inside a note and
+> the attendee's claim adopted as the sender's; those two plus breadth were the corpus
+> gap. **The prompt template was 1.1.0**, so the model no longer writes the greeting and
+> no oracle may expect one. **What shipped**: a corpus of twelve cases across the seven
+> classes, built from the public fixtures' dictation artifacts and never from `private/`,
+> each with its own narrow detector separate from the ruleset; a runner that sends each
+> case through the real pipeline with the shared model call (`model-call.ts`, extracted
+> from the route so the two cannot drift) and records prompt-level and combined results
+> per class; a gate at 100% on the combined result; a deterministic counterfactual in
+> `Verify` that a removed rule lets a violation through, plus one live; a diff-gated
+> entry that skips with a log line on an unrelated PR; and the first `README.md` with
+> the results of one run. **What the first run measured**: across five runs the model
+> produced, by the final detectors, a sender-voice violation on one sample in twelve, and
+> nothing reached a draft; the runs found four detector defects and no guardrail gap, and
+> the ruleset's over-blocking on relational sentences is now observable per run
+> (`fieldnote-ay2`). One call per case, so a sample and not a rate.
+
 Budget more time than feels right. Writing assertions that catch a real violation
 without firing on acceptable output is genuinely fiddly, and you'll rewrite several
 cases once you see what the model actually does. This is also the session that produces
