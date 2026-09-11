@@ -158,7 +158,10 @@ after export, and on the list beside the flags. Every surface says what it does 
 
 **The privacy boundary is unchanged** from session 5: roster names, a token after a title,
 and role references (ADR-0006, ADR-0007), with the guard on both sides of the model. The
-review spec asserts that the intercepted request carries tokens and no name.
+review spec asserts that the intercepted request carries tokens and no name. Since the
+greeting fix the model is told not to write a salutation and the pipeline composes one
+from the record after rehydration, outside the output hash; the prompt template is at
+1.1.0 and the audit record carries it.
 
 **Schema is at v2** with a migration that, in practice, rewrites nothing: no v1 build ever
 persisted a draft. The upgrade is there because `CLAUDE.md` requires one.
@@ -302,10 +305,13 @@ Stated rather than smoothed over.
   runner. `fieldnote-08m`, `fieldnote-ay2`.
 - **The truncation and refusal paths have never fired against the real API.** Mocked
   SDK only, and now a mocked route in the end-to-end suite.
-- **The greeting is the model's, and it rehydrates without the title.** "Dear
-  Okonjo-Baptiste," rather than "Dear Dr. Okonjo-Baptiste,", per ADR-0007's canonical
-  forms. Plan §4.1 says the greeting is templated from the name field; nothing templates
-  it. A review-gate matter today; worth a line in session 9 or 10.
+- **The greeting is composed from the display name as entered, and that is all the
+  record holds.** Fixed between sessions 6 and 7 (`fieldnote-viw`, prompt template
+  1.1.0): "Dear Dr. Okonjo-Baptiste," from the record, in place of the model's token
+  greeting, which rehydrated to a bare surname. `AttendeeRecord` has no title field; the
+  form is whatever the representative typed. Session 8's roster import is where
+  structured fields would arrive, and the composition takes the record so it can use
+  them then.
 - **The hardware run is one phone, one day, iOS 26.6.1.** Nothing built in sessions 5 or
   6 has been run on hardware. The clipboard write and the CSV download in the review
   surface are the two things most likely to behave differently on iOS.

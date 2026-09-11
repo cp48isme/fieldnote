@@ -4,6 +4,12 @@
 - **Date:** 2026-09-11
 - **Deciders:** cp48isme (owner); the shape of what a record must therefore carry, and
   what is hashed, by the session that implemented it
+- **Amended:** 2026-09-11, later the same day — the greeting line is now composed on the
+  device from the attendee record (`greeting.ts`, prompt template 1.1.0, `fieldnote-viw`)
+  and sits at the head of `generatedBody`. It is outside `outputHash` on purpose: the
+  hash is of what the model produced. The sentence under *What is hashed* about
+  re-pseudonymizing `generatedBody` to reproduce the output pre-image therefore applies
+  to the body below the greeting line. The decision is unchanged.
 
 ## Context
 

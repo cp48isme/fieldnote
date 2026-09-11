@@ -16,6 +16,9 @@
  *   4. applyGuardrails on the pseudonymized draft, so a blocked sentence never carried
  *      a name into a log
  *   5. rehydrate, canonical forms, for display
+ *   6. compose the greeting from the attendee record and prepend it, removing any
+ *      salutation the model wrote despite being told not to (`greeting.ts` says why
+ *      that is neither the model authoring content nor a claim)
  *
  * WHAT THE REPRESENTATIVE SEES WHEN SOMETHING FAILS. Never a stack trace, and never a
  * whole batch lost to one recipient. Each recipient's draft carries its own outcome:
@@ -51,9 +54,10 @@
  *     produced no text.
  *
  * Neither pre-image is stored. The rehydrated `generatedBody` on the draft is what a
- * human reads; re-pseudonymizing it on the device reproduces the output pre-image for
- * an unblocked draft, because rehydration writes canonical forms and the tokenizer is
- * stable on them.
+ * human reads, with the composed greeting line at its head; re-pseudonymizing the rest
+ * of it on the device reproduces the output pre-image for an unblocked draft, because
+ * rehydration writes canonical forms and the tokenizer is stable on them. The greeting
+ * is outside the hash on purpose: the hash is of what the model produced.
  */
 
 import type {
@@ -73,6 +77,7 @@ import {
 
 import { GenerationRequestError, requestDraft as defaultRequestDraft } from "./client";
 import type { GenerateRequest } from "./contract";
+import { composeDraft, greetingFor, isSalutation } from "./greeting";
 import { applyGuardrails, GUARDRAIL_RULESET_VERSION } from "./guardrails";
 import { sha256Hex } from "./hash";
 import { MODEL_ID } from "./model";
@@ -154,8 +159,7 @@ export function openingOf(draft: string): string | null {
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length > 0 && !/^subject:/i.test(l));
-  const greeting = (line: string) => /,$/.test(line) && line.split(/\s+/).length <= 8;
-  const first = lines.find((line) => !greeting(line));
+  const first = lines.find((line) => !isSalutation(line));
   if (!first) return null;
   return first.split(/(?<=[.!?])\s+/)[0] ?? null;
 }
@@ -294,7 +298,9 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
     drafts.push({
       ...base,
       model: response.model,
-      body: pseudonymizer.rehydrate(guarded.text),
+      // The name joins the draft here, on the device, after the model's text is guarded
+      // and rehydrated — the same place every other name is put back.
+      body: composeDraft(pseudonymizer.rehydrate(guarded.text), greetingFor(attendee)),
       blocked: null,
       explanation: null,
       flagsFired,

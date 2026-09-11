@@ -110,10 +110,12 @@ test.describe("review gate", () => {
       "claim-bearing",
     );
     // `toHaveValue`, not `toContainText`: a textarea's text content is not its value. The
-    // greeting is the canonical form ADR-0007 rehydrates a draft with — title removed.
+    // greeting is composed from the record as entered, title included — not the model's
+    // "Dear [token]," rehydrated to a bare surname (fieldnote-viw).
     const editor = page.getByTestId("draft-editor");
     await expect(editor).toHaveValue(/\[approved content required\]/);
-    await expect(editor).toHaveValue(/Dear Okonjo-Baptiste,/);
+    await expect(editor).toHaveValue(/Dear Dr\. Okonjo-Baptiste,/);
+    await expect(editor).not.toHaveValue(/Dear Okonjo-Baptiste,/);
     await expect(page.getByTestId("export-draft")).toBeEnabled();
 
     // Edit: fill the gap the guardrail left.
