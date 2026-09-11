@@ -15,7 +15,7 @@ import type { GenerateRequest, GenerateResponse } from "@/lib/generation/contrac
 import { generateDrafts, openingOf, UNKNOWN_TOKEN_FLAG } from "@/lib/generation/pipeline";
 import { applyGuardrails } from "@/lib/generation/guardrails";
 import { sha256Hex } from "@/lib/generation/hash";
-import { GAP_MARKER } from "@/lib/generation/prompt";
+import { GAP_MARKER, PROMPT_TEMPLATE_VERSION } from "@/lib/generation/prompt";
 import { MODEL_ID } from "@/lib/generation/model";
 import { ROSTER } from "../fixtures/dictation";
 
@@ -157,11 +157,58 @@ describe("per-person batching", () => {
       requestDraft,
     });
     expect(drafts[0]!.body).toContain("Dear Tomas Piper,");
+    // The model wrote "Dear [STAFF_1]," and the pipeline replaced it with the composed
+    // greeting: one greeting, the record's, and not the rehydrated token's.
+    expect(drafts[0]!.body.match(/^Dear\b.*$/gm)).toEqual(["Dear Tomas Piper,"]);
     expect(drafts[0]!.body).not.toMatch(/\[STAFF_\d+\]/);
     expect(drafts[0]!.blocked).toBeNull();
     expect(drafts[0]!.model).toBe(MODEL_ID);
-    expect(drafts[0]!.promptTemplateVersion).toBe("1.0.0");
+    expect(drafts[0]!.promptTemplateVersion).toBe(PROMPT_TEMPLATE_VERSION);
     expect(drafts[0]!.guardrailRulesetVersion).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+});
+
+describe("the composed greeting", () => {
+  it("uses the display name as entered, title included, where the model would have used a token", async () => {
+    // fieldnote-viw: under prompt 1.0.0 this opened "Dear Okonjo-Baptiste," — canonical
+    // form, no title — and the representative's first edit on every draft was the same.
+    const { requestDraft } = answering(email);
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-1", "Keen on a live case.")],
+      requestDraft,
+    });
+    expect(drafts[0]!.body).toContain("Dear Dr. Amara Okonjo-Baptiste,");
+    expect(drafts[0]!.body).not.toContain("Dear Okonjo-Baptiste,");
+  });
+
+  it("adds exactly one greeting when the model, as instructed, writes none", async () => {
+    const { requestDraft } = answering(
+      () =>
+        "Subject: Thank you\n\nThank you for your time on the truck.\n\nKind regards,",
+    );
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-5", "Keen.")],
+      requestDraft,
+    });
+    expect(drafts[0]!.body.match(/^Dear\b.*$/gm)).toEqual(["Dear Tomas Piper,"]);
+    expect(drafts[0]!.body).toBe(
+      "Subject: Thank you\n\nDear Tomas Piper,\n\nThank you for your time on the truck.\n\nKind regards,",
+    );
+  });
+
+  it("keeps the greeting outside the output hash: the hash is of what the model wrote", async () => {
+    const { requestDraft, requests } = answering(email);
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-5", "Keen.")],
+      requestDraft,
+    });
+    expect(drafts[0]!.outputHash).toBe(await sha256Hex(email(requests[0]!)));
   });
 });
 
