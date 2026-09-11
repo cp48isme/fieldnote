@@ -261,6 +261,16 @@ state, and the audit log exports to CSV.
 > session with the representative, blocks anything that builds on the capture layout, and
 > the review surface is the first thing that does.
 
+> **Amended 2026-09-11, between sessions 5 and 6.** The gate 1b check above is met and
+> no longer blocks. The representative was observed using the capture surface and
+> confirmed the layout; the owner's note is on `fieldnote-xjs`, closed. The review surface
+> can build on the capture layout as it stands. What it should read before it is designed
+> is `fieldnote-g7d`, the pre-meeting briefing package she reached for and did not find,
+> so that the path is designed against rather than rediscovered. One more item belongs to
+> this session: `fieldnote-x9p`, an ADR recording that deleting an event spares its audit
+> records. It has been open since session 2 as a source comment, and this is the session
+> that builds the audit log.
+
 ### Session 7 — Eval suite
 *~4 hours, and this one runs long*
 

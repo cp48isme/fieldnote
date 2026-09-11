@@ -63,11 +63,13 @@ test.describe("security headers", () => {
 
     // Subresource Integrity. What Next's `experimental.sri` covers, stated exactly: the
     // framework entry scripts and the polyfill carry `integrity`; the client-component
-    // chunks React preloads from the RSC manifest (`crossorigin=""`, no `integrity`) do
-    // not, under Turbopack or webpack — verified by building with both. The gap is
-    // `fieldnote-9gp`. What is asserted is that SRI is on,
-    // that it covers every script Next emits directly, and that every uncovered script is
-    // a same-origin chunk rather than anything external.
+    // chunks React preloads from the RSC manifest do not, under Turbopack or webpack —
+    // verified by building with both. The gap is `fieldnote-9gp`. What is asserted is
+    // that SRI is on, that it covers every script Next emits directly, and that every
+    // uncovered script is a same-origin chunk rather than anything external. Only the
+    // `src` is matched: Next 16.3.2 emitted `crossorigin=""` on the preloaded chunks and
+    // 16.3.4 does not, and the attribute shape is Next's to change. The nonce on every
+    // script is asserted above.
     const external = scriptTags.filter((tag) => /\bsrc=/.test(tag));
     expect(external.length).toBeGreaterThan(0);
     const withIntegrity = external.filter((tag) =>
@@ -79,7 +81,7 @@ test.describe("security headers", () => {
       expect(
         tag,
         "an uncovered script is a preloaded client chunk on this origin",
-      ).toMatch(/src="\/_next\/static\/chunks\/[^"]+" async="" crossorigin=""/);
+      ).toMatch(/\bsrc="\/_next\/static\/chunks\/[^"]+"/);
     }
   });
 
