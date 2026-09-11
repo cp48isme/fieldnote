@@ -18,7 +18,7 @@ the artifact.
 | [0005](0005-dictation-input.md) | Device dictation only; no audio capture, storage, or transcription | Accepted, amended 2026-09-01 | 2026-09-01 |
 | [0006](0006-structural-name-detection.md) | Structural name detection at the pseudonymization boundary | Accepted, amended 2026-09-09 | 2026-09-02 |
 | [0007](0007-role-references.md) | Role references at the pseudonymization boundary | Accepted | 2026-09-09 |
-| [0008](0008-audit-records-survive-event-deletion.md) | Audit records survive event deletion | Accepted | 2026-09-11 |
+| [0008](0008-audit-records-survive-event-deletion.md) | Audit records survive event deletion | Accepted, amended 2026-09-11 | 2026-09-11 |
 
 ## What each one settles
 

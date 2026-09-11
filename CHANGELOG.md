@@ -7,6 +7,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Between sessions 6 and 7
+
+- The greeting is composed on the device from the attendee record as entered, title
+  included, and prepended to the draft in place of anything the model wrote; the model
+  is told not to write one (prompt template 1.1.0). Every draft had opened with a bare
+  surname, because the model addressed a token and rehydration carries no title, and
+  with edit distance now measured the first edit on every draft would have been the same
+  one.
+
 ### Session 6 — audit log and review gate
 
 - Drafts persist beside their audit records in one transaction, through the only write
