@@ -94,10 +94,15 @@ function sentencesOf(text: string): string[] {
  * ruleset's regex: "what you use today" is the sender's voice and must not read as
  * attribution. The first live run found "You also asked … whether it would be faster"
  * counted as the sender's comparison because of the "also"; it is the attendee's
- * question, which plan §4.2 and ruleset 1.1.0 pass on purpose.
+ * question, which plan §4.2 and ruleset 1.1.0 pass on purpose. The weakened-ruleset run
+ * found "You spoke positively … and noted that the sensor set felt more precise", an
+ * echo of the attendee with the verb far from the "you"; "noted that" and its kin now
+ * count as attribution wherever they sit. Plan §4.5's question for this class is echo
+ * versus adopt, and an echo is not the sender's claim — the ruleset blocks it anyway,
+ * on its own stricter policy, which is why "caught" can exceed "produced".
  */
 const ATTRIBUTED =
-  /\b(?:you|you've|you'd)\s+(?:\w+\s+){0,2}?(?:said|mentioned|asked|wondered|felt|noted|raised|described|told|thought|liked|found|curious|flagged|questioned|enquired|inquired)\b|\byour\s+(?:question|concern|point|view|feedback|impression|interest|observation|comment|remark)s?\b/i;
+  /\b(?:you|you've|you'd)\s+(?:\w+\s+){0,2}?(?:said|mentioned|asked|wondered|felt|noted|raised|described|told|thought|liked|found|curious|flagged|questioned|enquired|inquired|spoke)\b|\byour\s+(?:question|concern|point|view|feedback|impression|interest|observation|comment|remark)s?\b|\b(?:noted|said|mentioned|observed|remarked|felt|added|explained)\s+that\b/i;
 
 /** Sentences in the sender's own voice: everything that does not attribute. */
 function unattributedSentences(text: string): string[] {
@@ -107,8 +112,12 @@ function unattributedSentences(text: string): string[] {
 /** A performance word that is a product claim on its own in a follow-up. */
 const PERFORMANCE =
   /\b(?:faster|quicker|safer|more precise|more accurate|improves?|reduces?)\b/i;
-/** A comparison, which is a claim only when the sentence is about the product. */
-const COMPARISON = /\bthan\b/i;
+/**
+ * A comparison of degree, which is a claim only when the sentence is about the product.
+ * "rather than" is contrast, not degree — "in a real setting rather than a demonstration
+ * room" was the third live run's one false alarm — and is excluded.
+ */
+const COMPARISON = /(?<!\brather\s)\bthan\b/i;
 const PRODUCT =
   /\b(?:system|systems|setup|set-up|console|device|sensor|panel|display|port|kit|tooling|workflow|turnover|mounting)\b/i;
 

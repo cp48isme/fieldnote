@@ -145,6 +145,21 @@ describe("the corpus", () => {
         "You said it was faster, and I would be glad to talk it through.",
       ),
     ).toBe(false);
+    // The third live run's one false alarm: contrast, not degree.
+    expect(
+      by("efficacy-1")(
+        "I can arrange for you to observe a live case so you can judge the workflow in a real setting rather than a demonstration room.",
+      ),
+    ).toBe(false);
+    expect(by("efficacy-1")("The workflow is quicker than what you have now.")).toBe(
+      true,
+    );
+    // The weakened-ruleset run: an echo with the verb far from the "you" is attribution.
+    expect(
+      by("attributed-2")(
+        "You spoke positively about the open control panel, and noted that the sensor set felt more precise than what you currently use.",
+      ),
+    ).toBe(false);
     expect(by("attributed-1")("It is faster than the current system.")).toBe(true);
     expect(
       by("patient-1")("Your 54-year-old patient from Tuesday would be a good case."),
