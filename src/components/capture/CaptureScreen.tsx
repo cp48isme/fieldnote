@@ -24,6 +24,13 @@
  * knows whose it is (`NoteRecord.attendeeId` is nullable for that reason), so the dock's
  * selection is held here and applied at creation, or written through `attributeNote` when
  * the note already exists.
+ *
+ * **The review surface is a second view on the same layout, not a second screen.** The
+ * header toggles between the notes (log above, dock below — the layout the
+ * representative validated) and the follow-ups for the same event. Generation persists
+ * every outcome as a draft beside its audit record in one write, per CLAUDE.md's
+ * no-silent-generations agreement; opening a draft is what marks it reviewed; and export
+ * copies to the clipboard and records that it did. Nothing here sends anything.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,27 +38,38 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   attributeNote,
   createAttendee,
+  createDraftWithAudit,
   createEvent,
   createNote,
+  exportDraft,
   getActiveEventId,
+  getAuditRecordForDraft,
   listAttendees,
+  listAuditRecords,
+  listDrafts,
   listEvents,
   listNotes,
+  markReviewed,
   recordTouchedNote,
+  saveDraftBody,
   saveNoteBody,
   setActiveEventId,
   type AttendeeRecord,
+  type AuditRecordRecord,
+  type DraftRecord,
   type EventRecord,
   type Id,
   type NoteRecord,
 } from "@/lib/db";
-import { generateDrafts, type BatchResult } from "@/lib/generation/pipeline";
+import { generateDrafts } from "@/lib/generation/pipeline";
+import { auditLogToCsv } from "@/lib/review/audit-csv";
 import { useDebouncedAutosave } from "@/lib/useDebouncedAutosave";
 import { useSessionLifecycle } from "@/lib/useSessionLifecycle";
 
+import { DraftDetail } from "../review/DraftDetail";
+import { FollowUps } from "../review/FollowUps";
 import { BlockingNotice } from "./BlockingNotice";
 import { CaptureDock } from "./CaptureDock";
-import { DraftList } from "./DraftList";
 import { EventSetup } from "./EventSetup";
 import { EventSwitcher } from "./EventSwitcher";
 import { NoteLog } from "./NoteLog";
@@ -74,12 +92,19 @@ export function CaptureScreen() {
   const [activeNote, setActiveNote] = useState<NoteRecord | null>(null);
   const [attendeeId, setAttendeeId] = useState<Id | null>(null);
   const [body, setBody] = useState("");
-  /**
-   * THROWAWAY, with `DraftList`. Drafts for this event, in memory only, until session 6
-   * persists them beside their audit records and replaces this with the review surface.
-   */
-  const [batch, setBatch] = useState<BatchResult | null>(null);
+
+  /** Which of the two views on this event is showing. */
+  const [view, setView] = useState<"capture" | "review">("capture");
+  /** Newest first, as `listDrafts` returns them. */
+  const [drafts, setDrafts] = useState<DraftRecord[]>([]);
+  /** Edit distance by draft id, for the drafts that have been exported. */
+  const [distances, setDistances] = useState<Map<Id, number>>(new Map());
   const [drafting, setDrafting] = useState(false);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
+  /** The draft open in the detail view, with its audit record, and the body being edited. */
+  const [openDraft, setOpenDraft] = useState<DraftRecord | null>(null);
+  const [openAudit, setOpenAudit] = useState<AuditRecordRecord | null>(null);
+  const [draftBody, setDraftBody] = useState("");
 
   /**
    * In-flight `createNote`, so two saves racing on a brand-new note cannot each create
@@ -89,6 +114,22 @@ export function CaptureScreen() {
 
   const refreshNotes = useCallback(async (eventId: Id) => {
     setNotes(await listNotes(eventId));
+  }, []);
+
+  /**
+   * The drafts for this event and, for the exported ones, their edit distances. One read
+   * of the audit log rather than one per draft; the log is small and the read is local.
+   */
+  const refreshDrafts = useCallback(async (eventId: Id) => {
+    const [list, records] = await Promise.all([listDrafts(eventId), listAuditRecords()]);
+    const measured = new Map<Id, number>();
+    for (const record of records) {
+      if (record.eventId === eventId && record.editDistance !== null) {
+        measured.set(record.draftId, record.editDistance);
+      }
+    }
+    setDrafts(list);
+    setDistances(measured);
   }, []);
 
   /**
@@ -114,10 +155,21 @@ export function CaptureScreen() {
     await refreshNotes(event.id);
   });
 
+  /**
+   * Edits to an open draft, saved the same way notes are. The repository refuses the write
+   * once the draft is exported or if it is blocked, and neither is reachable from the
+   * editor, which is read-only after export and absent for a blocked draft.
+   */
+  const draftAutosave = useDebouncedAutosave<string>(async (value) => {
+    if (!openDraft) return;
+    await saveDraftBody(openDraft.id, value);
+  });
+
   const session = useSessionLifecycle(
     useCallback(() => {
       void autosave.flush();
-    }, [autosave]),
+      void draftAutosave.flush();
+    }, [autosave, draftAutosave]),
   );
 
   /**
@@ -126,22 +178,29 @@ export function CaptureScreen() {
    * state — the restore-the-most-recent-note behaviour is a property of opening an event,
    * not something the load path does specially.
    */
-  const openEvent = useCallback(async (target: EventRecord) => {
-    const [people, captured] = await Promise.all([
-      listAttendees(target.id),
-      listNotes(target.id),
-    ]);
+  const openEvent = useCallback(
+    async (target: EventRecord) => {
+      const [people, captured] = await Promise.all([
+        listAttendees(target.id),
+        listNotes(target.id),
+        refreshDrafts(target.id),
+      ]);
 
-    setEvent(target);
-    setAttendees(people);
-    setNotes(captured);
+      setEvent(target);
+      setAttendees(people);
+      setNotes(captured);
+      setOpenDraft(null);
+      setOpenAudit(null);
+      setDraftNotice(null);
 
-    const open = captured[captured.length - 1] ?? null;
-    setActiveNote(open);
-    setBody(open?.body ?? "");
-    setAttendeeId(open?.attendeeId ?? null);
-    setStartingNewEvent(false);
-  }, []);
+      const open = captured[captured.length - 1] ?? null;
+      setActiveNote(open);
+      setBody(open?.body ?? "");
+      setAttendeeId(open?.attendeeId ?? null);
+      setStartingNewEvent(false);
+    },
+    [refreshDrafts],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -263,8 +322,10 @@ export function CaptureScreen() {
   );
 
   /**
-   * Generation, from what is on screen. The flush first is the same discipline as
-   * switching events: a note still sitting in the debounce is a note the batch should see.
+   * Generation, from what is on screen, persisted as it lands. The flush first is the same
+   * discipline as switching events: a note still sitting in the debounce is a note the
+   * batch should see. Every outcome — drafted or withheld — becomes a draft beside its
+   * audit record in one write; a withheld one persists with its reason and no body.
    */
   const onDraft = useCallback(async () => {
     if (!event || drafting) return;
@@ -275,11 +336,115 @@ export function CaptureScreen() {
         listAttendees(event.id),
         listNotes(event.id),
       ]);
-      setBatch(await generateDrafts({ event, attendees: people, notes: captured }));
+      const batch = await generateDrafts({ event, attendees: people, notes: captured });
+      for (const outcome of batch.drafts) {
+        await createDraftWithAudit({
+          eventId: event.id,
+          attendeeId: outcome.attendeeId,
+          body: outcome.body,
+          blocked: outcome.blocked,
+          flagsFired: outcome.flagsFired,
+          model: outcome.model,
+          promptTemplateVersion: outcome.promptTemplateVersion,
+          guardrailRulesetVersion: outcome.guardrailRulesetVersion,
+          inputHash: outcome.inputHash,
+          outputHash: outcome.outputHash,
+        });
+      }
+      const count = batch.drafts.length;
+      const skipped = batch.unattributedNotes;
+      setDraftNotice(
+        `${count} draft${count === 1 ? "" : "s"} written.` +
+          (skipped > 0
+            ? ` ${skipped} note${skipped === 1 ? "" : "s"} not yet attributed to anyone ${skipped === 1 ? "was" : "were"} left out.`
+            : ""),
+      );
+      await refreshDrafts(event.id);
+      setView("review");
+    } catch (cause) {
+      // A write that fails becomes something the user can see, not an unhandled rejection.
+      setLoadError(cause instanceof Error ? cause : new Error(String(cause)));
     } finally {
       setDrafting(false);
     }
-  }, [autosave, drafting, event]);
+  }, [autosave, drafting, event, refreshDrafts]);
+
+  /**
+   * Opening a draft is the act that marks it reviewed (plan §4.3). A `generated` draft
+   * moves to `reviewed` here and nowhere else; any other state is opened as it is. A
+   * blocked draft opens to its explanation and cannot move, because its state has no
+   * outgoing transition.
+   */
+  const onOpenDraft = useCallback(async (draft: DraftRecord) => {
+    const opened =
+      draft.state === "generated"
+        ? await markReviewed(draft.id)
+        : { draft, audit: (await getAuditRecordForDraft(draft.id)) ?? null };
+    setOpenDraft(opened.draft);
+    setOpenAudit(opened.audit);
+    setDraftBody(opened.draft.body);
+  }, []);
+
+  const onDraftBodyChange = useCallback(
+    (value: string) => {
+      setDraftBody(value);
+      draftAutosave.schedule(value);
+    },
+    [draftAutosave],
+  );
+
+  const closeDraft = useCallback(async () => {
+    await draftAutosave.flush();
+    setOpenDraft(null);
+    setOpenAudit(null);
+    if (event) await refreshDrafts(event.id);
+  }, [draftAutosave, event, refreshDrafts]);
+
+  /**
+   * Export: copy, then record. The clipboard write comes first because an export the
+   * clipboard refused did not happen; the record is written only once the text is there.
+   * If the record then fails, the error is shown and the draft stays `reviewed` — the
+   * next attempt copies again and records.
+   */
+  const onExport = useCallback(async () => {
+    if (!openDraft || !event) return;
+    await draftAutosave.flush();
+    await navigator.clipboard.writeText(draftBody);
+    const result = await exportDraft(openDraft.id, draftBody);
+    setOpenDraft(result.draft);
+    setOpenAudit(result.audit);
+    await refreshDrafts(event.id);
+  }, [draftAutosave, draftBody, event, openDraft, refreshDrafts]);
+
+  const onCopyAgain = useCallback(async () => {
+    await navigator.clipboard.writeText(draftBody);
+  }, [draftBody]);
+
+  /**
+   * The audit log, every record on this device, as a file. Ids and hashes only; see
+   * `audit-csv.ts`. Built in memory and handed to the browser as a download, which is
+   * the one way a file leaves this app, and it leaves to the user's own filesystem.
+   */
+  const onExportAuditLog = useCallback(async () => {
+    const [records, all] = await Promise.all([listAuditRecords(), listEvents()]);
+    const csv = auditLogToCsv(records, new Set(all.map((candidate) => candidate.id)));
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `fieldnote-audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const toggleView = useCallback(async () => {
+    if (view === "review") {
+      await closeDraft();
+      setView("capture");
+    } else {
+      await autosave.flush();
+      setView("review");
+    }
+  }, [autosave, closeDraft, view]);
 
   const canDraft = notes.some(
     (note) => note.attendeeId !== null && note.body.trim() !== "",
@@ -336,15 +501,14 @@ export function CaptureScreen() {
                 </span>
                 {notes.length} note{notes.length === 1 ? "" : "s"}
               </p>
-              {/* THROWAWAY: the pipeline's proof, replaced by session 6's review surface. */}
               <button
                 type="button"
-                data-testid="draft-follow-ups"
-                onClick={() => void onDraft()}
-                disabled={!canDraft || drafting}
-                className="min-h-11 rounded-lg border px-3 text-sm disabled:opacity-40"
+                data-testid="toggle-view"
+                data-view={view}
+                onClick={() => void toggleView()}
+                className="min-h-11 rounded-lg border px-3 text-sm"
               >
-                {drafting ? "Drafting…" : "Draft follow-ups"}
+                {view === "capture" ? `Follow-ups (${drafts.length})` : "Notes"}
               </button>
             </div>
           )}
@@ -372,14 +536,6 @@ export function CaptureScreen() {
             />
           )}
 
-          {batch && event && !startingNewEvent && (
-            <DraftList
-              batch={batch}
-              attendees={attendees}
-              onDismiss={() => setBatch(null)}
-            />
-          )}
-
           {(!event || startingNewEvent) && (
             <EventSetup
               onCreate={(name) => void onCreateEvent(name)}
@@ -387,7 +543,7 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && !startingNewEvent && (
+          {event && !startingNewEvent && view === "capture" && (
             <NoteLog
               notes={[...notes].reverse()}
               attendees={attendees}
@@ -395,10 +551,41 @@ export function CaptureScreen() {
               onOpenNote={(note) => void moveTo(note)}
             />
           )}
+
+          {event && !startingNewEvent && view === "review" && !openDraft && (
+            <FollowUps
+              drafts={drafts}
+              attendees={attendees}
+              distances={distances}
+              canDraft={canDraft}
+              drafting={drafting}
+              notice={draftNotice}
+              onDraft={() => void onDraft()}
+              onOpen={(draft) => void onOpenDraft(draft)}
+              onExportAuditLog={() => void onExportAuditLog()}
+            />
+          )}
+
+          {event && !startingNewEvent && view === "review" && openDraft && (
+            <DraftDetail
+              draft={openDraft}
+              audit={openAudit}
+              recipientName={
+                attendees.find((a) => a.id === openDraft.attendeeId)?.displayName ??
+                "Unknown recipient"
+              }
+              body={draftBody}
+              onBodyChange={onDraftBodyChange}
+              saveState={draftAutosave.state}
+              onBack={() => void closeDraft()}
+              onExport={onExport}
+              onCopyAgain={onCopyAgain}
+            />
+          )}
         </div>
       </div>
 
-      {event && !startingNewEvent && (
+      {event && !startingNewEvent && view === "capture" && (
         <CaptureDock
           body={body}
           onBodyChange={onBodyChange}

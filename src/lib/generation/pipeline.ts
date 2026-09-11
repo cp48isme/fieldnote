@@ -131,6 +131,14 @@ const BLOCK_EXPLANATIONS: Record<BlockReason, string> = {
     "The model wrote a name or a role that was not in the notes, so the draft is withheld rather than shown. Nothing was sent. Try again; if it repeats, the notes may contain a name the tokenizer did not recognise.",
 };
 
+/**
+ * The sentence the representative reads for a withheld draft. Derived from the reason
+ * rather than stored with the draft, so the wording can improve without a migration.
+ */
+export function explanationFor(reason: BlockReason): string {
+  return BLOCK_EXPLANATIONS[reason];
+}
+
 function kindOf(token: string): TokenKind {
   const kind = token.slice(1, token.indexOf("_"));
   return kind as TokenKind;
