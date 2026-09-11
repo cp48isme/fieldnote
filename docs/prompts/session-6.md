@@ -261,3 +261,50 @@ why. (4) What counts as "opened" for the review transition. (5) What you built, 
 file. (6) Where you were tempted toward a shortcut and what you did instead. (7) Beads
 created or closed; the ADR; the guide amendments. (8) Flags last, including anything in
 the plan, guide, handoff, or this prompt that turned out to be wrong.
+
+---
+
+## How it actually went, for whoever reuses this
+
+**The verification pass was done before the prompt was sent, and it still found things
+during the session.** The prompt above had already been checked against the repository
+and carried three corrections; none of those needed re-correcting. What the session found
+that the check had not:
+
+- **`toContainText` does not read a textarea's value.** The first end-to-end run failed
+  on an assertion that looked right. `toHaveValue` is the one. Twenty minutes, not a
+  finding about the product.
+- **The greeting rehydrates without the title.** ADR-0007 says a draft is rehydrated
+  with canonical forms — a rostered name with titles removed — and the spec had assumed
+  "Dear Dr. Okonjo-Baptiste,". It is "Dear Okonjo-Baptiste,". Plan §4.1 says the
+  greeting is templated from the name field, which is not built; the model writes it.
+  Not wrong, and the review gate exists for it, but a reader of the draft will notice.
+  Worth a line in session 9 or 10.
+- **`git rm` stages.** The throwaway's deletion was staged by `git rm` before a `git add`
+  of two other files, and rode into the wrong commit. Caught on `git status` before push;
+  the commit was undone and redone. The working agreement about staging explicit paths
+  is about `git add`; `git rm` has the same shape.
+
+**Decisions made in the session rather than read:**
+
+- **`generatedBody` was added**, as the prompt recommended, and no owner decision was
+  needed because the alternative — computing distance on every edit — makes the number
+  depend on edit history rather than on what was exported. Stated in the schema.
+- **`explanation` is not persisted.** Derived from the reason through a function the
+  pipeline now exports.
+- **"Opened" is tapping into the detail view.** The list is buttons; a row rendering is
+  not review; the detail view is the only place that can export. `markReviewed` is called
+  from exactly one handler.
+- **After export the body is read-only and can be copied again without a new record.**
+  A second copy of the same text is not a second export.
+- **The CSV holds no event name.** Event names are encryption-eligible (they identify a
+  site) and the log is ids and hashes only. `eventStatus` is the orphan column.
+- **The tests use an in-memory fake of the Dexie surface**, not `fake-indexeddb`, for the
+  reason `session-lifecycle.test.ts` already gave. The tempting shortcut was the
+  dependency; the storage path is covered by the end-to-end spec in a real browser.
+- **A `next` security bump landed first**, as its own PR (#36), because the prompt's
+  ordering said so and because the Dependabot PR's own run had failed on the headers
+  spec. Playwright 1.63 in the same group needed a new Chromium binary locally.
+
+**What the handoff regeneration changed structurally** is stated in the handoff itself,
+under *Known gaps*.

@@ -271,6 +271,27 @@ state, and the audit log exports to CSV.
 > records. It has been open since session 2 as a source comment, and this is the session
 > that builds the audit log.
 
+> **Amended 2026-09-11, session 6, on completion.** What shipped, and two corrections to
+> the notes above. **"The versions are ready" was true for what it named and silent on the
+> rest**: `model`, the two versions, and `flagsFired` were on the audit schema and in
+> `DraftOutcome`, but `inputHash`, `outputHash`, `editDistance`, and `humanEdited` had no
+> producer, and the draft record carried neither flags nor a blocked reason. Schema v2
+> adds `generatedBody` (write-once, so edit distance has a pre-image the audit record
+> deliberately does not hold), `flagsFired`, and `blocked` to the draft, and the blocked
+> reason, the two review-gate timestamps, and nullable hashes and human-edited fields to
+> the audit record. **The pipeline computes both hashes**, because it is the only place the
+> pre-images exist: the request as sent, and the guarded text before rehydration
+> (ADR-0008 says why). **"Immutable" is defined**: written once with its draft in the same
+> transaction, never deleted, touched exactly twice by the two transitions. **Opened means
+> opened**: tapping a draft into the detail view is the act that marks it reviewed; the
+> list cannot export. **The dashboard is deferred** by the owner's decision; the number is
+> captured and shown plainly with its caveat, and `fieldnote-5iv` records what a dashboard
+> would need. **Blocked drafts persist** as a fourth state with no outgoing transition,
+> and the test walks the graph. **The over-blocking instrument** is flags and distance per
+> draft, side by side across the event and in the CSV, with no score and no threshold;
+> `fieldnote-ay2` records that the rate is unmeasured. The throwaway UI is gone
+> (`fieldnote-aev` closed) and ADR-0008 is written (`fieldnote-x9p` closed).
+
 ### Session 7 — Eval suite
 *~4 hours, and this one runs long*
 
@@ -292,6 +313,15 @@ threshold.
 > a note delimiter, and an attendee's claim adopted as the sender's — and the ruleset's
 > claim-bearing classifier is a heuristic whose false-negative rate is unmeasured until
 > this session measures it.
+
+> **Amended 2026-09-11, session 6.** Session 6's adversarial cases are not corpus cases and
+> this session does not port them. They assert invariants of the data-access layer and the
+> state machine — no draft without its record, export impossible from `generated`, nothing
+> out of `blocked`, the cascade sparing audit records — in `tests/unit/repository-drafts.test.ts`
+> and `tests/unit/draft-state.test.ts`, and they stay there. What this session inherits from
+> session 6 is the other direction of the measurement: `fieldnote-ay2` records that the
+> false-positive rate has an instrument (flags and edit distance per draft) and no
+> measurement, beside the false-negative rate this session's runner measures.
 
 Budget more time than feels right. Writing assertions that catch a real violation
 without firing on acceptable output is genuinely fiddly, and you'll rewrite several
