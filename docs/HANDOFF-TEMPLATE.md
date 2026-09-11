@@ -72,9 +72,17 @@ when" verbatim enough to be useful — then send the reader to
 
 *Three places, and the boundary between them is a working agreement in `CLAUDE.md`.*
 
-*Beads — internal build state: findings, deferred decisions, open questions. Give the
-commands (`bd ready`, `bd blocked`) and describe the shape of the backlog. **Do not list
-the beads.***
+*Beads — build state: findings, deferred decisions, open questions. Give the commands
+(`bd ready`, `bd blocked`) and describe the shape of the backlog. **Do not list the
+backlog.** A bead that qualifies a claim made elsewhere in the handoff may be named by id
+with a one-line hook, because that is a pointer; a bead named for any other reason is a
+copy of the tracker.*
+
+*Beads are not private by description. Until 2026-09-09 the database pushed to this
+repository's public remote on every write, and three documents including this one called
+it internal without anyone checking. State where the beads data goes as something
+verified in the session that writes the handoff, and never send a finding about the
+private material there — see the working agreement in `CLAUDE.md`.*
 
 *GitHub issues — public record: anything a public reader should see. Name the open ones
 and any non-obvious reason one is stuck.*
