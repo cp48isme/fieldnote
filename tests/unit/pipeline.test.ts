@@ -13,6 +13,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { EventRecord, NoteRecord } from "@/lib/db";
 import type { GenerateRequest, GenerateResponse } from "@/lib/generation/contract";
 import { generateDrafts, openingOf, UNKNOWN_TOKEN_FLAG } from "@/lib/generation/pipeline";
+import { applyGuardrails } from "@/lib/generation/guardrails";
+import { sha256Hex } from "@/lib/generation/hash";
 import { GAP_MARKER } from "@/lib/generation/prompt";
 import { MODEL_ID } from "@/lib/generation/model";
 import { ROSTER } from "../fixtures/dictation";
@@ -323,5 +325,79 @@ describe("openingOf", () => {
 
   it("returns null for an empty draft", () => {
     expect(openingOf("")).toBeNull();
+  });
+});
+
+describe("audit hashes", () => {
+  // What is hashed is the decision recorded in ADR-0008 and the pipeline header: the
+  // request body as the client serialises it, and the guarded text before rehydration.
+  // These assert that decision against the bytes the injected request actually saw.
+
+  it("hashes the request as sent and the guarded text before rehydration", async () => {
+    const { requestDraft, requests } = answering(email);
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-5", "Piper wants the kit costed.")],
+      requestDraft,
+    });
+    expect(drafts[0]!.inputHash).toBe(await sha256Hex(JSON.stringify(requests[0])));
+    // No rule fires on the plain email, so the guarded text is the model's text.
+    expect(drafts[0]!.outputHash).toBe(await sha256Hex(email(requests[0]!)));
+    // And neither hash is of the rehydrated body a human reads.
+    expect(drafts[0]!.outputHash).not.toBe(await sha256Hex(drafts[0]!.body));
+  });
+
+  it("hashes what the ruleset let through, gap marker included", async () => {
+    const text = (r: GenerateRequest) =>
+      `Dear ${r.recipientToken},\n\nThe system is faster than anything on the market. Thank you for your time.`;
+    const { requestDraft, requests } = answering(text);
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-2", "Keen.")],
+      requestDraft,
+    });
+    const guarded = applyGuardrails(text(requests[0]!)).text;
+    expect(guarded).toContain(GAP_MARKER);
+    expect(drafts[0]!.outputHash).toBe(await sha256Hex(guarded));
+  });
+
+  it("records the input hash and no output hash when the model produced no text", async () => {
+    const requestDraft = vi.fn(async (): Promise<GenerateResponse> => ({
+      text: "",
+      blocked: "refusal",
+      model: MODEL_ID,
+      promptTemplateVersion: "1.0.0",
+      flagsFired: [],
+    }));
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-2", "Keen.")],
+      requestDraft,
+    });
+    expect(drafts[0]!.blocked).toBe("refusal");
+    expect(drafts[0]!.inputHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(drafts[0]!.outputHash).toBeNull();
+  });
+
+  it("records both hashes for a withheld draft, so the record says what was withheld", async () => {
+    const requestDraft = vi.fn(async (r: GenerateRequest): Promise<GenerateResponse> => ({
+      text: `Dear ${r.recipientToken},\n\nOkonjo-Baptiste sends regards.`,
+      blocked: null,
+      model: MODEL_ID,
+      promptTemplateVersion: "1.0.0",
+      flagsFired: [],
+    }));
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-2", "Keen.")],
+      requestDraft,
+    });
+    expect(drafts[0]!.blocked).toBe("output-blocked");
+    expect(drafts[0]!.inputHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(drafts[0]!.outputHash).toMatch(/^[0-9a-f]{64}$/);
   });
 });

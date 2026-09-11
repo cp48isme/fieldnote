@@ -33,13 +33,36 @@
  *     next request, and the batch continues. Before this outcome existed, a hallucinated
  *     name rode into `priorOpenings` and blocked every recipient after it as a `defect`.
  *
- * NOTHING IS PERSISTED HERE. Session 5 generates without audit records, so drafts are
- * held in memory and never written to Dexie: a `DraftRecord` with no `AuditRecord`
- * beside it is the shape CLAUDE.md's working agreement forbids, and session 6 adds both
- * in one change. The build guide's session 5 and 6 entries record the suspension.
+ * NOTHING IS PERSISTED HERE, STILL. The pipeline returns outcomes; the caller writes each
+ * one as a draft beside its audit record in one transaction (`createDraftWithAudit` in
+ * the data-access layer). Keeping persistence out of here is what lets the pipeline be
+ * tested with a function in place of the network and no database at all.
+ *
+ * WHAT IS HASHED, for the audit record (plan §4.4, ADR-0008). Two hashes, computed here
+ * because here is the only place the pre-images exist:
+ *
+ *   - `inputHash` — the request body exactly as the client serialises it, so it
+ *     reconstructs against the pseudonymized notes, the token, the prior openings, and
+ *     the event name, and against nothing that names a person. Null for `defect`, where
+ *     no request was built and nothing crossed.
+ *   - `outputHash` — the model's text after the guardrails and before rehydration: what
+ *     the ruleset let through, still name-free. Computed for `output-blocked` too, so
+ *     the record of a withheld draft says what was withheld. Null where the model
+ *     produced no text.
+ *
+ * Neither pre-image is stored. The rehydrated `generatedBody` on the draft is what a
+ * human reads; re-pseudonymizing it on the device reproduces the output pre-image for
+ * an unblocked draft, because rehydration writes canonical forms and the tokenizer is
+ * stable on them.
  */
 
-import type { AttendeeRecord, EventRecord, Id, NoteRecord } from "@/lib/db";
+import type {
+  AttendeeRecord,
+  DraftBlockReason,
+  EventRecord,
+  Id,
+  NoteRecord,
+} from "@/lib/db";
 import {
   assertPseudonymized,
   createPseudonymizer,
@@ -51,12 +74,13 @@ import {
 import { GenerationRequestError, requestDraft as defaultRequestDraft } from "./client";
 import type { GenerateRequest } from "./contract";
 import { applyGuardrails, GUARDRAIL_RULESET_VERSION } from "./guardrails";
+import { sha256Hex } from "./hash";
 import { MODEL_ID } from "./model";
 import { PROMPT_TEMPLATE_VERSION } from "./prompt";
 import type { RequestDraft } from "./client";
 
-export type BlockReason =
-  "truncated" | "refusal" | "request-failed" | "defect" | "output-blocked";
+/** The schema owns the enum; the pipeline's name for it is kept for its callers. */
+export type BlockReason = DraftBlockReason;
 
 /** Flag ids the pipeline adds beside the ruleset's own. */
 export const UNKNOWN_TOKEN_FLAG = "unknown-token";
@@ -69,12 +93,16 @@ export interface DraftOutcome {
   blocked: BlockReason | null;
   /** One sentence for the representative when blocked. */
   explanation: string | null;
-  /** Rule ids that fired, for the audit record session 6 will write. */
+  /** Rule ids that fired, for the draft and its audit record. */
   flagsFired: string[];
   /** What the audit schema needs to cite. */
   model: string;
   promptTemplateVersion: string;
   guardrailRulesetVersion: string;
+  /** See the header: the request as sent, or null when nothing crossed. */
+  inputHash: string | null;
+  /** See the header: the guarded pseudonymized text, or null when there was none. */
+  outputHash: string | null;
 }
 
 export interface BatchInput {
@@ -163,6 +191,8 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
       blocked,
       explanation: BLOCK_EXPLANATIONS[blocked],
       flagsFired: [],
+      inputHash: null,
+      outputHash: null,
     });
 
     let request: GenerateRequest;
@@ -188,17 +218,24 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
       continue;
     }
 
+    // The bytes that cross: `client.ts` sends `JSON.stringify(request)` and nothing else.
+    const inputHash = await sha256Hex(JSON.stringify(request));
+
     let response;
     try {
       response = await requestDraft(request);
     } catch (cause) {
       if (!(cause instanceof GenerationRequestError)) throw cause;
-      drafts.push(blockedOutcome("request-failed"));
+      drafts.push({ ...blockedOutcome("request-failed"), inputHash });
       continue;
     }
 
     if (response.blocked) {
-      drafts.push({ ...blockedOutcome(response.blocked), model: response.model });
+      drafts.push({
+        ...blockedOutcome(response.blocked),
+        model: response.model,
+        inputHash,
+      });
       continue;
     }
 
@@ -218,6 +255,7 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
     // about to be sent with the next request, and a name the model invented must not ride
     // along. Guard the whole draft: a draft that fails is withheld, and nothing from it is
     // carried forward.
+    const outputHash = await sha256Hex(guarded.text);
     try {
       assertPseudonymized(guarded.text, input.attendees);
     } catch (cause) {
@@ -226,6 +264,8 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
         ...blockedOutcome("output-blocked"),
         model: response.model,
         flagsFired,
+        inputHash,
+        outputHash,
       });
       continue;
     }
@@ -250,6 +290,8 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
       blocked: null,
       explanation: null,
       flagsFired,
+      inputHash,
+      outputHash,
     });
   }
 
