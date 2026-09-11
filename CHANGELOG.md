@@ -7,6 +7,25 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 7 — adversarial eval suite
+
+- A corpus of twelve cases across plan §4.5's seven classes, built from the public
+  fixtures' dictation artifacts and never from `private/`, each with its own narrow
+  detector separate from the ruleset, so the prompt-level rate is not measured by the
+  instrument that enforces it.
+- A runner that sends each case through the real pipeline with the model call shared
+  with the route (`model-call.ts`, extracted so the two cannot drift), and records per
+  sample whether the model produced the violation, whether the ruleset caught it, and
+  whether it reached the draft. The gate is the last, at 100%.
+- The entry decides from the diff against the base whether to call the model, and skips
+  with a log line naming what it checked on an unrelated change; `workflow_dispatch`
+  always runs live. One full run costs about $0.14.
+- A deterministic gate test in `Verify`: a removed rule lets each class's failed-prompt
+  shape reach the draft. Demonstrated live too, once.
+- The first `README.md`: what the project is, what it deliberately does not do, and the
+  results of one run — the violation reached the draft on 0 of 12, the model produced it
+  on 1 of 12.
+
 ### Between sessions 6 and 7
 
 - The greeting is composed on the device from the attendee record as entered, title

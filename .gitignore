@@ -90,3 +90,7 @@ next-env.d.ts
 .dolt/
 *.db
 .beads-credential-key
+
+# The eval suite's last run, written by tests/evals/evals.test.ts and printed by scripts/evals.mjs.
+# Holds the model's pseudonymized text per sample; the README carries the figures by hand.
+/evals-results.json

@@ -11,8 +11,9 @@
  *   - Transient failures (429, 5xx including 529, connection errors) are retried by the
  *     SDK, `MAX_RETRIES` times.
  *   - `stop_reason: "max_tokens"` is retried once at `TRUNCATION_RETRY_MULTIPLIER` times
- *     the ceiling. A second truncation blocks the draft: a cut-off email reads as
- *     finished until the end, and it is being copied into a mail client.
+ *     the ceiling (in `model-call.ts`, shared with the eval runner). A second truncation
+ *     blocks the draft: a cut-off email reads as finished until the end, and it is being
+ *     copied into a mail client.
  *   - `stop_reason: "refusal"` blocks the draft. The category is logged; the text is not.
  *
  * The API key is checked for presence, never read into anything that could print it.
@@ -23,20 +24,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import type { GenerateRequest, GenerateResponse } from "@/lib/generation/contract";
-import {
-  EFFORT,
-  MAX_OUTPUT_TOKENS,
-  MAX_RETRIES,
-  MODEL_ID,
-  TRUNCATION_RETRY_MULTIPLIER,
-} from "@/lib/generation/model";
+import { MAX_RETRIES } from "@/lib/generation/model";
 import { applyGuardrails } from "@/lib/generation/guardrails";
+import { requestModelDraft, textOf } from "@/lib/generation/model-call";
 import { loadPrivateTerms } from "@/lib/generation/private-terms";
-import {
-  buildSystemPrompt,
-  buildUserMessage,
-  PROMPT_TEMPLATE_VERSION,
-} from "@/lib/generation/prompt";
+import { PROMPT_TEMPLATE_VERSION } from "@/lib/generation/prompt";
 import { assertPseudonymized, PseudonymizationError } from "@/lib/privacy/pseudonymize";
 
 /** Never prerendered: this handler exists to be called, not built. */
@@ -73,34 +65,6 @@ console.info(
 /** Metadata only. Every field here is a number, an enum, or an identifier. */
 function log(entry: Record<string, string | number | boolean | null>): void {
   console.info(JSON.stringify({ route: "generate", ...entry }));
-}
-
-function textOf(message: Anthropic.Message): string {
-  return message.content
-    .filter((block): block is Anthropic.TextBlock => block.type === "text")
-    .map((block) => block.text)
-    .join("");
-}
-
-async function draft(client: Anthropic, request: GenerateRequest) {
-  const params = {
-    model: MODEL_ID,
-    system: buildSystemPrompt(),
-    messages: [{ role: "user" as const, content: buildUserMessage(request) }],
-    output_config: { effort: EFFORT },
-  };
-
-  let ceiling = MAX_OUTPUT_TOKENS;
-  let message = await client.messages.create({ ...params, max_tokens: ceiling });
-  let attempts = 1;
-
-  if (message.stop_reason === "max_tokens") {
-    ceiling *= TRUNCATION_RETRY_MULTIPLIER;
-    message = await client.messages.create({ ...params, max_tokens: ceiling });
-    attempts += 1;
-  }
-
-  return { message, attempts, ceiling };
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -148,7 +112,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   const client = new Anthropic({ maxRetries: MAX_RETRIES });
 
   try {
-    const { message, attempts, ceiling } = await draft(client, parsed.data);
+    // The call itself is `model-call.ts`, shared with the eval runner so the two cannot
+    // drift: the runner measures exactly what this sends.
+    const { message, attempts, ceiling } = await requestModelDraft(client, parsed.data);
 
     const blocked: GenerateResponse["blocked"] =
       message.stop_reason === "max_tokens"
