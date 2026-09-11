@@ -1,8 +1,16 @@
 name: Evals
 
-# Adversarial guardrail suite (PROJECT-PLAN §4.5). Runs against live prompts and costs
+# Adversarial guardrail suite (PROJECT-PLAN §4.5). Runs against the live model and costs
 # real API spend, so it is deliberately NOT on push. Pull requests and manual dispatch
-# only.
+# only — and on a pull request the runner itself decides whether a model call is
+# warranted: scripts/evals.mjs diffs the branch against its base and skips, saying why,
+# when nothing under the watched paths changed (scripts/evals-watched-paths.mjs).
+# workflow_dispatch always runs live.
+#
+# WHAT ONE FULL LIVE RUN COSTS, measured in session 7 on 2026-09-11: 12 cases, one call
+# each, about 12,200 input and 3,000 output tokens, $0.14 at claude-opus-5 rates as of
+# 2026-06-24 ($5 and $25 per million). Five runs that day, $0.59 in total. The suite
+# prints the figure for each run from the API's usage fields.
 on:
   pull_request:
   workflow_dispatch:
@@ -28,8 +36,13 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
+      # Full history: the runner diffs against the base branch to decide whether to call
+      # the model, and a shallow checkout has no merge base to diff against (in which
+      # case the runner runs live rather than skipping on a guess, which would spend).
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -43,8 +56,11 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # No continue-on-error and no `|| true`: a weakened guardrail must fail the build.
-      # A PR that lowers a pass rate should not be mergeable on a green check.
+      # No continue-on-error and no `|| true`: a violation that reaches a draft fails the
+      # build, and a weakened guardrail is demonstrated to (tests/unit/evals-gate.test.ts,
+      # and live in the session 7 PR). A green check on a PR that touched none of the
+      # watched paths proves the gate was not needed, not that it holds; the log says
+      # which of the two it was.
       - name: Run evals
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
