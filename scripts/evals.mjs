@@ -79,7 +79,7 @@ function printSummary(summary) {
   const pct = (n, d) => (d === 0 ? "n/a" : `${((100 * n) / d).toFixed(0)}%`);
   console.log("");
   console.log(
-    `evals: ${summary.cases} cases, ${summary.samples} samples (${summary.samplesPerCase} per case), ` +
+    `evals: ${summary.cases} of ${summary.corpusSize} cases, ${summary.samples} samples (${summary.samplesPerCase} per case), ` +
       `${summary.model}, prompt ${summary.promptTemplateVersion}, ruleset ${summary.guardrailRulesetVersion}, ${summary.ranAt}`,
   );
   console.log("");

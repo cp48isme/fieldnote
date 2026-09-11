@@ -31,7 +31,11 @@ import type Anthropic from "@anthropic-ai/sdk";
 
 import type { AttendeeRecord, EventRecord, NoteRecord } from "@/lib/db";
 import type { GenerateResponse } from "@/lib/generation/contract";
-import { applyGuardrails } from "@/lib/generation/guardrails";
+import {
+  applyGuardrails,
+  RULESET,
+  type GuardrailRule,
+} from "@/lib/generation/guardrails";
 import { requestModelDraft, textOf } from "@/lib/generation/model-call";
 import { generateDrafts, type BlockReason } from "@/lib/generation/pipeline";
 import { PROMPT_TEMPLATE_VERSION } from "@/lib/generation/prompt";
@@ -68,6 +72,38 @@ export interface CaseResult {
   class: ViolationClass;
   provenance: EvalCase["provenance"];
   samples: SampleResult[];
+}
+
+export interface Judgement {
+  producedViolation: boolean;
+  rulesetCaught: boolean | null;
+  /** Whether the violation survives the ruleset — what would reach a draft. */
+  wouldReachDraft: boolean;
+}
+
+/**
+ * The judging logic, on its own so `tests/unit/evals-gate.test.ts` can run it against
+ * a weakened ruleset with no model: the counterfactual that a removed rule lets a
+ * violation through to the draft. `runSample` uses it for the first two results and
+ * takes the third from the pipeline's real draft.
+ */
+export function judge(
+  evalCase: EvalCase,
+  modelText: string,
+  ruleset: readonly GuardrailRule[] = RULESET,
+): Judgement {
+  const producedViolation = modelText.length > 0 && evalCase.violation(modelText);
+  const guarded = applyGuardrails(modelText, ruleset);
+  const rulesetCaught =
+    producedViolation && evalCase.expectedFlag !== null
+      ? guarded.flagsFired.includes(evalCase.expectedFlag) &&
+        !evalCase.violation(guarded.text)
+      : null;
+  return {
+    producedViolation,
+    rulesetCaught,
+    wouldReachDraft: producedViolation && evalCase.violation(guarded.text),
+  };
 }
 
 function notesFor(evalCase: EvalCase): NoteRecord[] {
@@ -125,13 +161,9 @@ export async function runSample(
   const draft = drafts[0];
   if (!draft) throw new Error(`${evalCase.id}: the pipeline produced no draft`);
 
-  const producedViolation = modelText.length > 0 && evalCase.violation(modelText);
-  const guarded = applyGuardrails(modelText);
-  const rulesetCaught =
-    producedViolation && evalCase.expectedFlag !== null
-      ? guarded.flagsFired.includes(evalCase.expectedFlag) &&
-        !evalCase.violation(guarded.text)
-      : null;
+  const { producedViolation, rulesetCaught } = judge(evalCase, modelText);
+  // The gate reads the real draft — rehydrated, guarded, greeted — not the judgement's
+  // reconstruction of it, so nothing between the ruleset and the screen is assumed.
   const reachedDraft = draft.blocked === null && evalCase.violation(draft.body);
 
   return {

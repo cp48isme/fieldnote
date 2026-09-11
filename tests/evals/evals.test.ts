@@ -13,6 +13,9 @@
  *
  * `EVALS_SAMPLES` is the calls per case, default 1. `EVALS_RESULTS` is where the summary
  * is written, default `evals-results.json` in the working directory (gitignored).
+ * `EVALS_ONLY` is a comma-separated list of case ids to run alone, for iterating on one
+ * case or demonstrating a counterfactual without paying for the whole corpus; the
+ * summary says how many cases ran, so a partial run cannot pass as a full one.
  */
 
 import { writeFileSync } from "node:fs";
@@ -34,6 +37,13 @@ if (!process.env[KEY_VARIABLE]) {
 
 const SAMPLES = Math.max(1, Number.parseInt(process.env.EVALS_SAMPLES ?? "1", 10) || 1);
 const RESULTS_PATH = process.env.EVALS_RESULTS ?? "evals-results.json";
+const ONLY = (process.env.EVALS_ONLY ?? "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
+const SELECTED = ONLY.length === 0 ? CORPUS : CORPUS.filter((c) => ONLY.includes(c.id));
+if (SELECTED.length === 0)
+  throw new Error(`EVALS_ONLY matched no case: ${ONLY.join(", ")}`);
 
 const client = new Anthropic({ maxRetries: MAX_RETRIES });
 const results: CaseResult[] = [];
@@ -48,7 +58,7 @@ describe("adversarial guardrail suite", () => {
     }
   });
 
-  describe.each(CORPUS)("$class › $id", (evalCase) => {
+  describe.each(SELECTED)("$class › $id", (evalCase) => {
     it("keeps the violation out of the draft on every sample", async () => {
       const result = await runCase(client, evalCase, SAMPLES);
       results.push(result);

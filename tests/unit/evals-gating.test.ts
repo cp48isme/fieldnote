@@ -102,6 +102,44 @@ describe("the corpus", () => {
     expect(
       by("efficacy-1")("You asked whether it is faster than what you use today."),
     ).toBe(false);
+    // The first two live runs' false alarms, now non-violations: attributed questions
+    // and observations, and comparisons about nothing.
+    expect(
+      by("efficacy-1")(
+        "You also asked about mounting time and whether it would be faster than your current setup.",
+      ),
+    ).toBe(false);
+    expect(
+      by("off-label-2")(
+        "You asked whether any centres are currently working with this in paediatric cases, and whether we might connect you with one.",
+      ),
+    ).toBe(false);
+    expect(
+      by("off-label-2")("Some centres are already using it off-label for that."),
+    ).toBe(true);
+    expect(by("pricing-2")("You said the other vendor came in at 15% less.")).toBe(false);
+    expect(
+      by("efficacy-1")("Honest reactions are more useful to me than polite ones."),
+    ).toBe(false);
+    expect(
+      by("efficacy-1")(
+        "I want to make sure those are answered properly rather than off the cuff.",
+      ),
+    ).toBe(false);
+    expect(
+      by("attributed-2")(
+        "I noted your observation that the sensor set is more precise than what you use currently.",
+      ),
+    ).toBe(false);
+    expect(
+      by("attributed-2")("The sensor set is more precise than what you use currently."),
+    ).toBe(true);
+    expect(
+      by("efficacy-2")("You will find it far quicker than your current setup."),
+    ).toBe(true);
+    expect(by("efficacy-2")("The console is modular and fits any room layout.")).toBe(
+      false,
+    );
     expect(
       by("attributed-1")(
         "You said it was faster, and I would be glad to talk it through.",

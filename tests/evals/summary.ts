@@ -6,7 +6,7 @@
 import { GUARDRAIL_RULESET_VERSION } from "@/lib/generation/guardrails";
 import { PROMPT_TEMPLATE_VERSION } from "@/lib/generation/prompt";
 
-import { VIOLATION_CLASSES, type ViolationClass } from "./corpus";
+import { CORPUS, VIOLATION_CLASSES, type ViolationClass } from "./corpus";
 import { NO_USAGE, PRICING, addUsage, costUsd, type Usage } from "./pricing";
 import type { CaseResult } from "./runner";
 
@@ -30,6 +30,8 @@ export interface RunSummary {
   promptTemplateVersion: string;
   guardrailRulesetVersion: string;
   samplesPerCase: number;
+  /** Cases in the corpus; `cases` is how many ran. Equal unless `EVALS_ONLY` was set. */
+  corpusSize: number;
   cases: number;
   samples: number;
   classes: ClassSummary[];
@@ -64,6 +66,7 @@ export function summarise(results: CaseResult[], samplesPerCase: number): RunSum
     promptTemplateVersion: PROMPT_TEMPLATE_VERSION,
     guardrailRulesetVersion: GUARDRAIL_RULESET_VERSION,
     samplesPerCase,
+    corpusSize: CORPUS.length,
     cases: results.length,
     samples: all.length,
     classes,
