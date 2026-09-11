@@ -42,7 +42,7 @@ wrong regardless of how well it is implemented.
 
 ## Where we've been
 
-`main` is at `9dc1546` with 127 commits and 29 merged pull requests; this PR adds nine
+`main` is at `9dc1546` with 127 commits and 29 merged pull requests; this PR adds ten
 commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
 onward, and is not repeated here. What follows is the map from session to pull request,
 with the closed-not-merged ones named because a closed PR is easy to mistake for one that
@@ -68,7 +68,7 @@ never existed.
   16.3.4 clearing five Dependabot alerts, with the headers spec it needed). Dependabot
   **#26**, **#27**, and **#35** closed, not merged, each with the reason on it: #27 was
   the #11 migration again; #26 and #35 were superseded by #36.
-- **Session 6, audit log and review gate** — this PR, nine commits: schema v2 and the
+- **Session 6, audit log and review gate** — this PR, ten commits: schema v2 and the
   state machine; the pipeline's hashes; edit distance; drafts persisted beside their
   audit records with the two transitions; the CSV; the private-term id moved to the
   shared contract; the review surface replacing the throwaway; ADR-0008; the guide and
