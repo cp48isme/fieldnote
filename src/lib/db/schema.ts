@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -135,14 +135,45 @@ export const NOTE_POLICIES: FieldPolicies<NoteRecord> = {
 
 // --- Draft -----------------------------------------------------------------
 
-/** Per plan §4.3 and CLAUDE.md, export is gated on a human opening the draft. */
-export type DraftState = "generated" | "reviewed" | "exported";
+/**
+ * Per plan §4.3 and CLAUDE.md, export is gated on a human opening the draft:
+ * `generated` → `reviewed` → `exported`. `blocked` is the fourth state, added in v2: a
+ * generation the pipeline withheld — a refusal, a truncation, a hallucinated name — is
+ * persisted with its reason so that its audit record has something to point at, and it
+ * has no outgoing transition at all. The transition table is `draft-state.ts`.
+ */
+export type DraftState = "generated" | "reviewed" | "exported" | "blocked";
+
+/**
+ * Why a draft was withheld. Defined here rather than in the pipeline because the schema
+ * is the lower layer: the pipeline re-exports it. `truncated` and `refusal` are the
+ * model's stop reasons; `request-failed` is the route unreachable; `defect` is the
+ * tokenizer's own invariant failing on input; `output-blocked` is the model writing a
+ * name or a role it was never given (ADR-0006, ADR-0007).
+ */
+export type DraftBlockReason =
+  "truncated" | "refusal" | "request-failed" | "defect" | "output-blocked";
 
 export interface DraftRecord extends BaseRecord {
   eventId: Id;
   attendeeId: Id | null;
+  /** The text the representative edits and exports. Empty when blocked. */
   body: string;
+  /**
+   * The text as generated, rehydrated and guarded, written once at creation and never
+   * updated. Edit distance at export is computed against this; the audit record holds a
+   * hash, not content, so the pre-image has to survive here.
+   */
+  generatedBody: string;
   state: DraftState;
+  /** Non-null exactly when `state` is `blocked`. */
+  blocked: DraftBlockReason | null;
+  /**
+   * Rule ids that fired on this draft. Duplicated from the audit record on purpose: the
+   * review surface must be able to say why a sentence was replaced without reading the
+   * audit trail, because a UI that depends on the audit log inverts the relationship.
+   */
+  flagsFired: string[];
   promptTemplateVersion: string;
   guardrailRulesetVersion: string;
 }
@@ -155,9 +186,21 @@ export const DRAFT_POLICIES: FieldPolicies<DraftRecord> = {
     encryption: "eligible",
     why: "Correspondence addressed to an identified person, post-rehydration.",
   },
+  generatedBody: {
+    encryption: "eligible",
+    why: "The same correspondence before editing; identical sensitivity to body.",
+  },
   state: {
     encryption: "clear",
     why: "Enum; the review gate queries on it, so it must be readable without a key.",
+  },
+  blocked: {
+    encryption: "clear",
+    why: "Enum reason; carries no content and no identity.",
+  },
+  flagsFired: {
+    encryption: "clear",
+    why: "Guardrail rule ids; no identity. Not a string, so could not be eligible.",
   },
   promptTemplateVersion: { encryption: "clear", why: "Version string; no identity." },
   guardrailRulesetVersion: { encryption: "clear", why: "Version string; no identity." },
@@ -169,6 +212,14 @@ export const DRAFT_POLICIES: FieldPolicies<DraftRecord> = {
  * Per plan §4.4 an audit record holds hashes, never content. Nothing here is
  * encryption-eligible, and that is the design rather than an oversight: an audit log an
  * auditor cannot read without the data-owner's passphrase is a worse audit log.
+ *
+ * Immutable in this sense: written once with its draft, in the same transaction; never
+ * deleted, not even when the event is (ADR-0008); and touched exactly twice afterwards,
+ * by the two review-gate transitions, each of which fills fields that are null until
+ * then and refuses to fill them again. The generation facts never change.
+ *
+ * Every field an auditor needs is on the record itself, because after the event is
+ * deleted the record is all that remains (ADR-0008).
  */
 export interface AuditRecordRecord extends BaseRecord {
   draftId: Id;
@@ -176,23 +227,46 @@ export interface AuditRecordRecord extends BaseRecord {
   model: string;
   promptTemplateVersion: string;
   guardrailRulesetVersion: string;
-  inputHash: string;
-  outputHash: string;
+  /**
+   * SHA-256, hex, of the request body exactly as it crossed the boundary — pseudonymized
+   * notes, recipient token, prior openings, event name — so the hash reconstructs
+   * against material that names nobody. Null when nothing crossed (`defect`).
+   */
+  inputHash: string | null;
+  /**
+   * SHA-256, hex, of the model's text after the guardrails and before rehydration: what
+   * the ruleset let through, still name-free. Null when the model produced no text.
+   */
+  outputHash: string | null;
   flagsFired: string[];
-  humanEdited: boolean;
+  /** Non-null exactly when the draft was withheld; the draft's own reason, copied. */
+  blocked: DraftBlockReason | null;
+  /** When a human opened the draft. Null until then. */
+  reviewedAt: number | null;
+  /** When a human exported the draft. Null until then. */
+  exportedAt: number | null;
+  /** Null until export; then whether the exported text differs from the generated. */
+  humanEdited: boolean | null;
+  /** Null until export; then the character edit distance, generated to exported. */
   editDistance: number | null;
 }
 
 export const AUDIT_POLICIES: FieldPolicies<AuditRecordRecord> = {
   ...BASE_POLICY,
   draftId: { encryption: "clear", why: "Foreign key; must be indexable." },
-  eventId: { encryption: "clear", why: "Foreign key; must be indexable." },
+  eventId: {
+    encryption: "clear",
+    why: "Foreign key; must be indexable. May point at a deleted event (ADR-0008).",
+  },
   model: { encryption: "clear", why: "Model identifier; no identity." },
   promptTemplateVersion: { encryption: "clear", why: "Version string; no identity." },
   guardrailRulesetVersion: { encryption: "clear", why: "Version string; no identity." },
   inputHash: { encryption: "clear", why: "Hash, not content. That is the point of it." },
   outputHash: { encryption: "clear", why: "Hash, not content." },
   flagsFired: { encryption: "clear", why: "Guardrail rule ids; no identity." },
+  blocked: { encryption: "clear", why: "Enum reason; no content." },
+  reviewedAt: { encryption: "clear", why: "Timestamp; the review-gate signal." },
+  exportedAt: { encryption: "clear", why: "Timestamp; the review-gate signal." },
   humanEdited: { encryption: "clear", why: "Boolean; the review-gate signal." },
   editDistance: {
     encryption: "clear",

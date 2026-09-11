@@ -60,5 +60,13 @@ export function isGenerateResponse(value: unknown): value is GenerateResponse {
   );
 }
 
+/**
+ * The id of the route's own rule — the private-term rule in `private-terms.ts` — as it
+ * appears in `flagsFired`. Defined here rather than beside the rule because the rule
+ * reads a file with `node:fs` and cannot be imported by the client, while the review
+ * surface has to be able to explain the flag when it sees it.
+ */
+export const PRIVATE_TERM_RULE_ID = "private-term";
+
 /** The route. The single network destination in `src/`; see `tests/unit/single-egress.test.ts`. */
 export const GENERATE_ROUTE = "/api/generate";

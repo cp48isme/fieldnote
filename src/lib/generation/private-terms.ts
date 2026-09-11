@@ -36,8 +36,10 @@ import type { GuardrailRule } from "./guardrails";
 
 export const PRIVATE_TERMS_FILE = ".guardrail-terms.local";
 
-/** The rule id, as it appears in `flagsFired`. */
-export const PRIVATE_TERM_RULE_ID = "private-term";
+import { PRIVATE_TERM_RULE_ID } from "./contract";
+
+/** The rule id, as it appears in `flagsFired`. Defined in `contract.ts`; see there for why. */
+export { PRIVATE_TERM_RULE_ID };
 
 export interface PrivateTerms {
   /** `absent` means the rule is inert; the route says so at start-up. */

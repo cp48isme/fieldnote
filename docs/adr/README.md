@@ -14,10 +14,11 @@ the artifact.
 | [0001](0001-public-private-split.md) | De-branded public build, private fork for production use | Accepted | 2026-08-27 |
 | [0002](0002-invitation-design.md) | Attendee invitation limited to recipient-forwarded messages | Accepted | 2026-08-27 |
 | [0003](0003-spreadsheet-parsing-library.md) | `read-excel-file` for spreadsheet parsing, replacing `xlsx` (SheetJS) | Accepted, amended 2026-09-01 | 2026-08-28 |
-| [0004](0004-encryption-at-rest.md) | Encryption seam in the data layer; passphrase-derived encryption deferred to the private fork | Accepted, amended 2026-09-01 | 2026-09-01 |
+| [0004](0004-encryption-at-rest.md) | Encryption seam in the data layer; passphrase-derived encryption deferred to the private fork | Accepted, amended 2026-09-01 and 2026-09-11 | 2026-09-01 |
 | [0005](0005-dictation-input.md) | Device dictation only; no audio capture, storage, or transcription | Accepted, amended 2026-09-01 | 2026-09-01 |
 | [0006](0006-structural-name-detection.md) | Structural name detection at the pseudonymization boundary | Accepted, amended 2026-09-09 | 2026-09-02 |
 | [0007](0007-role-references.md) | Role references at the pseudonymization boundary | Accepted | 2026-09-09 |
+| [0008](0008-audit-records-survive-event-deletion.md) | Audit records survive event deletion | Accepted | 2026-09-11 |
 
 ## What each one settles
 
@@ -52,6 +53,12 @@ does not know are tokenized fail-closed on a closed list of head nouns, plurals 
 indefinite references are left alone, and rehydration puts back the form that was written
 at each position. It records why the model's placement of a role token is a review-gate
 matter rather than a boundary failure.
+
+**0008** records a session 2 decision that had lived in a source comment: deleting an
+event spares its audit records, so a cleanup action cannot destroy the audit trail. It
+states the consequence that follows — a record must carry everything an auditor needs,
+because after deletion it is all that remains — and it decides what the record's two
+hashes are taken over, so that neither reconstructs only against text containing a name.
 
 ## Numbering
 

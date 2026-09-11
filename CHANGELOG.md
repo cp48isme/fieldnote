@@ -7,6 +7,38 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 6 — audit log and review gate
+
+- Drafts persist beside their audit records in one transaction, through the only write
+  path there is; session 5's suspension of the no-silent-generations agreement is over.
+  Schema v2: the draft carries its generated text, its guardrail flags, and a blocked
+  reason; the audit record carries the blocked reason, the reviewed and exported
+  timestamps, and nullable hashes and human-edited fields.
+- The draft state machine as one table, `generated` → `reviewed` → `exported`, with
+  `blocked` as a fourth state that has no outgoing transition. Export is refused from
+  `generated`; a blocked draft cannot reach `exported` by any route; the test walks the
+  graph.
+- The pipeline computes the audit hashes over the request as sent and the guarded text
+  before rehydration, so neither reconstructs only against a name (ADR-0008).
+- The review surface, a second view on the validated capture layout: the list shows
+  state, flags, and edit distance together per draft; opening a draft marks it reviewed;
+  the detail view explains every flag and the gap marker, edits, copies to the clipboard
+  and only then records the export with the character edit distance and its caveat. The
+  throwaway draft list is gone.
+- The audit log downloads as CSV, ids and hashes only, with an `eventStatus` column that
+  marks records whose event has been deleted.
+- ADR-0008: audit records survive event deletion, and what a record must therefore carry.
+- An end-to-end spec that intercepts the one network call with a canned draft and walks
+  persistence, the gate, the clipboard, the distance, and the CSV in a real browser.
+
+### Between sessions 5 and 6
+
+- `next` 16.3.4 and the minor-and-patch group, clearing four critical and one high
+  Dependabot alert, with the headers spec loosened to match an uncovered script by its
+  `src` alone (#36).
+- The build guide's session 6 entry and the handoff template corrected: gate 1b is met,
+  and beads are not private by description (#33).
+
 ### Session 5 — generation route, guardrails, and headers
 
 - Role references at the pseudonymization boundary (ADR-0007): a role on the roster

@@ -5,8 +5,8 @@
  * ADR-0004 that is the single rule the encryption work depends on, and it is enforced
  * by `tests/unit/db-boundary.test.ts` rather than by discipline.
  *
- * Two schema decisions were made here rather than read from the plan. Both are recorded
- * in the session report and may deserve an ADR.
+ * Two schema decisions were made here rather than read from the plan. The first is
+ * recorded in the session 2 report; the second is ADR-0008.
  *
  * 1. `Note.attendeeId` is nullable.
  *
@@ -33,16 +33,22 @@
  *
  *    This has a retention consequence ADR-0004 gestures at — the local store does not
  *    shrink to nothing when events are deleted — which session 16's data-protection
- *    assessment should address rather than discover.
+ *    assessment should address rather than discover. ADR-0008 is the record, and it
+ *    states what a record must therefore carry.
  */
+
+import { editDistance } from "@/lib/review/edit-distance";
 
 import { encryptRecord, decryptAll, decryptRecord } from "./cipher";
 import { getDatabase } from "./database";
+import { assertTransition, canEdit } from "./draft-state";
 import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_AUTOSAVE_DEBOUNCE_MS,
   TABLES,
   type AttendeeRecord,
+  type AuditRecordRecord,
+  type DraftBlockReason,
   type DraftRecord,
   type EventRecord,
   type Id,
@@ -206,13 +212,201 @@ export async function attributeNote(id: Id, attendeeId: Id | null): Promise<Note
   return updated;
 }
 
-// --- Drafts ----------------------------------------------------------------
-// Full draft handling lands in sessions 5 and 6 with the generation route and the
-// review gate. Reads exist now so nothing outside this layer needs Dexie to look.
+// --- Drafts and audit records ----------------------------------------------
+//
+// A draft never exists without its audit record. There is one write path for a new
+// draft, `createDraftWithAudit`, and it writes both rows in one transaction; there is no
+// `createDraft`. That is the shape CLAUDE.md's no-silent-generations agreement requires,
+// and `tests/unit/repository-drafts.test.ts` demonstrates it by making the audit write
+// fail and finding no draft afterwards.
+//
+// The two review-gate transitions each go through `assertTransition` against the table
+// in `draft-state.ts`, and each fills audit fields that are null until then. Nothing
+// else writes `state`. Audit records are never deleted here or anywhere — see
+// `deleteEvent` above and ADR-0008.
 
+export interface NewDraftInput {
+  eventId: Id;
+  attendeeId: Id | null;
+  /** Rehydrated, guarded text. Empty when blocked. */
+  body: string;
+  blocked: DraftBlockReason | null;
+  flagsFired: string[];
+  model: string;
+  promptTemplateVersion: string;
+  guardrailRulesetVersion: string;
+  inputHash: string | null;
+  outputHash: string | null;
+}
+
+export interface DraftWithAudit {
+  draft: DraftRecord;
+  audit: AuditRecordRecord;
+}
+
+export async function createDraftWithAudit(
+  input: NewDraftInput,
+): Promise<DraftWithAudit> {
+  if (input.blocked !== null && input.body.length > 0) {
+    // The pipeline never produces this; stated so the invariant is visible here too.
+    throw new Error("A blocked draft has no body.");
+  }
+  const draft: DraftRecord = stamp({
+    eventId: input.eventId,
+    attendeeId: input.attendeeId,
+    body: input.body,
+    generatedBody: input.body,
+    state: input.blocked === null ? ("generated" as const) : ("blocked" as const),
+    blocked: input.blocked,
+    flagsFired: [...input.flagsFired],
+    promptTemplateVersion: input.promptTemplateVersion,
+    guardrailRulesetVersion: input.guardrailRulesetVersion,
+  });
+  const audit: AuditRecordRecord = stamp({
+    draftId: draft.id,
+    eventId: input.eventId,
+    model: input.model,
+    promptTemplateVersion: input.promptTemplateVersion,
+    guardrailRulesetVersion: input.guardrailRulesetVersion,
+    inputHash: input.inputHash,
+    outputHash: input.outputHash,
+    flagsFired: [...input.flagsFired],
+    blocked: input.blocked,
+    reviewedAt: null,
+    exportedAt: null,
+    humanEdited: null,
+    editDistance: null,
+  });
+
+  const db = getDatabase();
+  await db.transaction("rw", db.drafts, db.auditRecords, async () => {
+    // Audit first. If the draft write is what fails, the transaction rolls both back;
+    // if the audit write fails, no draft was ever attempted. Either way the invariant
+    // holds without depending on the order — the order is for the reader.
+    await db.auditRecords.put(encryptRecord(TABLES.auditRecords, audit));
+    await db.drafts.put(encryptRecord(TABLES.drafts, draft));
+  });
+  return { draft, audit };
+}
+
+export async function getDraft(id: Id): Promise<DraftRecord | undefined> {
+  const row = await getDatabase().drafts.get(id);
+  return row ? decryptRecord(TABLES.drafts, row) : undefined;
+}
+
+/** Newest first: the review question is "what did I just generate". */
 export async function listDrafts(eventId: Id): Promise<DraftRecord[]> {
   const rows = await getDatabase().drafts.where("eventId").equals(eventId).toArray();
-  return decryptAll(TABLES.drafts, rows);
+  return decryptAll(TABLES.drafts, rows).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+async function requireDraft(id: Id): Promise<DraftRecord> {
+  const draft = await getDraft(id);
+  if (!draft) throw new Error(`Draft ${id} not found`);
+  return draft;
+}
+
+async function requireAuditFor(draftId: Id): Promise<AuditRecordRecord> {
+  const audit = await getAuditRecordForDraft(draftId);
+  // A draft with no record is the invariant this layer exists to hold. Loud, not tolerated.
+  if (!audit) throw new Error(`Draft ${draftId} has no audit record`);
+  return audit;
+}
+
+/**
+ * The representative's edits, while export is still ahead. Refused once exported — the
+ * body is then the record of what was sent — and refused for a blocked draft, which has
+ * no body to edit. `generatedBody` is never touched.
+ */
+export async function saveDraftBody(id: Id, body: string): Promise<DraftRecord> {
+  const existing = await requireDraft(id);
+  if (!canEdit(existing.state)) {
+    throw new Error(`A draft in state "${existing.state}" cannot be edited`);
+  }
+  const updated: DraftRecord = { ...existing, body, updatedAt: now() };
+  await getDatabase().drafts.put(encryptRecord(TABLES.drafts, updated));
+  return updated;
+}
+
+/**
+ * `generated` → `reviewed`: a human opened the draft. The act is opening it in the review
+ * surface — not a list row rendering, which is why the surface calls this from the
+ * detail view and nowhere else. Stamps `reviewedAt` on the audit record, once.
+ */
+export async function markReviewed(id: Id): Promise<DraftWithAudit> {
+  const db = getDatabase();
+  return db.transaction("rw", db.drafts, db.auditRecords, async () => {
+    const existing = await requireDraft(id);
+    assertTransition(existing.state, "reviewed");
+    const audit = await requireAuditFor(id);
+    const timestamp = now();
+    const draft: DraftRecord = { ...existing, state: "reviewed", updatedAt: timestamp };
+    const stamped: AuditRecordRecord = {
+      ...audit,
+      reviewedAt: audit.reviewedAt ?? timestamp,
+      updatedAt: timestamp,
+    };
+    await db.drafts.put(encryptRecord(TABLES.drafts, draft));
+    await db.auditRecords.put(encryptRecord(TABLES.auditRecords, stamped));
+    return { draft, audit: stamped };
+  });
+}
+
+/**
+ * `reviewed` → `exported`: the text was copied to the mail client. `exportedBody` is what
+ * was copied; it becomes the draft's body and the edit distance is measured from
+ * `generatedBody` to it. The audit record's export fields are written here and only
+ * here, and refused if already written — the state check makes that unreachable, and the
+ * second check is there so the record's immutability does not rest on one line.
+ */
+export async function exportDraft(id: Id, exportedBody: string): Promise<DraftWithAudit> {
+  const db = getDatabase();
+  return db.transaction("rw", db.drafts, db.auditRecords, async () => {
+    const existing = await requireDraft(id);
+    assertTransition(existing.state, "exported");
+    const audit = await requireAuditFor(id);
+    if (audit.exportedAt !== null) {
+      throw new Error(`Audit record for draft ${id} already carries an export`);
+    }
+    const timestamp = now();
+    const distance = editDistance(existing.generatedBody, exportedBody);
+    const draft: DraftRecord = {
+      ...existing,
+      body: exportedBody,
+      state: "exported",
+      updatedAt: timestamp,
+    };
+    const stamped: AuditRecordRecord = {
+      ...audit,
+      exportedAt: timestamp,
+      humanEdited: distance > 0,
+      editDistance: distance,
+      updatedAt: timestamp,
+    };
+    await db.drafts.put(encryptRecord(TABLES.drafts, draft));
+    await db.auditRecords.put(encryptRecord(TABLES.auditRecords, stamped));
+    return { draft, audit: stamped };
+  });
+}
+
+export async function getAuditRecordForDraft(
+  draftId: Id,
+): Promise<AuditRecordRecord | undefined> {
+  const rows = await getDatabase()
+    .auditRecords.where("draftId")
+    .equals(draftId)
+    .toArray();
+  const [row] = decryptAll(TABLES.auditRecords, rows);
+  return row;
+}
+
+/**
+ * Every audit record on the device, oldest first, including those whose event has been
+ * deleted (ADR-0008). The CSV export reads this; nothing filters it.
+ */
+export async function listAuditRecords(): Promise<AuditRecordRecord[]> {
+  const rows = await getDatabase().auditRecords.orderBy("createdAt").toArray();
+  return decryptAll(TABLES.auditRecords, rows);
 }
 
 // --- Settings --------------------------------------------------------------
