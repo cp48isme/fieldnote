@@ -39,6 +39,7 @@ export {
   type NoteSource,
   type DraftRecord,
   type DraftState,
+  type DraftBlockReason,
   type AuditRecordRecord,
   type VoiceProfileRecord,
   type ApprovedContentRecord,
@@ -66,6 +67,15 @@ export {
   type NewAttendeeInput,
   type NewNoteInput,
 } from "./repository";
+
+export {
+  DRAFT_TRANSITIONS,
+  DraftStateError,
+  assertTransition,
+  canExport,
+  canTransition,
+  reachableFrom,
+} from "./draft-state";
 
 export {
   beginSession,
