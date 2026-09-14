@@ -389,7 +389,7 @@ describe("approved copy in the pipeline", () => {
 
   it("sends the library with the request and records an exact passage by id", async () => {
     const { requestDraft, requests } = answering(
-      (r) =>
+      () =>
         `Subject: Thanks\n\nThank you for your time.\n\n${LIBRARY[0]!.body}\n\nKind regards,`,
     );
     const { drafts } = await generateDrafts({
@@ -430,7 +430,7 @@ describe("approved copy in the pipeline", () => {
     // The opening is taken after the passages are restored: a draft that opens with a
     // passage carries the passage text forward, never the marker that stood for it.
     const { requestDraft, requests } = answering(
-      (r) =>
+      () =>
         `Subject: Thanks\n\n${LIBRARY[1]!.body} Thank you for your time.\n\nKind regards,`,
     );
     await generateDrafts({

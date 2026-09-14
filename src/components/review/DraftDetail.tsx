@@ -189,6 +189,19 @@ export function DraftDetail({
             </p>
           )}
 
+          {audit && audit.passagesUsed.length > 0 && (
+            <p
+              data-testid="passages-used"
+              data-count={audit.passagesUsed.length}
+              className="text-xs opacity-70"
+            >
+              {audit.passagesUsed.length} approved passage
+              {audit.passagesUsed.length === 1 ? "" : "s"} used. The product wording in
+              this draft was copied from the library, not written by the model; the audit
+              record names which.
+            </p>
+          )}
+
           {exported && audit && audit.editDistance !== null && (
             <p
               data-testid="edit-distance"
