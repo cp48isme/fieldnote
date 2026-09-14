@@ -1,6 +1,6 @@
 # Handoff
 
-Written 2026-09-14, at `4a74224` on `feat/session-8-roster-import`, the session 8 PR,
+Written 2026-09-14, at `a5d94f7` on `feat/session-10-attendee-view`, the session 10 PR,
 for the state `main` will be in when it merges.
 
 Every claim here was checked against the repository, git history, the trackers, or the
@@ -42,7 +42,7 @@ says so plainly. `CLAUDE.md` carries the non-negotiable constraints.
 
 ## Where we've been
 
-`main` is at `e09a0fa` with 162 commits and 34 merged pull requests; this PR adds nine
+`main` is at `294d6c6` with 172 commits and 35 merged pull requests; this PR adds five
 commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
 onward, and is not repeated here. What follows is the map from session to pull request,
 with the closed-not-merged ones named because a closed PR is easy to mistake for one that
@@ -63,14 +63,16 @@ never existed.
 - **Between sessions 5 and 6** — **#33**, **#36**. Dependabot **#26**, **#27**, **#35**
   closed, not merged, each with the reason on it.
 - **Session 6, audit log and review gate** — **#37**; ADR-0008. **Between 6 and 7** —
-  **#38**, the greeting composed from the record. Dependabot **#34** merged.
+  **#38**. Dependabot **#34** merged.
 - **Session 7, adversarial eval suite** — **#39**. **Between 7 and 8** — **#40**, ruleset
   1.2.0 from the first held-out run.
-- **Session 8, roster import** — this PR, nine commits: schema v3 with the atomic import;
-  the `canonicalNameOf` export; the messy fixture and its builder; the roster library;
-  the matcher fix from the first end-to-end run; the import screen from the switcher;
-  the end-to-end spec; the ADR, plan, guide, and prompt documentation; this handoff with
-  the changelog.
+- **Session 8, roster import** — **#41**; ADR-0003 amended.
+- **Session 10, ADR-0009, the attendee view, and the clinician field** — this PR, five
+  commits: the ADR with its consequences applied to the plan and the guide; schema v4
+  with `Attendee.kind`, its migration and test, and the pseudonymizer reading the field;
+  the attendee view and the people list; the prompt file; this handoff with the
+  changelog. Session 9 was skipped over: it is blocked on plan §7 item 4, and session 10
+  did not depend on it.
 
 Verified with `git log`, `git rev-list --count main`, and `gh pr list`.
 
@@ -78,7 +80,7 @@ Verified with `git log`, `git rev-list --count main`, and `gh pr list`.
 
 ## Where we are
 
-`main` is at `e09a0fa`, CI green. No pull requests are open besides this one. Zero open
+`main` is at `294d6c6`, CI green. No pull requests are open besides this one. Zero open
 Dependabot alerts.
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
@@ -88,62 +90,56 @@ reviews: **0**, deliberate for a single-maintainer repository. Verified against 
 branch-protection API this session.
 
 **What the green checks actually mean.** `Verify` runs the denylist, lint, typecheck,
-unit tests (216), build, and the end-to-end suite (31). `Adversarial guardrail suite`
-ran live on this PR because `src/lib/privacy/` changed; on a PR that touches none of the
-watched paths it skips the model and says so, and green means the gate was not needed.
-The caveats, unchanged from session 7 except where marked:
+unit tests (222), build, and the end-to-end suite (32). `Adversarial guardrail suite`
+ran live on this PR because `src/lib/privacy/` changed — `classify()` reads a field now —
+and on a PR that touches none of the watched paths it skips the model and says so. The
+caveats, unchanged from session 8 except where marked:
 
-- **The eval figures are one held-out run at five samples per case.** `README.md` carries
-  them, dated: 0 of 60 reached under ruleset 1.2.0, 2 of 60 produced. The detectors have
-  been frozen since #39. Prompt injection has no rule behind it, and the ruleset
-  over-blocks relational sentences (`fieldnote-ay2`, 29 of 60 samples).
-- **The roster import's "never touches the network" is one recorded run.** The spec
-  records every request the page makes from the moment the import opens and finds none
-  leaving the origin and none to the API route. It runs in Chromium on `127.0.0.1`, with
-  the fixture files; it says nothing about a real sheet on a phone.
-- **The matcher misses the observed dictation mangling by design**, and its `close` basis
-  proposes any one-letter slip on a surname of five or more letters. The representative's
-  confirmation is the control; every proposal must be answered before the import button
-  enables.
-- **The single-egress check is a grep**; the one-model-call test holds `messages.create`
-  to one file. **SRI is partial** (`fieldnote-9gp`). **CI enforces structural denylist
-  patterns only.** **The end-to-end suite runs in one browser.** **The service worker's
-  update path is untested** (`fieldnote-unp`).
+- **The eval figures are one held-out run at five samples per case**, in `README.md`,
+  dated. The detectors are frozen. Prompt injection has no rule behind it; the ruleset
+  over-blocks relational sentences (`fieldnote-ay2`).
+- **The token class is now a field a human sets or corrects**, not a heuristic. The
+  dock writes `staff` for everyone; import reads a title of Dr or Prof; the view corrects
+  either. A clinician added from the dock is `staff` until someone opens the view, and
+  the model is then told "a colleague". The heuristic's stated cost, now in a place a
+  person can see and fix.
+- **The attendee view's history is joined by canonical name**, exactly the join the
+  pseudonymizer uses and no looser: "Dr Vance" and "Dr. Peter Vance" are two people to
+  it. The view says so. Nothing is fetched.
+- **The roster import's "never touches the network" is one recorded run** on the
+  fixtures. **The matcher's bases were chosen, not measured.**
+- **The single-egress check is a grep**; **SRI is partial** (`fieldnote-9gp`); **CI
+  enforces structural denylist patterns only**; **the end-to-end suite runs in one
+  browser**; **the service worker's update path is untested** (`fieldnote-unp`).
 
-**Attendees record where they came from.** Schema v3: `Attendee.source` is `captured`
-from the dock or `imported` from a sheet, backfilled `captured` by migration. The roster
-is an intention, not a record (`fieldnote-g7d`); session 11's briefing and session 15's
-threat model both read this field.
+**ADR-0009 decides the briefing's shape.** The application lays it out from what the
+representative enters and offers it as a download; it never sends it; the model writes
+none of it; deal positioning has no home in the public build. The single-egress claim
+survives as written and the review gate does not apply, because nothing is generated.
+Plan §3.2's suggested openers and selected talking points are withdrawn. Photo upload
+and its storage — a binary entity the cipher does not yet serialise — go to session 11
+with the form the representative fills.
 
-**Import fills, never renames.** `applyRosterImport` takes confirmed decisions in one
-transaction: a merge fills an existing attendee's empty role, specialty, and institution
-and cannot touch `displayName`; a new row becomes an imported attendee. It has no
-matcher. The matcher (`src/lib/roster/match.ts`) proposes on canonical names — exact
-across the whole sheet first, then surname, then one edit on a long surname.
+**Schema is at v4.** `Attendee.kind` (`hcp` | `staff`, plan §4.1's words) joins `source`
+(v3). Migration v4 backfills `kind` from the old `specialty` heuristic, and
+`tests/unit/migration-v4.test.ts` runs that migration over v3 rows through a seam added
+to the fake database — the first migration test in the repository.
 
-**Parsed input is hostile and is treated so.** Format by magic bytes, `.xls` refused
-with an instruction, every cell a sanitised string before anything else sees it. CSV is
-read by `src/lib/roster/csv.ts`, because `read-excel-file` has no CSV support at 9.3.10 —
-ADR-0003's consequence said otherwise and now carries a dated note.
+**The attendee view exists.** `src/components/attendees/`: a people list reached from the
+event switcher's third option, and one person's record — five fields editable, `source`
+read-only — with their notes and drafts across every event on the device, joined by
+name, oldest event first, and a draft opening in the existing detail view. Its first
+line says it shows what the phone holds and fetches nothing. No photo, no opener.
 
-**The dock's add-person flow is untouched**, and the end-to-end spec adds a walk-in after
-an import to show it. The import is an option in the event switcher, beside "Start a new
-event…", so the header the representative validated is unchanged.
+**Everything sessions 5 to 8 established stands**: the boundary, the greeting composed
+from the record, the review gate, the audit record surviving deletion, the shared model
+call, the diff-gated eval suite, the roster import that fills and never renames.
 
-**An imported specialty changes an attendee's token class.** `classify()` calls an
-attendee with a non-empty `specialty` a clinician; a "Department" column mapped to
-specialty can make a coordinator an HCP token. The heuristic's stated cost, now reachable
-(`fieldnote-1o6`).
-
-**Everything sessions 5 to 7 established stands**: the boundary, the greeting composed
-from the record, the review gate, the audit record surviving deletion (ADR-0008), the
-shared model call, the diff-gated eval suite.
-
-**Documentation set.** `README.md`, `docs/PROJECT-PLAN.md` (now with the data-model
-line on `Note.attendeeId` and `Attendee.source`), `docs/BUILD-GUIDE.md`,
-`docs/TESTING-ON-DEVICE.md`, eight ADRs with an index, `docs/prompts/` through session 8,
-this handoff and its template, `CHANGELOG.md` through session 8, `SECURITY.md`. Plan
-§4.6's `docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`, `docs/THREAT-MODEL.md`,
+**Documentation set.** `README.md`, `docs/PROJECT-PLAN.md` (§3.2 now carries the
+ADR-0009 note), `docs/BUILD-GUIDE.md` (sessions 10 and 11 amended), `docs/TESTING-ON-DEVICE.md`,
+nine ADRs with an index, `docs/prompts/` through session 10, this handoff and its
+template, `CHANGELOG.md` through session 10, `SECURITY.md`. Plan §4.6's
+`docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`, `docs/THREAT-MODEL.md`,
 `docs/DATA-PROTECTION.md`, and `docs/COMPLIANCE-MAP.md` do not exist yet (checked with
 `ls`).
 
@@ -151,60 +147,57 @@ this handoff and its template, `CHANGELOG.md` through session 8, `SECURITY.md`. 
 
 ## What's next
 
-### Session 9 — Approved content library
+### Session 11 — Briefing PDF, or session 9 — Approved content library
 
-Read `docs/BUILD-GUIDE.md` session 9 in full before starting; this is a pointer, not a
-substitute. Budgeted at ~2–3 hours. Storage, upload, and the matcher that validates
-claim-bearing output against the library.
+Two candidates, and the order is the owner's.
 
-**It is blocked**, and the guide says so: plan §7 item 4 — what approved content the
-representative actually has — is still open (`Status: open` in the plan), and it decides
-whether this is a library-selection feature or a paste field. Nothing in the repository
-can settle that. Until it is answered, every draft carries the gap marker and the
-claim-bearing rule blocks unconditionally, which is plan §4.2 working and the source of
-the over-blocking `fieldnote-ay2` records.
+**Session 11** is now specified by ADR-0009 and the guide's dated note: the form the
+representative fills — event details, logistics, contacts, per-attendee text she types
+or dictates — photo upload and its storage as a binary entity with the cipher extended
+for it, the document laid out and offered as a download, no model. Read the guide's
+session 11 entry with its amendment and ADR-0009 in full, then `fieldnote-g7d`'s
+remaining gaps: event metadata the record does not hold, the representative's own team as
+a second class of person, and the document stating expected attendance as of the
+generation date. Budgeted at ~4 hours and expected to run long. It needs no dependency
+decision the repository has not made, except how a PDF is produced on the device, which
+the guide does not say.
 
-**What earlier sessions hand it.** The eval suite measures both directions once the
-library exists: session 7's runner for what the model writes, and `flagsFired` with edit
-distance per draft for what the ruleset blanks. The roster now carries `role`,
-`specialty`, and `institution` from sheets, which the prompt does not yet use. Any change
-under `src/lib/generation/` runs the eval suite live. Check the prompt's premises against
-the repository before building on them — and, this time, against the dependency's own
-`package.json`: session 8's one stale premise was about a library's API that three
-documents had repeated.
+**Session 9** is still blocked on plan §7 item 4 (`Status: open` in the plan): what
+approved content the representative actually has, which decides whether it is a
+library-selection feature or a paste field. Nothing in the repository can settle that.
+
+Either way: check the prompt's premises against the repository, and against any
+dependency's own `package.json`, before building on them.
 
 ### Where outstanding work lives
 
 Three places, deliberately. Do not duplicate between them.
 
 **Beads — build state, local.** Verified this session: `.beads/config.yaml` has
-`git-push: false` and the remote carries no `refs/dolt/*`. Nothing about the private
-material goes into a bead. 51 issues: 27 open, 21 closed, 3 deferred, 16 ready, 11
-blocked (`bd stats`). Run `bd ready` and `bd blocked`.
+`git-push: false` and the remote carries no `refs/dolt/*`. 51 issues: 26 open, 22 closed,
+3 deferred, 15 ready, 11 blocked (`bd stats`). Run `bd ready` and `bd blocked`.
 
 Named here because they qualify claims made above; the backlog itself is not listed.
-`fieldnote-1o6` — an imported specialty makes an HCP token. `fieldnote-6qr` — a workbook
-with several sheets reads the first only. `fieldnote-ay2` — over-blocking has instances
-and a largest cause, no rate. `fieldnote-g7d` — the briefing package, which needs an ADR
-before anything is built. `fieldnote-5iv` — the edit-distance dashboard. `fieldnote-9gp`
-— SRI. `fieldnote-quj` — the two rulesets differ. `fieldnote-dx0` — mangled clinical
-terms. `fieldnote-ech` — the denylist matches listed spellings only. `fieldnote-bdw` —
-Safari storage durability. `fieldnote-unp` — the service worker update path.
-`fieldnote-v2s` — the private fork has no session. `fieldnote-loh` — session 15's
-container, deferred. Closed this session: `fieldnote-g6d`.
+`fieldnote-g7d` — the briefing package: its ADR is written; its schema and entity gaps go
+to session 11, and its post-event readout is not decided by ADR-0009. `fieldnote-6qr` —
+a workbook with several sheets reads the first only. `fieldnote-ay2` — over-blocking has
+instances and a largest cause, no rate. `fieldnote-5iv` — the edit-distance dashboard.
+`fieldnote-9gp` — SRI. `fieldnote-quj` — the two rulesets differ. `fieldnote-dx0` —
+mangled clinical terms. `fieldnote-ech` — the denylist matches listed spellings only.
+`fieldnote-bdw` — Safari storage durability. `fieldnote-unp` — the service worker update
+path. `fieldnote-v2s` — the private fork has no session. `fieldnote-loh` — session 15's
+container, deferred. Closed this session: `fieldnote-1o6`.
 
 **GitHub issues — public record.** One open: **#11**, the ESLint flat-config migration.
-Close each Dependabot 16.x offer as #27 was, with the reason on it, until #11 lands.
 
-**Session prompts — what was asked.** `docs/prompts/`, one file per session through 8.
-Session 8's carries the prompt verbatim and a how-it-went section naming the stale
-premise.
+**Session prompts — what was asked.** `docs/prompts/`, one file per session through 10.
 
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`; immutable once accepted,
-superseded or amended with a dated note. ADR-0003 gained a dated note this session. Still
-owed or worth considering: ADR-0004 when `fieldnote-bdw` resolves; ADR-0006's five-name
-evidence statement; the plan §2 conversation; and the briefing ADR `fieldnote-g7d`
-requires.
+superseded or amended with a dated note. ADR-0009 landed this session. Still owed or
+worth considering: ADR-0004 when `fieldnote-bdw` resolves; ADR-0006's five-name evidence
+statement; the plan §2 conversation; and a decision on the post-event readout and staff
+thank-yous, a second generation path with an internal audience that ADR-0009 does not
+cover.
 
 ---
 
@@ -213,16 +206,15 @@ requires.
 - **Read the build guide session in full before writing prompts for it.** The guide is
   the source of truth for scope and for what "done" means.
 - **Verify the guide's and the prompt's premises before building on them, and stop when
-  one is wrong.** Nine prompts have run; eight carried a stale premise, and the ninth's
-  was a dependency's API that no printout had checked. Print the dependency's exports
-  when a prompt leans on them.
+  one is wrong.** Print a dependency's `package.json` exports when a prompt leans on
+  them; session 8's one stale premise was a library's API that three documents had
+  repeated.
 - **A control that is not tested is not a control, and one that reads as tested is
   worse.** Where something genuinely cannot be covered, say so in the file itself.
 - **Verify by running, not by reasoning.** Every counterfactual named in a test header
-  was run. The first end-to-end run of the import found the matcher wrong; read what the
-  run did before deciding which side is wrong.
+  was run.
 - **`pnpm evals` costs real spend.** Run it deliberately, count the runs, and report the
-  total. `EVALS_ONLY` runs named cases alone; `EVALS_RUN=live` forces a live run.
+  total.
 - **Check what is listening before trusting a red or green e2e run.** `lsof -iTCP:3000`.
 - **The denylist can fire on ordinary vocabulary.** Remove the word rather than bypass
   the hook, and do not name it in the commit.
@@ -233,11 +225,13 @@ requires.
 - **Never `--no-verify`.** Check `git config core.hooksPath` still reads `.husky/_` after
   any tool that installs hooks, including every `bd` command.
 - **`gh pr create`, never `--fill`.**
-- **Stage explicit paths.** `git rm` stages too. Prettier reformats committed files on
-  commit, so anchor edits on what is in the file. A heredoc or file write that carries a
-  literal control character or byte-order mark is refused by the harness; write escapes.
+- **Stage explicit paths.** `git rm` stages too. Prettier reformats committed files, so
+  anchor an edit on what is in the file, with whitespace-tolerant matching for a line it
+  may have wrapped. A file write carrying a literal control character or byte-order mark
+  is refused by the harness; write escapes.
 - **One session, one PR.** Findings that are not blocking get beads.
-- **Separate commits per logical change.** Merge commit, not squash.
+- **Separate commits per logical change.** An ADR and its consequences come before any
+  code that depends on them. Merge commit, not squash.
 
 ---
 
@@ -245,32 +239,27 @@ requires.
 
 Stated rather than smoothed over.
 
-- **The import has been run on the fixtures only.** No real sign-in sheet has been
-  through it, and ADR-0003 warns that `read-excel-file` has not absorbed a decade of
-  pathological spreadsheets. The header detector handles the shapes the fixture names;
-  a sheet with a shape it does not name may find nothing, and then says so.
-- **The "never touches the network" demonstration is one browser, one origin, the
-  fixtures.** It records the page's own requests; a dependency phoning home from inside a
-  worker the page did not open would not be in that list. Nothing here suggests one.
-- **The matcher's bases were chosen, not measured.** Exact, surname, one edit on five or
-  more letters; no data on how often each proposes wrongly. The review step is the
-  control and every proposal must be answered.
+- **The attendee view has been run on the fixtures and one browser only**, like the
+  import. The name-join across events has a unit oracle and no real data behind it.
+- **A clinician added from the dock is `staff` until corrected.** The dock grows no
+  toggle by decision; the view is the correction. Nothing reminds the representative to
+  open it.
+- **The migration test runs the upgrade function over fake rows**, not Dexie's own
+  upgrade transaction against IndexedDB. A populated v3 store from a real device has not
+  been upgraded, because none exists outside the developer's own.
 - **Session 9 is blocked on plan §7 item 4** and nothing in the repository can unblock it.
 - **The eval figures are one held-out run, one day.**
 - **The containment amendment of 2026-09-09 is not reproduced here.** Its full text is in
   the handoff at commit `2dbdcb1`; its conclusions stand.
 - **The hardware run is one phone, one day, iOS 26.6.1.** Nothing built in sessions 5 to
-  8 has been run on hardware. The file picker on iOS is the thing most likely to behave
-  differently.
-- **The layout validation is one observed session**; the review surface and the import
-  screen have not been observed in use.
+  10 has been run on hardware.
+- **The layout validation is one observed session**; the review surface, the import
+  screen, and the attendee view have not been observed in use.
 - **Storage durability across Safari's eviction window is untested.** `fieldnote-bdw`.
 - **Nothing is deployed.** `fieldnote-6x5`, `fieldnote-ijg`.
 - **The private fork has no session and this handoff has no visibility into it.**
 - **Audit records grow without bound** by design (ADR-0008); session 16 owes retention.
-- **A name with neither a title nor a roster entry is still missed**, and import makes
-  that case more likely, not less (`fieldnote-g7d`); `Attendee.source` records which
-  entries were seen, it does not find the ones that were not.
+- **A name with neither a title nor a roster entry is still missed.** ADR-0006, ADR-0007.
 - **Session-to-PR attribution before session 2 is partly inferred.**
 - **Hours in the build guide are estimates, not measurements.**
 
