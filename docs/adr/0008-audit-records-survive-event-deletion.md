@@ -10,6 +10,14 @@
   hash is of what the model produced. The sentence under *What is hashed* about
   re-pseudonymizing `generatedBody` to reproduce the output pre-image therefore applies
   to the body below the greeting line. The decision is unchanged.
+- **Amended:** 2026-09-14, session 9 — the record gains `passagesUsed`, the ids of the
+  approved passages the draft carried exactly, and `libraryVersion`, a SHA-256 over the
+  library's normalised bodies at generation time, null when the library was empty
+  (schema v5, migration backfills `[]` and `null`). Both are metadata, not content: an id
+  and a hash, like everything else on the record. A passage removed from the library
+  stays referenced by id, for the reason this ADR gives for the record itself — deleting
+  the thing must not delete the evidence that it was used — and the library screen says
+  so on remove. The decision is unchanged.
 
 ## Context
 

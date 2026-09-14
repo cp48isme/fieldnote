@@ -425,6 +425,25 @@ whether this is a library-selection feature or a paste field.
 > eval case without every name and every product and commercial detail substituted
 > (plan §7 as amended).
 
+> **Amended 2026-09-14, session 9, on completion.** The material decided it: a
+> library-selection feature, small. "Upload" above is not what shipped — passages are
+> entered one at a time, label, body, and the approving document's code and version, and
+> there is no bulk upload by decision. What shipped: the matcher in
+> `src/lib/generation/approved.ts` — exact, whole passage, after whitespace and
+> quote-and-dash normalisation with case kept, nothing looser — which holds approved
+> spans out of every rule with a placeholder and puts the library's own body back after;
+> a library that refuses a passage at load when the pricing, hospitality, patient, or
+> invented-name rule fires on it or the pseudonymizer's structural guard would; prompt
+> template 1.2.0, which lists the passages after the notes and tells the model to select
+> and copy exactly, and keeps the empty-library wording word for word; ruleset 1.3.0,
+> the exemption and "rather than" no longer read as a comparison; schema v5, the audit
+> record carrying `passagesUsed` and `libraryVersion` (ADR-0008 amended); the library
+> screen from the event switcher; five invented passages as fixtures; and two eval
+> classes, passage-verbatim and passage-paraphrase, with the held-out figures in
+> `README.md`. The public build ships with the library empty. What the private material
+> is and what it decided are recorded beside it, per `CLAUDE.md`. Also folded in:
+> `fieldnote-frx`, the dock classifying a typed Dr or Prof as a clinician.
+
 ### Session 10 — Attendee profiles
 *~2 hours*
 
