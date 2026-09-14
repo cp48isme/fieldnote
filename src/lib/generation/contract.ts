@@ -17,6 +17,12 @@
 
 export type TokenKindName = "HCP" | "STAFF" | "PERSON" | "ROLE";
 
+/** An approved passage, sent so the model can select it and the route can protect it. */
+export interface RequestPassage {
+  id: string;
+  body: string;
+}
+
 export interface GenerateRequest {
   /** Pseudonymized note bodies for one recipient, oldest first. */
   notes: string[];
@@ -25,6 +31,13 @@ export interface GenerateRequest {
   /** First lines of drafts already produced in this batch, pseudonymized. */
   priorOpenings: string[];
   eventName: string;
+  /**
+   * The approved content library, whole (session 9). Empty when there is none. The
+   * passages cross the boundary as approved copy — cleared for external use by
+   * definition, holding no personal data — and `inputHash` covers them with the rest
+   * of the request.
+   */
+  passages: RequestPassage[];
 }
 
 /**

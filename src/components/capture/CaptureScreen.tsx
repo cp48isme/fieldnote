@@ -44,6 +44,7 @@ import {
   exportDraft,
   getActiveEventId,
   getAuditRecordForDraft,
+  listApprovedContent,
   listAttendees,
   listAuditRecords,
   listDrafts,
@@ -355,11 +356,17 @@ export function CaptureScreen() {
     setDrafting(true);
     try {
       await autosave.flush();
-      const [people, captured] = await Promise.all([
+      const [people, captured, library] = await Promise.all([
         listAttendees(event.id),
         listNotes(event.id),
+        listApprovedContent(),
       ]);
-      const batch = await generateDrafts({ event, attendees: people, notes: captured });
+      const batch = await generateDrafts({
+        event,
+        attendees: people,
+        notes: captured,
+        library,
+      });
       for (const outcome of batch.drafts) {
         await createDraftWithAudit({
           eventId: event.id,
@@ -372,8 +379,8 @@ export function CaptureScreen() {
           guardrailRulesetVersion: outcome.guardrailRulesetVersion,
           inputHash: outcome.inputHash,
           outputHash: outcome.outputHash,
-          passagesUsed: [],
-          libraryVersion: null,
+          passagesUsed: outcome.passagesUsed,
+          libraryVersion: outcome.libraryVersion,
         });
       }
       const count = batch.drafts.length;

@@ -51,6 +51,7 @@ const REQUEST: GenerateRequest = {
   recipientKind: "HCP",
   priorOpenings: [],
   eventName: "Northgate mobile lab",
+  passages: [],
 };
 
 function message(text: string, stop_reason: string): Anthropic.Message {
@@ -81,10 +82,17 @@ describe("one model call", () => {
     const params = buildModelParams(REQUEST);
     expect(params).toEqual({
       model: MODEL_ID,
-      system: buildSystemPrompt(),
+      system: buildSystemPrompt(false),
       messages: [{ role: "user", content: buildUserMessage(REQUEST) }],
       output_config: { effort: EFFORT },
     });
+    // With a library, the system prompt is the select-and-copy one.
+    const withLibrary = {
+      ...REQUEST,
+      passages: [{ id: "p-1", body: "The console is modular." }],
+    };
+    expect(buildModelParams(withLibrary).system).toBe(buildSystemPrompt(true));
+    expect(buildModelParams(withLibrary).messages[0]!.content).toContain("[p-1]");
   });
 
   it("sends the ceiling, and retries once at the multiple on truncation", async () => {

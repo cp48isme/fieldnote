@@ -20,6 +20,13 @@
  *      salutation the model wrote despite being told not to (`greeting.ts` says why
  *      that is neither the model authoring content nor a claim)
  *
+ * APPROVED COPY (session 9) sits between 3 and 4: every whole library passage the model
+ * copied exactly is held out of the rules as a placeholder and put back as the
+ * library's own body after them (`approved.ts`). A reworded passage is not found and is
+ * blocked as claim-bearing like any other product sentence. The library is a parameter,
+ * like the attendees — the pipeline never reads the database — so the eval runner can
+ * pass fixtures. What the draft carried is recorded on the outcome by passage id.
+ *
  * WHAT THE REPRESENTATIVE SEES WHEN SOMETHING FAILS. Never a stack trace, and never a
  * whole batch lost to one recipient. Each recipient's draft carries its own outcome:
  *
@@ -75,6 +82,12 @@ import {
   type TokenKind,
 } from "@/lib/privacy/pseudonymize";
 
+import {
+  libraryVersionOf,
+  protectApproved,
+  restoreApproved,
+  type ApprovedPassage,
+} from "./approved";
 import { GenerationRequestError, requestDraft as defaultRequestDraft } from "./client";
 import type { GenerateRequest } from "./contract";
 import { composeDraft, greetingFor, isSalutation } from "./greeting";
@@ -108,12 +121,18 @@ export interface DraftOutcome {
   inputHash: string | null;
   /** See the header: the guarded pseudonymized text, or null when there was none. */
   outputHash: string | null;
+  /** Ids of the approved passages the draft carried, in order. Empty when none. */
+  passagesUsed: string[];
+  /** The library the draft selected from; null when it was empty. */
+  libraryVersion: string | null;
 }
 
 export interface BatchInput {
   event: EventRecord;
   attendees: readonly AttendeeRecord[];
   notes: readonly NoteRecord[];
+  /** The approved content library, whole. Omitted means empty. */
+  library?: readonly ApprovedPassage[];
   /** Injected for tests; the real one is the API client. */
   requestDraft?: RequestDraft;
 }
@@ -167,6 +186,9 @@ export function openingOf(draft: string): string | null {
 export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
   const requestDraft = input.requestDraft ?? defaultRequestDraft;
   const pseudonymizer = createPseudonymizer(input.attendees);
+  const library = input.library ?? [];
+  const passages = library.map(({ id, body }) => ({ id, body }));
+  const libraryVersion = await libraryVersionOf(library);
 
   const notesByAttendee = new Map<Id, NoteRecord[]>();
   let unattributedNotes = 0;
@@ -205,6 +227,8 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
       flagsFired: [],
       inputHash: null,
       outputHash: null,
+      passagesUsed: [],
+      libraryVersion,
     });
 
     let request: GenerateRequest;
@@ -219,6 +243,7 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
         recipientKind: kindOf(recipientToken),
         priorOpenings: [...priorOpenings],
         eventName: input.event.name,
+        passages,
       };
     } catch (cause) {
       if (!(cause instanceof PseudonymizationError)) throw cause;
@@ -251,11 +276,15 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
       continue;
     }
 
-    const guarded = applyGuardrails(response.text);
+    // Approved copy held out of the rules, then the rules, then the copy put back as
+    // the library wrote it. `guardedText` is what everything after this reads.
+    const held = protectApproved(response.text, library);
+    const guarded = applyGuardrails(held.text);
+    const guardedText = restoreApproved(guarded.text, held.table);
     // The route's own flags first — the private-term rule it applied before answering —
     // then the public ruleset's.
     const flagsFired = [...response.flagsFired, ...guarded.flagsFired];
-    for (const token of guarded.text.match(TOKEN_PATTERN) ?? []) {
+    for (const token of guardedText.match(TOKEN_PATTERN) ?? []) {
       if (!pseudonymizer.mapping.has(token) && !flagsFired.includes(UNKNOWN_TOKEN_FLAG)) {
         // Left in place rather than failed, per ADR-0006: one odd string, not a lost draft.
         flagsFired.push(UNKNOWN_TOKEN_FLAG);
@@ -267,9 +296,9 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
     // about to be sent with the next request, and a name the model invented must not ride
     // along. Guard the whole draft: a draft that fails is withheld, and nothing from it is
     // carried forward.
-    const outputHash = await sha256Hex(guarded.text);
+    const outputHash = await sha256Hex(guardedText);
     try {
-      assertPseudonymized(guarded.text, input.attendees);
+      assertPseudonymized(guardedText, input.attendees);
     } catch (cause) {
       if (!(cause instanceof PseudonymizationError)) throw cause;
       drafts.push({
@@ -278,6 +307,7 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
         flagsFired,
         inputHash,
         outputHash,
+        passagesUsed: held.used,
       });
       continue;
     }
@@ -285,7 +315,7 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
     // Belt and braces on the one string that will actually cross: the opening is a slice
     // of text that just passed, so this cannot throw today, and it stays so that the
     // invariant the next request depends on is checked where it is relied on.
-    const opening = openingOf(guarded.text);
+    const opening = openingOf(guardedText);
     if (opening) {
       try {
         assertPseudonymized(opening, input.attendees);
@@ -300,12 +330,14 @@ export async function generateDrafts(input: BatchInput): Promise<BatchResult> {
       model: response.model,
       // The name joins the draft here, on the device, after the model's text is guarded
       // and rehydrated — the same place every other name is put back.
-      body: composeDraft(pseudonymizer.rehydrate(guarded.text), greetingFor(attendee)),
+      body: composeDraft(pseudonymizer.rehydrate(guardedText), greetingFor(attendee)),
       blocked: null,
       explanation: null,
       flagsFired,
       inputHash,
       outputHash,
+      passagesUsed: held.used,
+      libraryVersion,
     });
   }
 

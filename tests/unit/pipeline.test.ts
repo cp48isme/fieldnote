@@ -375,6 +375,89 @@ describe("openingOf", () => {
   });
 });
 
+describe("approved copy in the pipeline", () => {
+  const LIBRARY = [
+    {
+      id: "p-console",
+      body: "The open control console sits at eye level and is designed to move between rooms on its own stand.",
+    },
+    {
+      id: "p-sensor",
+      body: "The sensor module is supplied as a matched pair and allows a check before every case.",
+    },
+  ];
+
+  it("sends the library with the request and records an exact passage by id", async () => {
+    const { requestDraft, requests } = answering(
+      (r) =>
+        `Subject: Thanks\n\nThank you for your time.\n\n${LIBRARY[0]!.body}\n\nKind regards,`,
+    );
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-2", "Asked about the console.")],
+      library: LIBRARY,
+      requestDraft,
+    });
+    expect(requests[0]!.passages).toEqual(LIBRARY);
+    const draft = drafts[0]!;
+    expect(draft.body).toContain(LIBRARY[0]!.body);
+    expect(draft.body).not.toContain(GAP_MARKER);
+    expect(draft.flagsFired).toEqual([]);
+    expect(draft.passagesUsed).toEqual(["p-console"]);
+    expect(draft.libraryVersion).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("blocks a reworded passage as claim-bearing and records nothing for it", async () => {
+    const reworded = LIBRARY[0]!.body.replace("eye level", "eye height");
+    const { requestDraft } = answering(
+      () => `Subject: Thanks\n\nThank you for your time.\n\n${reworded}\n\nKind regards,`,
+    );
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-2", "Asked about the console.")],
+      library: LIBRARY,
+      requestDraft,
+    });
+    expect(drafts[0]!.body).toContain(GAP_MARKER);
+    expect(drafts[0]!.body).not.toContain("eye height");
+    expect(drafts[0]!.flagsFired).toEqual(["claim-bearing"]);
+    expect(drafts[0]!.passagesUsed).toEqual([]);
+  });
+
+  it("never carries a placeholder into the next request's openings", async () => {
+    // The opening is taken after the passages are restored: a draft that opens with a
+    // passage carries the passage text forward, never the marker that stood for it.
+    const { requestDraft, requests } = answering(
+      (r) =>
+        `Subject: Thanks\n\n${LIBRARY[1]!.body} Thank you for your time.\n\nKind regards,`,
+    );
+    await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-1", "Keen."), note("att-2", "Also keen.")],
+      library: LIBRARY,
+      requestDraft,
+    });
+    expect(requests[1]!.priorOpenings).toEqual([LIBRARY[1]!.body]);
+    expect(JSON.stringify(requests)).not.toContain("\u0001");
+  });
+
+  it("sends no passages and a null library version when the library is empty", async () => {
+    const { requestDraft, requests } = answering(email);
+    const { drafts } = await generateDrafts({
+      event: EVENT,
+      attendees: ROSTER,
+      notes: [note("att-2", "Keen.")],
+      requestDraft,
+    });
+    expect(requests[0]!.passages).toEqual([]);
+    expect(drafts[0]!.passagesUsed).toEqual([]);
+    expect(drafts[0]!.libraryVersion).toBeNull();
+  });
+});
+
 describe("audit hashes", () => {
   // What is hashed is the decision recorded in ADR-0008 and the pipeline header: the
   // request body as the client serialises it, and the guarded text before rehydration.
