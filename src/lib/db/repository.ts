@@ -41,6 +41,7 @@ import { editDistance } from "@/lib/review/edit-distance";
 
 import { encryptRecord, decryptAll, decryptRecord } from "./cipher";
 import { getDatabase } from "./database";
+import { kindFromDisplayName } from "./attendee-kind";
 import { assertTransition, canEdit } from "./draft-state";
 import {
   CURRENT_SCHEMA_VERSION,
@@ -49,6 +50,7 @@ import {
   type AttendeeKind,
   type AttendeeRecord,
   type AttendeeSource,
+  type ApprovedContentRecord,
   type AuditRecordRecord,
   type DraftBlockReason,
   type DraftRecord,
@@ -135,7 +137,10 @@ export async function deleteEvent(id: Id): Promise<void> {
 export interface NewAttendeeInput {
   eventId: Id;
   displayName: string;
-  /** Defaults to `staff`: the dock asks for a name only, and the view corrects the class. */
+  /**
+   * Omitted by the dock, which asks for a name only: then the leading title decides —
+   * "Dr. Swali" is `hcp`, "Marisol Vance" is `staff` — and the view corrects either.
+   */
   kind?: AttendeeKind;
   role?: string;
   specialty?: string;
@@ -148,7 +153,7 @@ function attendeeFrom(input: NewAttendeeInput): AttendeeRecord {
   return stamp({
     eventId: input.eventId,
     displayName: input.displayName,
-    kind: input.kind ?? ("staff" as const),
+    kind: input.kind ?? kindFromDisplayName(input.displayName),
     role: input.role ?? "",
     specialty: input.specialty ?? "",
     institution: input.institution ?? "",
@@ -390,6 +395,10 @@ export interface NewDraftInput {
   guardrailRulesetVersion: string;
   inputHash: string | null;
   outputHash: string | null;
+  /** Ids of the approved passages the draft carried. Empty when none. */
+  passagesUsed: Id[];
+  /** The library the draft selected from, or null when it was empty. */
+  libraryVersion: string | null;
 }
 
 export interface DraftWithAudit {
@@ -429,6 +438,8 @@ export async function createDraftWithAudit(
     exportedAt: null,
     humanEdited: null,
     editDistance: null,
+    passagesUsed: [...input.passagesUsed],
+    libraryVersion: input.libraryVersion,
   });
 
   const db = getDatabase();
@@ -569,6 +580,65 @@ export async function getAuditRecordForDraft(
 export async function listAuditRecords(): Promise<AuditRecordRecord[]> {
   const rows = await getDatabase().auditRecords.orderBy("createdAt").toArray();
   return decryptAll(TABLES.auditRecords, rows);
+}
+
+// --- Approved content ------------------------------------------------------
+//
+// Plain storage for the library (session 9). Whether a passage may be loaded — the
+// rules it must not trip, the guard it must pass — is decided in
+// `src/lib/library/passages.ts`, which calls these; nothing here judges a body.
+
+export interface NewApprovedContentInput {
+  label: string;
+  body: string;
+  sourceRef: string;
+}
+
+/** Oldest first: the order the representative entered them, which is the order she knows. */
+export async function listApprovedContent(): Promise<ApprovedContentRecord[]> {
+  const rows = await getDatabase().approvedContent.orderBy("updatedAt").toArray();
+  return decryptAll(TABLES.approvedContent, rows).sort(
+    (a, b) => a.createdAt - b.createdAt,
+  );
+}
+
+export async function addApprovedContent(
+  input: NewApprovedContentInput,
+): Promise<ApprovedContentRecord> {
+  const record: ApprovedContentRecord = stamp({
+    label: input.label.trim(),
+    body: input.body.trim(),
+    sourceRef: input.sourceRef.trim(),
+  });
+  await getDatabase().approvedContent.put(encryptRecord(TABLES.approvedContent, record));
+  return record;
+}
+
+export async function updateApprovedContent(
+  id: Id,
+  input: NewApprovedContentInput,
+): Promise<ApprovedContentRecord> {
+  const db = getDatabase();
+  const existing = await db.approvedContent.get(id);
+  if (!existing) throw new Error(`Approved content ${id} not found`);
+  const updated: ApprovedContentRecord = {
+    ...decryptRecord(TABLES.approvedContent, existing),
+    label: input.label.trim(),
+    body: input.body.trim(),
+    sourceRef: input.sourceRef.trim(),
+    updatedAt: now(),
+  };
+  await db.approvedContent.put(encryptRecord(TABLES.approvedContent, updated));
+  return updated;
+}
+
+/**
+ * Removes a passage from the library. Audit records that carried it keep its id in
+ * `passagesUsed` — the record survives (ADR-0008) and the id is the reference — so a
+ * removed passage is unavailable to future drafts and still accounted for in past ones.
+ */
+export async function removeApprovedContent(id: Id): Promise<void> {
+  await getDatabase().approvedContent.delete(id);
 }
 
 // --- Settings --------------------------------------------------------------

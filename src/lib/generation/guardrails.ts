@@ -17,6 +17,20 @@
  *
  * VERSION NOTES
  *
+ *   1.3.0 — 2026-09-14, session 9. Two changes. **Approved spans are exempt from every
+ *           rule.** Plan §4.2: claim-bearing text is selected from the library, never
+ *           authored. The matcher (`approved.ts`) replaces each whole passage the model
+ *           copied exactly with a placeholder before the sentence rules run and restores
+ *           it after; here, a placeholder is its own segment and passes untouched, so a
+ *           passage that carries indication language by nature — a regulatory passage —
+ *           is not blanked for being what it is. The exemption is honest only because
+ *           the library refuses a passage at load time if the pricing, hospitality,
+ *           patient, or invented-name rule fires on it (`src/lib/library/passages.ts`).
+ *           **"rather than" is contrast, not comparison**: STRONG_CLAIM's bare "than" no
+ *           longer matches it. The single largest cause of over-blocking in the held-out
+ *           eval runs ("in a real setting rather than a demonstration room" blanked;
+ *           `fieldnote-ay2`). Nothing else in the ruleset changes. Decided by the owner.
+ *
  *   1.2.0 — 2026-09-14, between sessions 7 and 8. The indication rule gains a phrase
  *           list for regulatory language that is not "cleared for": "cleared
  *           population", "cleared indication", "clearance", "labelled indication",
@@ -86,7 +100,7 @@ import {
 
 import { GAP_MARKER } from "./prompt";
 
-export const GUARDRAIL_RULESET_VERSION = "1.2.0";
+export const GUARDRAIL_RULESET_VERSION = "1.3.0";
 
 export interface GuardrailRule {
   /** Stable id, recorded in `flagsFired`. */
@@ -114,7 +128,7 @@ const DESCRIPTOR =
  * rule's adversarial case fails when that rule alone is removed.
  */
 const STRONG_CLAIM =
-  /\bthan\b|\b(?:faster|quicker|better|safer|superior|proven|outcomes?|reduces?|reducing|improv\w*|efficacy|effective\w*)\b/i;
+  /(?<!\brather\s)\bthan\b|\b(?:faster|quicker|better|safer|superior|proven|outcomes?|reduces?|reducing|improv\w*|efficacy|effective\w*)\b/i;
 
 /** The sentence reports what the recipient said, asked, or felt. */
 const ATTRIBUTED =
@@ -256,6 +270,16 @@ export const RULESET: readonly GuardrailRule[] = [
 
 // --- Application ----------------------------------------------------------------------
 
+/**
+ * An approved passage, held out of the rules (1.3.0). `approved.ts` writes these into
+ * the text before `applyGuardrails` runs and reads them back after; a segment that is
+ * exactly a placeholder is passed through unjudged. The delimiter is U+0001, chosen so
+ * it cannot collide with the pseudonymizer's own U+0000 placeholders, which in any case
+ * never survive past `pseudonymize()`.
+ */
+export const APPROVED_PLACEHOLDER = /\u0001(\d+)\u0001/g;
+const APPROVED_PLACEHOLDER_ONLY = /^\u0001\d+\u0001$/;
+
 export interface GuardrailResult {
   /** The draft with every violating sentence replaced by the gap marker. */
   text: string;
@@ -277,8 +301,19 @@ const SENTENCE_BOUNDARY = new RegExp(
   "i",
 );
 
+/**
+ * Splits a line into sentences, with every approved placeholder as a segment of its own
+ * so that a violating sentence around a passage is blanked without taking the passage
+ * with it, and the passage is never judged.
+ */
 function sentencesOf(line: string): string[] {
-  return line.split(SENTENCE_BOUNDARY).filter((s) => s.length > 0);
+  return line
+    .split(/(\u0001\d+\u0001)/)
+    .flatMap((part) =>
+      APPROVED_PLACEHOLDER_ONLY.test(part) ? [part] : part.split(SENTENCE_BOUNDARY),
+    )
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 export function applyGuardrails(
@@ -294,6 +329,7 @@ export function applyGuardrails(
       sentencesOf(line)
         .map((sentence) => {
           if (sentence === GAP_MARKER) return sentence;
+          if (APPROVED_PLACEHOLDER_ONLY.test(sentence)) return sentence;
           const violated = ruleset.filter((rule) => rule.violates(sentence));
           if (violated.length === 0) return sentence;
           for (const rule of violated) fired.add(rule.id);

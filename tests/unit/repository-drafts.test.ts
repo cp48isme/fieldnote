@@ -68,6 +68,8 @@ function draftInput(overrides: Partial<NewDraftInput> = {}): NewDraftInput {
     guardrailRulesetVersion: "1.1.0",
     inputHash: "a".repeat(64),
     outputHash: "b".repeat(64),
+    passagesUsed: [],
+    libraryVersion: null,
     ...overrides,
   };
 }

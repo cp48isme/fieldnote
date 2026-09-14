@@ -63,6 +63,11 @@ export {
   listNotesForAttendee,
   listDraftsForAttendee,
   applyRosterImport,
+  listApprovedContent,
+  addApprovedContent,
+  updateApprovedContent,
+  removeApprovedContent,
+  type NewApprovedContentInput,
   type AttendeeEdit,
   type AttendeeDetails,
   type RosterImportDecision,
@@ -88,6 +93,8 @@ export {
   type NewDraftInput,
   type DraftWithAudit,
 } from "./repository";
+
+export { kindFromTitle, kindFromDisplayName } from "./attendee-kind";
 
 export {
   DRAFT_TRANSITIONS,

@@ -26,6 +26,17 @@
  *           token instruction still tells the model to use the recipient's token where a
  *           name would go in the body. `fieldnote-viw`.
  *
+ *   1.2.0 — 2026-09-14, session 9. The approved content library exists, so the model
+ *           is told what it may select from. When the library is empty the system
+ *           prompt is 1.1.0's, word for word — "there is no approved wording available
+ *           to you" — so the empty-library path is unchanged. When it is not, that
+ *           paragraph says: select from the passages listed, copy each one exactly with
+ *           no change to any word, and where none fits write the gap marker; and the
+ *           user message lists the passages with their identifiers after the notes.
+ *           Plan §4.2: select and arrange, never author. The matcher (`approved.ts`)
+ *           holds an exactly copied passage out of the rules; a reworded one is blocked
+ *           as claim-bearing, which is the instruction enforced after the fact.
+ *
  * WHAT THE MODEL IS TOLD AND WHY.
  *
  *   - Names and roles are tokens. It is told which token classes are people and which are
@@ -46,7 +57,7 @@
  *     ways.
  */
 
-export const PROMPT_TEMPLATE_VERSION = "1.1.0";
+export const PROMPT_TEMPLATE_VERSION = "1.2.0";
 
 /**
  * The literal the model writes where product language would go, and the literal the
@@ -75,9 +86,17 @@ export function wrapNote(text: string): string {
   return `${NOTE_OPEN}\n${defanged}\n${NOTE_CLOSE}`;
 }
 
+/** An approved passage as the model sees it: an identifier and the exact text. */
+export interface PromptPassage {
+  id: string;
+  body: string;
+}
+
 export interface PromptInput {
   /** Pseudonymized note bodies for one recipient, oldest first. */
   notes: readonly string[];
+  /** The approved content library, or empty. Omitted means empty. */
+  passages?: readonly PromptPassage[];
   /** Whether the recipient is a clinician or a colleague, from the token class. */
   recipientKind: "HCP" | "STAFF" | "PERSON" | "ROLE";
   /** The recipient's own token, so the model can address them. */
@@ -88,7 +107,18 @@ export interface PromptInput {
   eventName: string;
 }
 
-export function buildSystemPrompt(): string {
+/**
+ * The one paragraph that changes with the library. Empty: 1.1.0's text exactly.
+ * Otherwise: select, copy exactly, gap where nothing fits.
+ */
+function productParagraph(hasPassages: boolean): string {
+  if (!hasPassages) {
+    return `YOU MAY NOT DESCRIBE THE PRODUCT. Do not write any sentence that states, implies, or compares the product's characteristics, capabilities, performance, indications, regulatory status, price, or cost, in your own voice. There is no approved wording available to you. Where such a sentence would naturally go, write exactly this on its own line: ${GAP_MARKER}`;
+  }
+  return `YOU MAY NOT DESCRIBE THE PRODUCT IN YOUR OWN WORDS. Do not write any sentence that states, implies, or compares the product's characteristics, capabilities, performance, indications, regulatory status, price, or cost, in your own voice. The only product wording you may use is the approved passages listed after the notes. Select the passage or passages that fit what this person raised and copy each one exactly, with no change to any word, punctuation mark, or order; you may place a passage where it belongs in the email, but you may not shorten, combine, or reword it. Where no passage fits, write exactly this on its own line: ${GAP_MARKER}`;
+}
+
+export function buildSystemPrompt(hasPassages = false): string {
   return [
     "You draft a short follow-up email from a field representative to one person who attended a product demonstration event. The representative will review and edit every word before anything is sent; you are producing a first draft, not a finished email.",
     "",
@@ -98,7 +128,7 @@ export function buildSystemPrompt(): string {
     "",
     "WRITE ONLY RELATIONAL TEXT. You may write: thanks for their time, acknowledgement of what they said, asked, or were concerned about, logistics such as a live case visit or a follow-up conversation, and a warm close. You may refer to what the recipient said about the product, attributed to them.",
     "",
-    `YOU MAY NOT DESCRIBE THE PRODUCT. Do not write any sentence that states, implies, or compares the product's characteristics, capabilities, performance, indications, regulatory status, price, or cost, in your own voice. There is no approved wording available to you. Where such a sentence would naturally go, write exactly this on its own line: ${GAP_MARKER}`,
+    productParagraph(hasPassages),
     "",
     "DO NOT OFFER anything of value: no meals, travel, gifts, honoraria, or payment. Do not mention any patient. Do not mention pricing, discounts, or cost figures even if the notes do.",
     "",
@@ -115,6 +145,17 @@ export function buildUserMessage(input: PromptInput): string {
       ? "None yet."
       : input.priorOpenings.map((line) => `- ${line}`).join("\n");
 
+  const passages = input.passages ?? [];
+  const library =
+    passages.length === 0
+      ? []
+      : [
+          "",
+          "Approved passages you may copy exactly, and only exactly:",
+          "",
+          ...passages.map((passage) => `[${passage.id}]\n${passage.body}`),
+        ];
+
   return [
     `Event: ${input.eventName}`,
     `Recipient: ${input.recipientToken} (${describeKind(input.recipientKind)})`,
@@ -122,6 +163,7 @@ export function buildUserMessage(input: PromptInput): string {
     "Notes about this person, oldest first:",
     "",
     notes,
+    ...library,
     "",
     "Openings already used in this batch:",
     openings,

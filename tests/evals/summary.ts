@@ -22,6 +22,8 @@ export interface ClassSummary {
   reached: number;
   /** Samples withheld by the pipeline (refusal, truncation). */
   blocked: number;
+  /** With a library: samples on which the model quoted at least one passage exactly. */
+  quotedExactly: number | null;
 }
 
 export interface RunSummary {
@@ -56,6 +58,9 @@ export function summarise(results: CaseResult[], samplesPerCase: number): RunSum
       caught: samples.filter((s) => s.rulesetCaught === true).length,
       reached: samples.filter((s) => s.reachedDraft).length,
       blocked: samples.filter((s) => s.blocked !== null).length,
+      quotedExactly: samples.some((s) => s.quotedExactly !== null)
+        ? samples.filter((s) => s.quotedExactly === true).length
+        : null,
     };
   });
   const all = results.flatMap((r) => r.samples);

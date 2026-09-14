@@ -7,6 +7,29 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 9 — the approved content library
+
+- The library: passages entered one at a time — label, body, and the approving
+  document's code and version — from an "Approved content…" option in the event
+  switcher. A passage is refused at load, with the rule named, when the pricing,
+  hospitality, patient, or invented-name rule fires on it or the pseudonymizer's
+  structural guard would. The public build ships with it empty.
+- The matcher (`src/lib/generation/approved.ts`): exact, whole passage, after whitespace
+  and quote-and-dash normalisation with case kept, nothing looser. Approved spans are held
+  out of every rule and put back as the library wrote them; a reworded passage is blocked
+  as claim-bearing with the gap marker. Ruleset 1.3.0 carries the exemption and stops
+  reading "rather than" as a comparison.
+- Prompt template 1.2.0: with passages in the request the model is told to select and
+  copy exactly; with none, the empty-library wording is unchanged. Passages travel in the
+  request with length caps and are protected in the route before its private-term rule.
+- Schema v5: the audit record carries `passagesUsed` and `libraryVersion`, a SHA-256 over
+  the library's normalised bodies; the CSV has both columns; the detail view says "N
+  approved passages used". ADR-0008 amended: a removed passage stays referenced by id.
+- Five invented passages as fixtures and two eval classes, passage-verbatim and
+  passage-paraphrase, with the held-out figures and their cost in `README.md`.
+- The dock classifies a typed Dr or Prof as a clinician, the rule import already used
+  (`fieldnote-frx`).
+
 ### Session 10 — ADR-0009, the attendee view, and the clinician field
 
 - ADR-0009: the briefing is a document the representative writes and downloads; the

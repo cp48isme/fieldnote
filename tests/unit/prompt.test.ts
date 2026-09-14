@@ -66,7 +66,59 @@ describe("the message the model receives", () => {
     const system = buildSystemPrompt();
     expect(system).toContain("Do not write a greeting or salutation line");
     expect(system).not.toContain("Then the greeting");
-    expect(PROMPT_TEMPLATE_VERSION).toBe("1.1.0");
+    expect(PROMPT_TEMPLATE_VERSION).toBe("1.2.0");
+  });
+
+  it("1.2.0: keeps 1.1.0's product paragraph word for word when the library is empty", () => {
+    const empty = buildSystemPrompt(false);
+    expect(empty).toContain("There is no approved wording available to you.");
+    expect(empty).not.toContain("approved passages");
+    expect(buildSystemPrompt()).toBe(empty);
+  });
+
+  it("1.2.0: tells the model to select and copy exactly when the library is not empty", () => {
+    const withLibrary = buildSystemPrompt(true);
+    expect(withLibrary).toContain("copy each one exactly");
+    expect(withLibrary).toContain("may not shorten, combine, or reword");
+    expect(withLibrary).not.toContain("There is no approved wording available to you.");
+    expect(withLibrary).toContain(GAP_MARKER);
+    // Everything else is unchanged between the two.
+    const strip = (s: string) =>
+      s.split("\n").filter((line) => !line.startsWith("YOU MAY NOT DESCRIBE"));
+    expect(strip(withLibrary)).toEqual(strip(buildSystemPrompt(false)));
+  });
+
+  it("1.2.0: lists the passages with their identifiers after the notes, and nothing when empty", () => {
+    const base = {
+      notes: ["[HCP_1] asked about the console."],
+      recipientToken: "[HCP_1]",
+      recipientKind: "HCP" as const,
+      priorOpenings: [],
+      eventName: "Ridgeway",
+    };
+    const without = buildUserMessage(base);
+    expect(without).not.toContain("Approved passages");
+    const withPassages = buildUserMessage({
+      ...base,
+      passages: [
+        { id: "p-console", body: "The open control console sits at eye level." },
+        { id: "p-kit", body: "The tooling kit ships in one case." },
+      ],
+    });
+    expect(withPassages).toContain(
+      "Approved passages you may copy exactly, and only exactly:",
+    );
+    expect(withPassages).toContain(
+      "[p-console]\nThe open control console sits at eye level.",
+    );
+    expect(withPassages).toContain("[p-kit]\nThe tooling kit ships in one case.");
+    // After the notes, before the openings.
+    expect(withPassages.indexOf("</note>")).toBeLessThan(
+      withPassages.indexOf("[p-console]"),
+    );
+    expect(withPassages.indexOf("[p-kit]")).toBeLessThan(
+      withPassages.indexOf("Openings already used"),
+    );
   });
 
   it("carries the notes, the recipient, and the prior openings", () => {

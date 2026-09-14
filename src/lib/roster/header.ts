@@ -24,7 +24,7 @@
  * whole mapping every time.
  */
 
-import type { AttendeeKind } from "@/lib/db";
+import { kindFromTitle, type AttendeeKind } from "@/lib/db";
 
 export type RosterField =
   "name" | "givenName" | "title" | "role" | "specialty" | "institution";
@@ -187,16 +187,8 @@ export interface ImportedPerson {
   institution: string;
 }
 
-/**
- * The titles a sign-in sheet writes for a clinician. A title column is the one thing on
- * a sheet that says "clinician" without saying anything else; a department or a role
- * column does not (`fieldnote-1o6`), which is why neither is read here.
- */
-const CLINICIAN_TITLE = /^(?:dr|prof|professor|doctor)\.?$/i;
-
-export function kindFromTitle(title: string): AttendeeKind {
-  return CLINICIAN_TITLE.test(title.trim()) ? "hcp" : "staff";
-}
+/** The title rule lives in `src/lib/db/attendee-kind.ts`, shared with the dock's path. */
+export { kindFromTitle };
 
 const cellAt = (row: readonly string[], index: number | null) =>
   index === null ? "" : (row[index] ?? "");

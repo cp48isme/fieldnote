@@ -19,6 +19,10 @@
  * "People at this event…" (session 10) is the door to the attendee view, for the same
  * reason: the dock's attribution select shows the same names but a `<select>` cannot
  * hold a per-option action, and the follow-ups list is a list of drafts, not of people.
+ *
+ * "Approved content…" (session 9) is the door to the library. It is not per event, but
+ * the switcher is the one list the representative already opens, and a library reached
+ * from anywhere else would be a fourth control in a header that has room for none.
  */
 
 import type { EventRecord, Id } from "@/lib/db";
@@ -30,6 +34,7 @@ import type { EventRecord, Id } from "@/lib/db";
 const NEW_EVENT_VALUE = "__new__";
 const IMPORT_ROSTER_VALUE = "__import__";
 const PEOPLE_VALUE = "__people__";
+const LIBRARY_VALUE = "__library__";
 
 export interface EventSwitcherProps {
   /** Newest first, as `listEvents` returns them. */
@@ -39,6 +44,7 @@ export interface EventSwitcherProps {
   onStartNew: () => void;
   onImportRoster: () => void;
   onShowPeople: () => void;
+  onShowLibrary: () => void;
 }
 
 export function EventSwitcher({
@@ -48,6 +54,7 @@ export function EventSwitcher({
   onStartNew,
   onImportRoster,
   onShowPeople,
+  onShowLibrary,
 }: EventSwitcherProps) {
   return (
     <>
@@ -74,6 +81,10 @@ export function EventSwitcher({
             onShowPeople();
             return;
           }
+          if (value === LIBRARY_VALUE) {
+            onShowLibrary();
+            return;
+          }
           onSwitch(value);
         }}
         className="min-h-11 max-w-[60%] flex-1 truncate rounded-lg border px-2 text-base font-semibold"
@@ -86,6 +97,7 @@ export function EventSwitcher({
         <option value={NEW_EVENT_VALUE}>Start a new event…</option>
         <option value={PEOPLE_VALUE}>People at this event…</option>
         <option value={IMPORT_ROSTER_VALUE}>Import a sign-in sheet…</option>
+        <option value={LIBRARY_VALUE}>Approved content…</option>
       </select>
     </>
   );

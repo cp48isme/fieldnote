@@ -32,7 +32,7 @@ export function buildModelParams(
 ): Omit<Anthropic.MessageCreateParamsNonStreaming, "max_tokens"> {
   return {
     model: MODEL_ID,
-    system: buildSystemPrompt(),
+    system: buildSystemPrompt(request.passages.length > 0),
     messages: [{ role: "user" as const, content: buildUserMessage(request) }],
     output_config: { effort: EFFORT },
   };

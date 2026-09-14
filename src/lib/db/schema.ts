@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -283,6 +283,19 @@ export interface AuditRecordRecord extends BaseRecord {
   humanEdited: boolean | null;
   /** Null until export; then the character edit distance, generated to exported. */
   editDistance: number | null;
+  /**
+   * The approved-content passages the draft carried, by id, in the order they appear
+   * (session 9, v5). Plan §4.2: claim-bearing text is selected from the library, never
+   * authored, and this is the record of what was selected. A passage removed from the
+   * library later stays referenced here; the record survives (ADR-0008).
+   */
+  passagesUsed: Id[];
+  /**
+   * SHA-256, hex, over the library's normalised passage bodies at generation time, so
+   * the record says which library the draft selected from. Null when the library was
+   * empty and nothing could have been selected.
+   */
+  libraryVersion: string | null;
 }
 
 export const AUDIT_POLICIES: FieldPolicies<AuditRecordRecord> = {
@@ -306,6 +319,8 @@ export const AUDIT_POLICIES: FieldPolicies<AuditRecordRecord> = {
     encryption: "clear",
     why: "Integer distance, not content. Plan §4.4 surfaces it as a dashboard metric.",
   },
+  passagesUsed: { encryption: "clear", why: "Opaque ids of approved copy; no identity." },
+  libraryVersion: { encryption: "clear", why: "Hash, not content." },
 };
 
 // --- VoiceProfile ----------------------------------------------------------
@@ -337,6 +352,13 @@ export interface ApprovedContentRecord extends BaseRecord {
   sourceRef: string;
 }
 
+/**
+ * One approved passage (session 9). `body` is matched whole and exactly, after
+ * normalisation, against the model's text; `sourceRef` holds the approving document's
+ * code and version, per passage, so a draft's audit record can say which approved copy
+ * it carried. The public build ships with this table empty; the private fork loads the
+ * real passages there.
+ */
 export const APPROVED_CONTENT_POLICIES: FieldPolicies<ApprovedContentRecord> = {
   ...BASE_POLICY,
   label: { encryption: "clear", why: "Library label; no identity." },

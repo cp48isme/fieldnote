@@ -153,6 +153,33 @@ export const MIGRATIONS: Migration[] = [
         });
     },
   },
+  {
+    // Session 9: the audit record says which approved passages a draft carried and
+    // from which library. Every record written before this version was generated with
+    // no library, so the backfill is an empty list and a null version. No index changes.
+    version: 5,
+    stores: {
+      [TABLES.events]: "id, status, startsAt, updatedAt",
+      [TABLES.attendees]: "id, eventId, updatedAt",
+      [TABLES.notes]: "id, eventId, attendeeId, updatedAt",
+      [TABLES.drafts]: "id, eventId, attendeeId, state, updatedAt",
+      [TABLES.auditRecords]: "id, draftId, eventId, createdAt",
+      [TABLES.voiceProfiles]: "id, updatedAt",
+      [TABLES.approvedContent]: "id, updatedAt",
+      [TABLES.settings]: "id",
+      [TABLES.sessionMarkers]: "id, startedAt, endedAt",
+    },
+    upgrade: async (tx) => {
+      await tx
+        .table(TABLES.auditRecords)
+        .toCollection()
+        .modify((record: Partial<AuditRecordRecord>) => {
+          record.passagesUsed ??= [];
+          record.libraryVersion ??= null;
+          record.schemaVersion = 5;
+        });
+    },
+  },
 ];
 
 /**

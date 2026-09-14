@@ -37,14 +37,21 @@ describe("applyRosterImport", () => {
   it("marks the dock's attendees captured and the sheet's imported", async () => {
     const typed = await createAttendee({ eventId: EVENT, displayName: "Dr. Swali" });
     expect(typed.source).toBe("captured");
+    // fieldnote-frx: the dock's typed title decides the class, the rule import uses.
+    expect(typed.kind).toBe("hcp");
+    expect(
+      (await createAttendee({ eventId: EVENT, displayName: "Marisol Vance" })).kind,
+    ).toBe("staff");
+    expect(
+      (await createAttendee({ eventId: EVENT, displayName: "Prof Green" })).kind,
+    ).toBe("hcp");
     const { added } = await applyRosterImport(EVENT, [
       { kind: "new", displayName: "Dr Green", attendeeKind: "hcp", details: DETAILS },
     ]);
     expect(added[0]!.source).toBe("imported");
     expect(added[0]!.kind).toBe("hcp");
-    expect(typed.kind).toBe("staff");
     expect(added[0]!.role).toBe("Consultant");
-    expect(await listAttendees(EVENT)).toHaveLength(2);
+    expect(await listAttendees(EVENT)).toHaveLength(4);
   });
 
   it("fills only empty details on a merge, and never the display name", async () => {

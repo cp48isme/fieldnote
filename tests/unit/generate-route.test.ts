@@ -38,6 +38,7 @@ const VALID = {
   recipientKind: "HCP",
   priorOpenings: [],
   eventName: "Northgate mobile lab",
+  passages: [],
 };
 
 function post(body: unknown): Request {
@@ -167,6 +168,33 @@ describe("the generation route", () => {
     expect(logged).not.toContain("set-for-the-test");
     expect(logged).toContain('"stopReason":"end_turn"');
     expect(logged).toContain('"outputTokens":20');
+  });
+
+  it("validates passages with length caps", async () => {
+    const tooLong = { id: "p-1", body: "x".repeat(2001) };
+    const response = await POST(post({ ...VALID, passages: [tooLong] }));
+    expect(response.status).toBe(400);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("holds an approved passage out of its own private-term rule, and hands it back intact", async () => {
+    // fieldnote-quj: real approved copy carries the product's own name, which is what
+    // the private list holds. The route protects the passages in the request before its
+    // one rule runs. The private list is absent here, so the rule never fires; what is
+    // under test is that the passage survives the route's guard unchanged.
+    const passage = {
+      id: "p-console",
+      body: "The open control console sits at eye level.",
+    };
+    create.mockResolvedValueOnce(
+      reply(`Thank you for your time.\n\n${passage.body}\n\nKind regards,`, "end_turn"),
+    );
+    const response = await POST(post({ ...VALID, passages: [passage] }));
+    const body = await response.json();
+    expect(body.text).toBe(
+      `Thank you for your time.\n\n${passage.body}\n\nKind regards,`,
+    );
+    expect(create.mock.calls[0]![0].system).toContain("copy each one exactly");
   });
 
   it("maps an API error to a 502 without echoing the upstream message", async () => {

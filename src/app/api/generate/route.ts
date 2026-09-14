@@ -26,6 +26,7 @@ import { z } from "zod";
 import type { GenerateRequest, GenerateResponse } from "@/lib/generation/contract";
 import { MAX_RETRIES } from "@/lib/generation/model";
 import { applyGuardrails } from "@/lib/generation/guardrails";
+import { protectApproved, restoreApproved } from "@/lib/generation/approved";
 import { requestModelDraft, textOf } from "@/lib/generation/model-call";
 import { loadPrivateTerms } from "@/lib/generation/private-terms";
 import { PROMPT_TEMPLATE_VERSION } from "@/lib/generation/prompt";
@@ -44,6 +45,9 @@ const GenerateRequestSchema = z.object({
   recipientKind: z.enum(["HCP", "STAFF", "PERSON", "ROLE"]),
   priorOpenings: z.array(z.string().max(500)).max(50),
   eventName: z.string().max(200),
+  passages: z
+    .array(z.object({ id: z.string().min(1).max(64), body: z.string().min(1).max(2000) }))
+    .max(50),
 }) satisfies z.ZodType<GenerateRequest>;
 
 const KEY_VARIABLE = "ANTHROPIC_API_KEY";
@@ -124,9 +128,19 @@ export async function POST(request: Request): Promise<NextResponse> {
           : null;
 
     // The one rule the server owns: private terms the public ruleset cannot carry.
+    // Approved passages are held out of it first (fieldnote-quj): real approved copy
+    // carries the product's own name, which is exactly what the private list holds,
+    // and a passage the model copied exactly is not the model writing the name.
     const guarded = blocked
-      ? { text: "", flagsFired: [] }
-      : applyGuardrails(textOf(message), [privateTerms.rule]);
+      ? { text: "", flagsFired: [] as string[] }
+      : (() => {
+          const held = protectApproved(textOf(message), parsed.data.passages);
+          const result = applyGuardrails(held.text, [privateTerms.rule]);
+          return {
+            text: restoreApproved(result.text, held.table),
+            flagsFired: result.flagsFired,
+          };
+        })();
 
     log({
       status: 200,
@@ -140,6 +154,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       outputTokens: message.usage.output_tokens,
       notes: parsed.data.notes.length,
       priorOpenings: parsed.data.priorOpenings.length,
+      passages: parsed.data.passages.length,
       privateTermsFired: guarded.flagsFired.length > 0,
       durationMs: Date.now() - startedAt,
     });
