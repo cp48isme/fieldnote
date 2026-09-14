@@ -19,6 +19,7 @@ the artifact.
 | [0006](0006-structural-name-detection.md) | Structural name detection at the pseudonymization boundary | Accepted, amended 2026-09-09 | 2026-09-02 |
 | [0007](0007-role-references.md) | Role references at the pseudonymization boundary | Accepted | 2026-09-09 |
 | [0008](0008-audit-records-survive-event-deletion.md) | Audit records survive event deletion | Accepted, amended 2026-09-11 | 2026-09-11 |
+| [0009](0009-briefing-is-downloaded-never-sent.md) | The briefing is a document the representative writes and downloads; the application lays it out and never sends it | Accepted | 2026-09-14 |
 
 ## What each one settles
 
@@ -59,6 +60,12 @@ event spares its audit records, so a cleanup action cannot destroy the audit tra
 states the consequence that follows — a record must carry everything an auditor needs,
 because after deletion it is all that remains — and it decides what the record's two
 hashes are taken over, so that neither reconstructs only against text containing a name.
+
+**0009** decides the briefing's distribution path before anything is built: the
+application lays the document out from what the representative enters and offers it as
+a download; it never sends it, the model writes none of it, and deal positioning has no
+home in the public build. It withdraws plan §3.2's suggested openers and selected talking
+points rather than deferring them.
 
 ## Numbering
 

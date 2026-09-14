@@ -152,6 +152,12 @@ a much worse risk profile, and I'm not building that.
 
 **Deliverable:** PDF. It gets forwarded, printed, and read on a phone in a parking lot.
 
+> **Amended 2026-09-14, ADR-0009.** The talking points and the opener are entered by the
+> representative, not selected or suggested: the model writes no part of the briefing.
+> The application lays the document out and offers it as a download; it never sends it.
+> Deal positioning is not in the public build, as a field or a section; the private fork
+> may add it under ADR-0001.
+
 ### 3.3 Event planning — pre-event communication (new)
 
 An email to registered attendees before the event.

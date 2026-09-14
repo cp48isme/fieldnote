@@ -422,11 +422,33 @@ whether this is a library-selection feature or a paste field.
 
 Photo upload (uploaded, never fetched), prior-interaction history, suggested openers.
 
+> **Amended 2026-09-14, session 10, under ADR-0009.** Of the three nouns above, one is
+> withdrawn and one moves. **Suggested openers are withdrawn**, not deferred: the model
+> writes no part of the briefing, and the representative writes the opener herself.
+> **Photo upload moves to session 11**, with the document it exists for; it needs binary
+> storage the cipher does not have, and that is a schema decision for the session that
+> lays the document out. **Prior-interaction history** already exists as data keyed by
+> the attendee, and this session renders it. What this session builds instead: the
+> attendee view — one person's record, editable, with their notes and drafts across every
+> event on the device and a line saying nothing is fetched — and the structured
+> clinician field `fieldnote-1o6` asks for, `Attendee.kind`, replacing the heuristic
+> that read the token class off `specialty`.
+
 ### Session 11 — Briefing PDF
 *~4 hours, and this one also runs long*
 
 PDF generation always takes longer than estimated. Layout that survives both a phone
 screen and a printer is fiddly, and you'll iterate on it more than you plan to.
+
+> **Amended 2026-09-14, under ADR-0009.** This session gains the form the representative
+> fills — event details, logistics, contacts, and per attendee whatever she types or
+> dictates — and the photo upload and its storage, a binary entity with the cipher
+> extended for it. No model: the document is laid out from her entries and offered as a
+> download; nothing is generated, so there is no prompt, no ruleset, and no audit record.
+> The attendee section states that it is expected attendance as of the generation date.
+> The schema and entity gaps `fieldnote-g7d` lists — event metadata the record does not
+> hold, the representative's own team as a second class of person — land here. Deal
+> positioning has no home in the public build.
 
 **Phase 2 total: ~8.5 hours** (8–9; midpoint, as with Phase 1).
 
