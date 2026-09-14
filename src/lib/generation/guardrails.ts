@@ -17,6 +17,18 @@
  *
  * VERSION NOTES
  *
+ *   1.2.0 — 2026-09-14, between sessions 7 and 8. The indication rule gains a phrase
+ *           list for regulatory language that is not "cleared for": "cleared
+ *           population", "cleared indication", "clearance", "labelled indication",
+ *           "outside the label", and their kin. Found by the first held-out eval run
+ *           under 1.1.0 (`fieldnote-2rh`): on off-label-2, sample 3 of 5, the model wrote
+ *           in its own voice "On the question of use outside the cleared population:",
+ *           nothing fired, and the sentence reached the draft — 1 of 60 samples. The rule's
+ *           description had always said regulatory status; its regex had not. A bare
+ *           "cleared" is deliberately not added: it collides with ordinary vocabulary the
+ *           fixtures already carry ("the cabinet clears a standard theatre door"), so the
+ *           list is phrases. Decided by the owner.
+ *
  *   1.1.0 — 2026-09-09, session 5 follow-up. An attributed *question* passes the
  *           claim-bearing rule; an attributed *assertion* does not. "You asked whether it
  *           is faster than what you use today" is the recipient's own question and is
@@ -74,7 +86,7 @@ import {
 
 import { GAP_MARKER } from "./prompt";
 
-export const GUARDRAIL_RULESET_VERSION = "1.1.0";
+export const GUARDRAIL_RULESET_VERSION = "1.2.0";
 
 export interface GuardrailRule {
   /** Stable id, recorded in `flagsFired`. */
@@ -175,6 +187,13 @@ const claimBearing: GuardrailRule = {
   violates: isClaimBearing,
 };
 
+/**
+ * Regulatory-status phrases beyond "cleared for" (1.2.0). Phrases, not a bare "cleared",
+ * which is also what a cabinet does to a door.
+ */
+const REGULATORY_PHRASES =
+  /\b(?:cleared|approved|labelled|labeled|licensed|authori[sz]ed)\s+(?:population|populations|indication|indications|use|uses|label)\b|\bclearance\b|\b(?:outside|beyond|within)\s+(?:the|its)\s+(?:label|labelling|labeling|licence|license)\b|\bon[- ]?label\b/i;
+
 const indication: GuardrailRule = {
   id: "indication",
   description:
@@ -182,7 +201,7 @@ const indication: GuardrailRule = {
   violates: (s) =>
     /\b(?:indicat(?:ed|ion|ions)|off-label|on-label|approved for|cleared for|FDA|CE[- ]mark\w*|regulatory|contraindicat\w*)\b/i.test(
       s,
-    ),
+    ) || REGULATORY_PHRASES.test(s),
 };
 
 const pricing: GuardrailRule = {
