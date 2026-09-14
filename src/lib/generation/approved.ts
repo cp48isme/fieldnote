@@ -17,7 +17,8 @@
  * MECHANISM. Before the sentence rules run, every span of the model's text that equals
  * a library passage is replaced by a placeholder; the rules run; the placeholders are
  * replaced by the library's own body — the canonical, approved string — not the model's
- * spelling of it. The placeholder is U+0001-delimited, distinct from the pseudonymizer's
+ * spelling of it. The rest of the text, its line breaks included, is left exactly as the
+ * model wrote it: the match is whitespace-tolerant, the text is not rewritten. The placeholder is U+0001-delimited, distinct from the pseudonymizer's
  * U+0000 ones, which never survive past `pseudonymize()` in any case, and
  * `applyGuardrails` passes a placeholder segment through unjudged (ruleset 1.3.0).
  *
@@ -40,23 +41,43 @@ export interface ApprovedPassage {
 
 /** Whitespace to single spaces, quotes and dashes to ASCII, trimmed. Case kept. */
 export function normaliseText(text: string): string {
+  return foldPunctuation(text).replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Curly quotes and the dash family to ASCII, one character for one, so that an index
+ * into the folded text is an index into the original. Whitespace is not touched here:
+ * that is what keeps the draft's line breaks where the model put them.
+ */
+function foldPunctuation(text: string): string {
   return text
-    .replace(/[‘’‚′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/[‐‑‒–—―−]/g, "-")
-    .replace(/…/g, "...")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/[\u2018\u2019\u201A\u2032]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/g, "-");
 }
 
 const placeholder = (index: number) => `\u0001${index}\u0001`;
 const PLACEHOLDER = /\u0001(\d+)\u0001/g;
 
-const isWordChar = (char: string | undefined) =>
-  char !== undefined && /[\p{L}\p{N}]/u.test(char);
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * A passage as a pattern over the folded text: its normalised words in order, any
+ * whitespace between them, at word boundaries. Whole passage or nothing.
+ */
+function patternFor(body: string): RegExp | null {
+  const words = normaliseText(body)
+    .split(" ")
+    .filter((w) => w.length > 0);
+  if (words.length === 0) return null;
+  return new RegExp(
+    `(?<![\\p{L}\\p{N}])${words.map(escapeRegExp).join("\\s+")}(?![\\p{L}\\p{N}])`,
+    "gu",
+  );
+}
 
 export interface ProtectedText {
-  /** The normalised text with each approved span replaced by a placeholder. */
+  /** The text with each approved span replaced by a placeholder; everything else as it was. */
   text: string;
   /** Placeholder index to passage. */
   table: ApprovedPassage[];
@@ -65,36 +86,34 @@ export interface ProtectedText {
 }
 
 /**
- * Finds every whole passage in `text` and replaces it with a placeholder. Longest
- * passages first, so a passage that contains another is matched as itself. A match must
- * sit at word boundaries: "modular design" is not found inside "modular designs".
+ * Finds every whole passage in `text` and replaces it with a placeholder, leaving the
+ * rest of the text — its line breaks included — exactly as it was. Longest passages
+ * first, so a passage that contains another is matched as itself.
  */
 export function protectApproved(
   text: string,
   library: readonly ApprovedPassage[],
 ): ProtectedText {
-  let working = normaliseText(text);
+  let working = text;
   const table: ApprovedPassage[] = [];
   const candidates = library
-    .map((passage) => ({ passage, needle: normaliseText(passage.body) }))
-    .filter(({ needle }) => needle.length > 0)
-    .sort((a, b) => b.needle.length - a.needle.length);
+    .map((passage) => ({ passage, pattern: patternFor(passage.body) }))
+    .filter((c): c is { passage: ApprovedPassage; pattern: RegExp } => c.pattern !== null)
+    .sort(
+      (a, b) =>
+        normaliseText(b.passage.body).length - normaliseText(a.passage.body).length,
+    );
 
-  for (const { passage, needle } of candidates) {
-    let from = 0;
-    for (;;) {
-      const at = working.indexOf(needle, from);
-      if (at === -1) break;
-      const before = working[at - 1];
-      const after = working[at + needle.length];
-      if (isWordChar(before) || isWordChar(after)) {
-        from = at + 1;
-        continue;
-      }
+  for (const { passage, pattern } of candidates) {
+    // Search the folded text, splice the original: the fold is length-preserving.
+    const folded = foldPunctuation(working);
+    const spans: Array<[number, number]> = [];
+    for (const match of folded.matchAll(pattern)) {
+      spans.push([match.index, match.index + match[0].length]);
+    }
+    for (const [from, to] of spans.reverse()) {
       const index = table.push(passage) - 1;
-      const mark = placeholder(index);
-      working = working.slice(0, at) + mark + working.slice(at + needle.length);
-      from = at + mark.length;
+      working = working.slice(0, from) + placeholder(index) + working.slice(to);
     }
   }
 

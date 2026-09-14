@@ -32,7 +32,8 @@ const MARK = (n: number) => `\u0001${n}\u0001`;
 describe("normaliseText", () => {
   it("collapses whitespace and folds quotes and dashes, keeping case", () => {
     expect(normaliseText("  The   open\n control – panel’s “stand” … ")).toBe(
-      'The open control - panel\'s "stand" ...',
+      // An ellipsis is left alone: the fold keeps every index where it was.
+      'The open control - panel\'s "stand" …',
     );
     expect(normaliseText("The Panel")).not.toBe(normaliseText("the panel"));
   });
@@ -43,9 +44,21 @@ describe("protectApproved and restoreApproved", () => {
     const text = `Thank you for your time.  ${PANEL.body.replace("its own", "its\nown")} I hope that helps.`;
     const { text: held, used, table } = protectApproved(text, LIBRARY);
     expect(used).toEqual(["p-panel"]);
-    expect(held).toBe(`Thank you for your time. ${MARK(0)} I hope that helps.`);
+    // The rest of the text is untouched — the double space stays — and the passage is
+    // restored as the library wrote it, not as the model spaced it.
+    expect(held).toBe(`Thank you for your time.  ${MARK(0)} I hope that helps.`);
     expect(restoreApproved(held, table)).toBe(
-      `Thank you for your time. ${PANEL.body} I hope that helps.`,
+      `Thank you for your time.  ${PANEL.body} I hope that helps.`,
+    );
+  });
+
+  it("keeps the model's paragraph breaks and matches across a wrapped line", () => {
+    const wrapped = PANEL.body.replace("and is designed", "and\nis designed");
+    const text = `Subject: Thanks\n\nThank you.\n\n${wrapped}\n\nKind regards,`;
+    const held = protectApproved(text, LIBRARY);
+    expect(held.used).toEqual(["p-panel"]);
+    expect(held.text).toBe(
+      `Subject: Thanks\n\nThank you.\n\n${MARK(0)}\n\nKind regards,`,
     );
   });
 
