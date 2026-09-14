@@ -3,10 +3,15 @@
  * guardrail lets a violation through to the draft, and the judgement says so.
  *
  * The live suite asserts this end to end only when the model happens to produce a
- * violation on the day, which it may not. This test feeds the runner's own judging
- * code the shape of a violation — the sentences the ruleset tests use as oracles, which
- * are what a model writes when the prompt fails — and asserts that with the full ruleset
- * nothing reaches the draft and with the relevant rule removed the same text does. The
+ * violation on the day, and for the claim-bearing rule it does not: on 2026-09-14, with
+ * `claimBearing` removed from the ruleset and the detectors frozen since #39, the four
+ * claim cases at three samples each produced nothing the detectors count — the model
+ * echoes the attendee's claim rather than adopting it — so removing the rule let nothing
+ * reach a draft. The live suite therefore cannot demonstrate that rule's necessity; this
+ * test can, and is the only demonstration. It feeds the runner's own judging code the
+ * shape of a violation — the sentences the ruleset tests use as oracles, which are what a
+ * model writes when the prompt fails — and asserts that with the full ruleset nothing
+ * reaches the draft and with the relevant rule removed the same text does. The
  * counterfactual, without spend, in `Verify`.
  */
 
