@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -80,12 +80,24 @@ export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
 
 // --- Attendee --------------------------------------------------------------
 
+/**
+ * Where an attendee record came from. `captured` is the dock's add-person flow — someone
+ * the representative met and typed in during the event. `imported` is a row from a
+ * sign-in sheet or registration list (session 8). The roster is an intention, not a
+ * record (`fieldnote-g7d`): the briefing must say who was expected, the review surface
+ * can tell a person met from a person listed, and ADR-0006's residual risk — a name with
+ * neither a title nor a roster entry — is worse after import, so the record says which
+ * entries were seen and which were assumed. Follows `NoteRecord.source`.
+ */
+export type AttendeeSource = "captured" | "imported";
+
 export interface AttendeeRecord extends BaseRecord {
   eventId: Id;
   displayName: string;
   role: string;
   specialty: string;
   institution: string;
+  source: AttendeeSource;
 }
 
 export const ATTENDEE_POLICIES: FieldPolicies<AttendeeRecord> = {
@@ -101,6 +113,10 @@ export const ATTENDEE_POLICIES: FieldPolicies<AttendeeRecord> = {
     why: "Same reasoning as role; a specialty plus an institution narrows sharply.",
   },
   institution: { encryption: "eligible", why: "Directly identifying in combination." },
+  source: {
+    encryption: "clear",
+    why: "Enum; records how the record arrived, met or listed. No identity in it.",
+  },
 };
 
 // --- Note ------------------------------------------------------------------

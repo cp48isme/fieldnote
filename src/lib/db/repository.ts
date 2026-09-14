@@ -47,6 +47,7 @@ import {
   DEFAULT_AUTOSAVE_DEBOUNCE_MS,
   TABLES,
   type AttendeeRecord,
+  type AttendeeSource,
   type AuditRecordRecord,
   type DraftBlockReason,
   type DraftRecord,
@@ -136,18 +137,106 @@ export interface NewAttendeeInput {
   role?: string;
   specialty?: string;
   institution?: string;
+  /** Defaults to `captured`: the dock is the one caller that omits it. */
+  source?: AttendeeSource;
 }
 
-export async function createAttendee(input: NewAttendeeInput): Promise<AttendeeRecord> {
-  const record: AttendeeRecord = stamp({
+function attendeeFrom(input: NewAttendeeInput): AttendeeRecord {
+  return stamp({
     eventId: input.eventId,
     displayName: input.displayName,
     role: input.role ?? "",
     specialty: input.specialty ?? "",
     institution: input.institution ?? "",
+    source: input.source ?? ("captured" as const),
   });
+}
+
+export async function createAttendee(input: NewAttendeeInput): Promise<AttendeeRecord> {
+  const record = attendeeFrom(input);
   await getDatabase().attendees.put(encryptRecord(TABLES.attendees, record));
   return record;
+}
+
+/** The three fields a sign-in sheet can supply. Never the display name. */
+export interface AttendeeDetails {
+  role: string;
+  specialty: string;
+  institution: string;
+}
+
+/**
+ * What one confirmed decision from a roster import does. `merge` fills the empty
+ * details of an attendee the representative confirmed is the same person; `new` creates
+ * an attendee from the row, marked `imported`. There is no decision that touches a
+ * display name: the name the representative typed is the one the greeting uses, and a
+ * sheet's spelling of it is not more authoritative than theirs.
+ */
+export type RosterImportDecision =
+  | { kind: "merge"; attendeeId: Id; details: AttendeeDetails }
+  | { kind: "new"; displayName: string; details: AttendeeDetails };
+
+export interface RosterImportResult {
+  added: AttendeeRecord[];
+  updated: AttendeeRecord[];
+}
+
+/**
+ * Fills the empty details of an existing attendee from a sheet. A field that already
+ * holds something is left alone — the representative may have typed it, or an earlier
+ * import may have — and `displayName` is never written. Returns the record as it now is.
+ */
+function fillDetails(existing: AttendeeRecord, details: AttendeeDetails): AttendeeRecord {
+  const fill = (current: string, incoming: string) =>
+    current.trim().length === 0 && incoming.trim().length > 0 ? incoming : current;
+  return {
+    ...existing,
+    role: fill(existing.role, details.role),
+    specialty: fill(existing.specialty, details.specialty),
+    institution: fill(existing.institution, details.institution),
+    updatedAt: now(),
+  };
+}
+
+/**
+ * Applies a roster import, all of it or none of it, from decisions the representative
+ * confirmed. The matcher proposes (`src/lib/roster/match.ts`); nothing reaches this
+ * function without a person having said "same person" or "new person" per row, and this
+ * function does not decide anything — it has no matcher and no fallback. One
+ * transaction, so a failure part-way through leaves the roster as it was.
+ */
+export async function applyRosterImport(
+  eventId: Id,
+  decisions: readonly RosterImportDecision[],
+): Promise<RosterImportResult> {
+  const db = getDatabase();
+  return db.transaction("rw", db.attendees, async () => {
+    const added: AttendeeRecord[] = [];
+    const updated: AttendeeRecord[] = [];
+    for (const decision of decisions) {
+      if (decision.kind === "new") {
+        const record = attendeeFrom({
+          eventId,
+          displayName: decision.displayName,
+          ...decision.details,
+          source: "imported",
+        });
+        await db.attendees.put(encryptRecord(TABLES.attendees, record));
+        added.push(record);
+        continue;
+      }
+      const row = await db.attendees.get(decision.attendeeId);
+      if (!row) throw new Error(`Attendee ${decision.attendeeId} not found`);
+      const existing = decryptRecord(TABLES.attendees, row);
+      if (existing.eventId !== eventId) {
+        throw new Error(`Attendee ${decision.attendeeId} belongs to another event`);
+      }
+      const filled = fillDetails(existing, decision.details);
+      await db.attendees.put(encryptRecord(TABLES.attendees, filled));
+      updated.push(filled);
+    }
+    return { added, updated };
+  });
 }
 
 export async function listAttendees(eventId: Id): Promise<AttendeeRecord[]> {

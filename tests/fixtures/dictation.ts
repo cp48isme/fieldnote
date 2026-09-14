@@ -64,6 +64,7 @@ function attendee(
     role,
     specialty,
     institution: "Northgate Regional",
+    source: "captured",
   };
 }
 
