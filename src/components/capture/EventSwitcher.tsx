@@ -10,6 +10,11 @@
  * "Start a new event…" lives in the same list because otherwise it lives nowhere. The
  * capture screen only shows the setup form when there are no events at all, so without
  * this option a representative who has run one event can never run a second.
+ *
+ * "Import a sign-in sheet…" lives here too (session 8), for the same reason and one
+ * more: the header is the layout the representative validated, and a third button in it
+ * on a phone is a change to that layout; an option in the list she already uses is not.
+ * Import is a separate affordance from the dock's add-person flow, which is untouched.
  */
 
 import type { EventRecord, Id } from "@/lib/db";
@@ -19,6 +24,7 @@ import type { EventRecord, Id } from "@/lib/db";
  * lookup, so it cannot be mistaken for one.
  */
 const NEW_EVENT_VALUE = "__new__";
+const IMPORT_ROSTER_VALUE = "__import__";
 
 export interface EventSwitcherProps {
   /** Newest first, as `listEvents` returns them. */
@@ -26,6 +32,7 @@ export interface EventSwitcherProps {
   activeEventId: Id;
   onSwitch: (eventId: Id) => void;
   onStartNew: () => void;
+  onImportRoster: () => void;
 }
 
 export function EventSwitcher({
@@ -33,6 +40,7 @@ export function EventSwitcher({
   activeEventId,
   onSwitch,
   onStartNew,
+  onImportRoster,
 }: EventSwitcherProps) {
   return (
     <>
@@ -51,6 +59,10 @@ export function EventSwitcher({
             onStartNew();
             return;
           }
+          if (value === IMPORT_ROSTER_VALUE) {
+            onImportRoster();
+            return;
+          }
           onSwitch(value);
         }}
         className="min-h-11 max-w-[60%] flex-1 truncate rounded-lg border px-2 text-base font-semibold"
@@ -61,6 +73,7 @@ export function EventSwitcher({
           </option>
         ))}
         <option value={NEW_EVENT_VALUE}>Start a new event…</option>
+        <option value={IMPORT_ROSTER_VALUE}>Import a sign-in sheet…</option>
       </select>
     </>
   );
