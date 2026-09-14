@@ -94,6 +94,8 @@ export {
   type DraftWithAudit,
 } from "./repository";
 
+export { kindFromTitle, kindFromDisplayName } from "./attendee-kind";
+
 export {
   DRAFT_TRANSITIONS,
   DraftStateError,

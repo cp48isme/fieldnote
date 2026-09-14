@@ -41,6 +41,7 @@ import { editDistance } from "@/lib/review/edit-distance";
 
 import { encryptRecord, decryptAll, decryptRecord } from "./cipher";
 import { getDatabase } from "./database";
+import { kindFromDisplayName } from "./attendee-kind";
 import { assertTransition, canEdit } from "./draft-state";
 import {
   CURRENT_SCHEMA_VERSION,
@@ -136,7 +137,10 @@ export async function deleteEvent(id: Id): Promise<void> {
 export interface NewAttendeeInput {
   eventId: Id;
   displayName: string;
-  /** Defaults to `staff`: the dock asks for a name only, and the view corrects the class. */
+  /**
+   * Omitted by the dock, which asks for a name only: then the leading title decides —
+   * "Dr. Swali" is `hcp`, "Marisol Vance" is `staff` — and the view corrects either.
+   */
   kind?: AttendeeKind;
   role?: string;
   specialty?: string;
@@ -149,7 +153,7 @@ function attendeeFrom(input: NewAttendeeInput): AttendeeRecord {
   return stamp({
     eventId: input.eventId,
     displayName: input.displayName,
-    kind: input.kind ?? ("staff" as const),
+    kind: input.kind ?? kindFromDisplayName(input.displayName),
     role: input.role ?? "",
     specialty: input.specialty ?? "",
     institution: input.institution ?? "",
