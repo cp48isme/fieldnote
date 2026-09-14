@@ -7,6 +7,28 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 8 — roster import
+
+- Sign-in sheets and registration lists import on the device: `.xlsx` through
+  `read-excel-file`, `.csv` through a forty-line reader of our own (the library has no
+  CSV support, contrary to ADR-0003's consequence, now amended), `.xls` refused by its
+  magic bytes with an instruction to re-save. Every cell is sanitised before anything
+  sees it; the file never touches the network, shown by an end-to-end spec that records
+  every request during an import.
+- A header found under banners and blank rows, a merged header cell's sub-labels joined
+  to it, and column guesses by header text with a title column prepended to the name so
+  the greeting keeps its title.
+- A matcher that compares canonical names — exact, then surname, then one edit on a
+  surname of five or more letters — and proposes; the representative confirms each
+  proposal and nothing merges silently. A confirmed match fills an existing attendee's
+  empty role, specialty, and institution and never the display name. Swali/Swelha is
+  missed by design.
+- Schema v3: `Attendee.source` records whether a person was met at the event or listed
+  on a sheet, because the roster is an intention, not a record.
+- The import lives in the event switcher beside "Start a new event…"; the dock's
+  add-person flow is untouched. A messy synthetic `.xlsx` fixture, built by a script with
+  no dependency, is what "imports correctly" means.
+
 ### Between sessions 7 and 8
 
 - Guardrail ruleset 1.2.0: the indication rule gains a phrase list for regulatory
