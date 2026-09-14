@@ -53,6 +53,19 @@ describe("proposeMatches", () => {
     expect(tooShort!.candidate).toBeNull();
   });
 
+  it("settles every exact match before any surname match, whatever the row order", () => {
+    // The first end-to-end run: "Dr Peter Vance" on the row above "Marisol Vance" took her
+    // by surname, and her own row then had nobody left. Exact wins across the sheet.
+    const marisol = { ...ROSTER[2]! };
+    const [peter, her] = proposeMatches(
+      [person("Dr Peter Vance", 0), person("Marisol Vance", 1)],
+      [marisol],
+    );
+    expect(her!.basis).toBe("exact");
+    expect(her!.candidate?.id).toBe(marisol.id);
+    expect(peter!.candidate).toBeNull();
+  });
+
   it("misses the observed dictation mangling by design", () => {
     // ADR-0006: spoken Swali, transcribed Swelha. Three edits; no proposal.
     const captured = { ...ROSTER[0]!, id: "att-swali", displayName: "Dr. Swali" };
@@ -73,7 +86,10 @@ describe("proposals are not decisions", () => {
     // Counterfactual: a UI that fed proposals straight to applyRosterImport would merge
     // silently; the repository takes decisions, and a proposal is not one.
     const marisol = await createAttendee({ eventId: "e", displayName: "Marisol Vance" });
-    const proposals = proposeMatches([person("Vance"), person("Dr Green")], [marisol]);
+    const proposals = proposeMatches(
+      [person("Vance", 0), person("Dr Green", 1)],
+      [marisol],
+    );
     expect(proposals[0]!.candidate?.id).toBe(marisol.id);
     expect((await listAttendees("e"))[0]!.role).toBe("");
 
