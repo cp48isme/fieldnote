@@ -457,9 +457,12 @@ inputs a later session has to be able to check.
    Doesn't block the public build, gates the private one. **Status: resolved.**
 4. **What "approved content" she actually has** — a leave-behind, an approved slide,
    a fact sheet. It determines whether §4.2 is a library-selection feature or just a
-   text field she pastes into. Needed by session 9. **Status: open.**
+   text field she pastes into. Needed by session 9. **Status: received.** One
+   customer-facing leave-behind at `private/approved-content-brochure.md`, received
+   2026-09-14; session 9 is unblocked, and what it decides is recorded beside the
+   material, not here.
 
-Items 1 and 2 are private-fork material and live at `private/`, which is gitignored on
+Items 1, 2, and 4 are private-fork material and live at `private/`, which is gitignored on
 the public side. Where either is adapted into public eval cases, **names are replaced with
 the synthetic roster per ADR-0001, and so is every product and commercial detail** —
 product characteristics, competitive pricing comparisons, and regulatory indication

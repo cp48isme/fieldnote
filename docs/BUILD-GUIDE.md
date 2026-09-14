@@ -417,6 +417,14 @@ Storage, upload, and the matcher that validates claim-bearing output against it.
 Blocked on knowing what approved content actually exists (plan §7 item 4) — it decides
 whether this is a library-selection feature or a paste field.
 
+> **Amended 2026-09-14.** Unblocked: plan §7 item 4 was received that day and lives at
+> `private/approved-content-brochure.md`. What it is and what it decides are recorded
+> beside the material, per the working agreement in `CLAUDE.md` on findings about the
+> private material; the public record says only that it exists. The session that builds
+> this reads the private file first, and nothing from it reaches a public fixture or
+> eval case without every name and every product and commercial detail substituted
+> (plan §7 as amended).
+
 ### Session 10 — Attendee profiles
 *~2 hours*
 
