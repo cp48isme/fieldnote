@@ -68,6 +68,7 @@ import { useSessionLifecycle } from "@/lib/useSessionLifecycle";
 
 import { DraftDetail } from "../review/DraftDetail";
 import { FollowUps } from "../review/FollowUps";
+import { RosterImport } from "../roster/RosterImport";
 import { BlockingNotice } from "./BlockingNotice";
 import { CaptureDock } from "./CaptureDock";
 import { EventSetup } from "./EventSetup";
@@ -86,6 +87,12 @@ export function CaptureScreen() {
   const [event, setEvent] = useState<EventRecord | null>(null);
   /** True while the new-event form is up, so the dock cannot be typed into meanwhile. */
   const [startingNewEvent, setStartingNewEvent] = useState(false);
+  /**
+   * True while the roster import is up. Like the new-event form, it replaces the log
+   * and the dock rather than sitting above them: importing a sheet is not something done
+   * mid-note, and a dock with a textarea under a file picker is two things to focus.
+   */
+  const [importingRoster, setImportingRoster] = useState(false);
   const [attendees, setAttendees] = useState<AttendeeRecord[]>([]);
   /** Oldest first, as `listNotes` returns them. Reversed for display. */
   const [notes, setNotes] = useState<NoteRecord[]>([]);
@@ -487,6 +494,10 @@ export function CaptureScreen() {
               activeEventId={event.id}
               onSwitch={(eventId) => void switchEvent(eventId)}
               onStartNew={() => setStartingNewEvent(true)}
+              onImportRoster={() => {
+                void autosave.flush();
+                setImportingRoster(true);
+              }}
             />
           ) : (
             <h1 className="truncate text-base font-semibold">Fieldnote</h1>
@@ -543,7 +554,16 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && !startingNewEvent && view === "capture" && (
+          {event && importingRoster && (
+            <RosterImport
+              event={event}
+              attendees={attendees}
+              onImported={() => void listAttendees(event.id).then(setAttendees)}
+              onClose={() => setImportingRoster(false)}
+            />
+          )}
+
+          {event && !startingNewEvent && !importingRoster && view === "capture" && (
             <NoteLog
               notes={[...notes].reverse()}
               attendees={attendees}
@@ -552,40 +572,48 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && !startingNewEvent && view === "review" && !openDraft && (
-            <FollowUps
-              drafts={drafts}
-              attendees={attendees}
-              distances={distances}
-              canDraft={canDraft}
-              drafting={drafting}
-              notice={draftNotice}
-              onDraft={() => void onDraft()}
-              onOpen={(draft) => void onOpenDraft(draft)}
-              onExportAuditLog={() => void onExportAuditLog()}
-            />
-          )}
+          {event &&
+            !startingNewEvent &&
+            !importingRoster &&
+            view === "review" &&
+            !openDraft && (
+              <FollowUps
+                drafts={drafts}
+                attendees={attendees}
+                distances={distances}
+                canDraft={canDraft}
+                drafting={drafting}
+                notice={draftNotice}
+                onDraft={() => void onDraft()}
+                onOpen={(draft) => void onOpenDraft(draft)}
+                onExportAuditLog={() => void onExportAuditLog()}
+              />
+            )}
 
-          {event && !startingNewEvent && view === "review" && openDraft && (
-            <DraftDetail
-              draft={openDraft}
-              audit={openAudit}
-              recipientName={
-                attendees.find((a) => a.id === openDraft.attendeeId)?.displayName ??
-                "Unknown recipient"
-              }
-              body={draftBody}
-              onBodyChange={onDraftBodyChange}
-              saveState={draftAutosave.state}
-              onBack={() => void closeDraft()}
-              onExport={onExport}
-              onCopyAgain={onCopyAgain}
-            />
-          )}
+          {event &&
+            !startingNewEvent &&
+            !importingRoster &&
+            view === "review" &&
+            openDraft && (
+              <DraftDetail
+                draft={openDraft}
+                audit={openAudit}
+                recipientName={
+                  attendees.find((a) => a.id === openDraft.attendeeId)?.displayName ??
+                  "Unknown recipient"
+                }
+                body={draftBody}
+                onBodyChange={onDraftBodyChange}
+                saveState={draftAutosave.state}
+                onBack={() => void closeDraft()}
+                onExport={onExport}
+                onCopyAgain={onCopyAgain}
+              />
+            )}
         </div>
       </div>
 
-      {event && !startingNewEvent && view === "capture" && (
+      {event && !startingNewEvent && !importingRoster && view === "capture" && (
         <CaptureDock
           body={body}
           onBodyChange={onBodyChange}

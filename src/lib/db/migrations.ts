@@ -17,6 +17,7 @@ import type { Transaction } from "dexie";
 
 import {
   TABLES,
+  type AttendeeRecord,
   type AuditRecordRecord,
   type DraftBlockReason,
   type DraftRecord,
@@ -96,6 +97,32 @@ export const MIGRATIONS: Migration[] = [
             record.editDistance = null;
           }
           record.schemaVersion = 2;
+        });
+    },
+  },
+  {
+    // Session 8: attendees carry where they came from. Every attendee written before
+    // this version was typed into the dock at an event, so the backfill is `captured`;
+    // `imported` exists only from v3 onward. No index changes: source is not queried on.
+    version: 3,
+    stores: {
+      [TABLES.events]: "id, status, startsAt, updatedAt",
+      [TABLES.attendees]: "id, eventId, updatedAt",
+      [TABLES.notes]: "id, eventId, attendeeId, updatedAt",
+      [TABLES.drafts]: "id, eventId, attendeeId, state, updatedAt",
+      [TABLES.auditRecords]: "id, draftId, eventId, createdAt",
+      [TABLES.voiceProfiles]: "id, updatedAt",
+      [TABLES.approvedContent]: "id, updatedAt",
+      [TABLES.settings]: "id",
+      [TABLES.sessionMarkers]: "id, startedAt, endedAt",
+    },
+    upgrade: async (tx) => {
+      await tx
+        .table(TABLES.attendees)
+        .toCollection()
+        .modify((attendee: Partial<AttendeeRecord>) => {
+          attendee.source ??= "captured";
+          attendee.schemaVersion = 3;
         });
     },
   },

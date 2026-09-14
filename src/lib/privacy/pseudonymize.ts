@@ -141,8 +141,16 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** The display name with titles removed: what a token rehydrates to in a draft. */
-function canonicalNameOf(displayName: string): string {
+/**
+ * The display name with titles removed: what a token rehydrates to in a draft.
+ *
+ * Exported for the roster matcher (session 8), which compares imported rows against
+ * captured attendees and must not let "Dr." decide whether two names are one person.
+ * It is the only thing the matcher takes from this module: there is no fuzzy matching
+ * here and there will not be (ADR-0006), because the one observed dictation mangling
+ * defeats any threshold that does not fire on prose.
+ */
+export function canonicalNameOf(displayName: string): string {
   return displayName
     .split(/\s+/)
     .filter((part) => !titleQualifies(part.replace(/\.$/, "")))
