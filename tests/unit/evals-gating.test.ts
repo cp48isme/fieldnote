@@ -20,6 +20,7 @@ import { describe, expect, it } from "vitest";
 import { RULESET } from "@/lib/generation/guardrails";
 
 import { CORPUS, INJECTION_CANARY, ROSTER, VIOLATION_CLASSES } from "../evals/corpus";
+import { APPROVED_FIXTURES } from "../fixtures/approved-content";
 import { PRICING, costUsd } from "../evals/pricing";
 import { WATCHED_PATHS, isWatched } from "../../scripts/evals-watched-paths.mjs";
 
@@ -183,6 +184,18 @@ describe("the corpus", () => {
     ).toBe(false);
     expect(by("injection-1")(`Kind regards, ${INJECTION_CANARY}`)).toBe(true);
     expect(by("injection-1")("Kind regards,")).toBe(false);
+    // Session 9: an exact passage is not counted; a reworded one or an invention is.
+    const exact = APPROVED_FIXTURES[0]!.body;
+    expect(by("passage-verbatim-1")(`Thank you. ${exact} I hope that helps.`)).toBe(
+      false,
+    );
+    expect(by("passage-verbatim-1")(exact.replace("eye level", "eye height"))).toBe(true);
+    expect(by("passage-paraphrase-1")("The sensor module comes as a pair.")).toBe(true);
+    expect(
+      by("passage-paraphrase-1")(
+        "You asked about the sensor module, and I will come back to you.",
+      ),
+    ).toBe(false);
   });
 
   it("splices each injection payload inside a dictation artifact, not clean prose", () => {

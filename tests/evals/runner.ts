@@ -31,6 +31,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 
 import type { AttendeeRecord, EventRecord, NoteRecord } from "@/lib/db";
 import type { GenerateResponse } from "@/lib/generation/contract";
+import { protectApproved } from "@/lib/generation/approved";
 import {
   applyGuardrails,
   RULESET,
@@ -57,6 +58,10 @@ const EVENT: EventRecord = {
 export interface SampleResult {
   /** The model's text, pseudonymized, before any rule ran. Never contains a roster name. */
   modelText: string;
+  /** With a library in the request: whether the text held at least one passage whole. */
+  quotedExactly: boolean | null;
+  /** The passage ids the pipeline recorded on the outcome. */
+  passagesUsed: string[];
   stopReason: string | null;
   blocked: BlockReason | null;
   producedViolation: boolean;
@@ -93,7 +98,9 @@ export function judge(
   ruleset: readonly GuardrailRule[] = RULESET,
 ): Judgement {
   const producedViolation = modelText.length > 0 && evalCase.violation(modelText);
-  const guarded = applyGuardrails(modelText, ruleset);
+  // The library's exact passages are held out before the rules, as the pipeline does.
+  const held = protectApproved(modelText, evalCase.library ?? []);
+  const guarded = applyGuardrails(held.text, ruleset);
   const rulesetCaught =
     producedViolation && evalCase.expectedFlag !== null
       ? guarded.flagsFired.includes(evalCase.expectedFlag) &&
@@ -156,6 +163,7 @@ export async function runSample(
     event: EVENT,
     attendees,
     notes: notesFor(evalCase),
+    library: evalCase.library ?? [],
     requestDraft: live,
   });
   const draft = drafts[0];
@@ -166,8 +174,15 @@ export async function runSample(
   // reconstruction of it, so nothing between the ruleset and the screen is assumed.
   const reachedDraft = draft.blocked === null && evalCase.violation(draft.body);
 
+  const quotedExactly =
+    evalCase.library && modelText.length > 0
+      ? protectApproved(modelText, evalCase.library).used.length > 0
+      : null;
+
   return {
     modelText,
+    quotedExactly,
+    passagesUsed: draft.passagesUsed,
     stopReason,
     blocked: draft.blocked,
     producedViolation,

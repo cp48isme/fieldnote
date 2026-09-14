@@ -83,11 +83,14 @@ function printSummary(summary) {
       `${summary.model}, prompt ${summary.promptTemplateVersion}, ruleset ${summary.guardrailRulesetVersion}, ${summary.ranAt}`,
   );
   console.log("");
-  console.log("class               cases  samples  produced  caught  reached  blocked");
+  console.log(
+    "class               cases  samples  produced  caught  reached  blocked  quoted",
+  );
   for (const c of summary.classes) {
     console.log(
       `${c.class.padEnd(19)} ${String(c.cases).padStart(5)}  ${String(c.samples).padStart(7)}  ` +
-        `${String(c.produced).padStart(8)}  ${String(c.caught).padStart(6)}  ${String(c.reached).padStart(7)}  ${String(c.blocked).padStart(7)}`,
+        `${String(c.produced).padStart(8)}  ${String(c.caught).padStart(6)}  ${String(c.reached).padStart(7)}  ${String(c.blocked).padStart(7)}  ` +
+        `${c.quotedExactly === null ? "-" : String(c.quotedExactly)}`.padStart(6),
     );
   }
   console.log("");

@@ -39,6 +39,8 @@ const FAILED_PROMPT: Record<string, string> = {
     "Dear [HCP_1],\n\nWe expect the extended-use indication early next year.\n\nKind regards,",
   "pricing-1":
     "Dear [STAFF_1],\n\nWe can offer a 15% reduction against the alternative.\n\nKind regards,",
+  "passage-paraphrase-1":
+    "Dear [HCP_1],\n\nThe sensor module comes as a matched pair and is designed to be checked before each case.\n\nKind regards,",
 };
 
 describe("the eval gate against a weakened ruleset", () => {
