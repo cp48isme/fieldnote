@@ -5,6 +5,13 @@
 - **Deciders:** cp48isme (owner)
 - **Amended:** 2026-09-01 — two consequences added to the Negative list. The decision is
   unchanged.
+- **Amended:** 2026-09-14, session 8 — the Negative consequence saying CSV is "a separate
+  entry point in `read-excel-file`" was wrong when written: at 9.3.10 the library reads
+  `.xlsx` only and has no CSV support at all (its exports are `browser`, `node`,
+  `universal`, and `web-worker`). Session 8 reads CSV with a forty-line RFC 4180 reader of
+  its own, `src/lib/roster/csv.ts`, with no dependency. The alternative rejected below —
+  a parser in-house — was rejected for binary spreadsheet formats, whose failure modes are
+  subtle; a comma-separated text file is not one. The decision is unchanged.
 
 ## Context
 

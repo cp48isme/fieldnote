@@ -13,7 +13,7 @@ the artifact.
 |---|---|---|---|
 | [0001](0001-public-private-split.md) | De-branded public build, private fork for production use | Accepted | 2026-08-27 |
 | [0002](0002-invitation-design.md) | Attendee invitation limited to recipient-forwarded messages | Accepted | 2026-08-27 |
-| [0003](0003-spreadsheet-parsing-library.md) | `read-excel-file` for spreadsheet parsing, replacing `xlsx` (SheetJS) | Accepted, amended 2026-09-01 | 2026-08-28 |
+| [0003](0003-spreadsheet-parsing-library.md) | `read-excel-file` for spreadsheet parsing, replacing `xlsx` (SheetJS) | Accepted, amended 2026-09-01 and 2026-09-14 | 2026-08-28 |
 | [0004](0004-encryption-at-rest.md) | Encryption seam in the data layer; passphrase-derived encryption deferred to the private fork | Accepted, amended 2026-09-01 and 2026-09-11 | 2026-09-01 |
 | [0005](0005-dictation-input.md) | Device dictation only; no audio capture, storage, or transcription | Accepted, amended 2026-09-01 | 2026-09-01 |
 | [0006](0006-structural-name-detection.md) | Structural name detection at the pseudonymization boundary | Accepted, amended 2026-09-09 | 2026-09-02 |

@@ -386,7 +386,24 @@ content into a model call without routing it through the session 4 boundary.
 **Done when:** a messy real-shaped `.xlsx` imports correctly and the file never touches
 the network.
 
-**Phase 1 total: ~22 hours, seven to eight evenings.**
+> **Amended 2026-09-14, session 8, on completion.** One premise here was wrong: CSV is
+> not a separate entry point in `read-excel-file` — the library has no CSV support at
+> 9.3.10 — so CSV is read by a forty-line reader in `src/lib/roster/csv.ts`, and
+> ADR-0003 carries the note. What shipped: format by magic bytes with `.xls` refused and
+> an instruction to re-save; every cell sanitised before anything sees it; a header found
+> under banners and blank rows, with a merged cell's sub-labels joined to it; mapping
+> guesses by header text, with a title column prepended to the name so the greeting keeps
+> its title; a matcher that compares canonical names — exact, then surname, then one edit
+> on a surname of five or more letters — and proposes, never merges, missing Swali/Swelha
+> by design; an import screen from the event switcher, beside "Start a new event…", so
+> the validated header is unchanged and the dock's add-person flow is untouched; schema v3
+> with `Attendee.source`; and an end-to-end spec that records every request during an
+> import and finds none left the origin. "A messy real-shaped `.xlsx`" means
+> `tests/fixtures/roster-messy.xlsx`, built by `scripts/build-roster-fixture.mjs`, whose
+> header names each artifact. Two findings from the run: `read-excel-file` drops trailing
+> empty columns before any code sees them, and the matcher's first version let a surname
+> match on an earlier row take a person whose own row matched exactly, fixed the same day.
+: ~22 hours, seven to eight evenings.**
 
 ---
 

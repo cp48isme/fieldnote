@@ -382,6 +382,12 @@ is aspirational is the same category of error as an eval badge over an empty sui
 `Event` → `Attendee` → `Note` → `Draft` → `AuditRecord`
 plus `VoiceProfile`, `ApprovedContent`, `Settings`
 
+`Note.attendeeId` is nullable: a note is captured before the person is identified, and a
+placeholder attendee would look like a person in lists and counts. Attribution is an
+ordinary update later. `Attendee.source` records whether the person was met at the event
+or listed on an imported sheet (session 8), because the roster is an intention, not a
+record.
+
 Every record carries `createdAt`, `updatedAt`, and a schema version for migrations.
 Every field carries an encryption-eligibility classification, per non-negotiable 7.
 
