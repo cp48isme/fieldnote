@@ -35,6 +35,7 @@ export {
   type EventRecord,
   type EventStatus,
   type AttendeeRecord,
+  type AttendeeKind,
   type AttendeeSource,
   type NoteRecord,
   type NoteSource,

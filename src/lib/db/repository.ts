@@ -46,6 +46,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_AUTOSAVE_DEBOUNCE_MS,
   TABLES,
+  type AttendeeKind,
   type AttendeeRecord,
   type AttendeeSource,
   type AuditRecordRecord,
@@ -134,6 +135,8 @@ export async function deleteEvent(id: Id): Promise<void> {
 export interface NewAttendeeInput {
   eventId: Id;
   displayName: string;
+  /** Defaults to `staff`: the dock asks for a name only, and the view corrects the class. */
+  kind?: AttendeeKind;
   role?: string;
   specialty?: string;
   institution?: string;
@@ -145,6 +148,7 @@ function attendeeFrom(input: NewAttendeeInput): AttendeeRecord {
   return stamp({
     eventId: input.eventId,
     displayName: input.displayName,
+    kind: input.kind ?? ("staff" as const),
     role: input.role ?? "",
     specialty: input.specialty ?? "",
     institution: input.institution ?? "",
@@ -174,7 +178,12 @@ export interface AttendeeDetails {
  */
 export type RosterImportDecision =
   | { kind: "merge"; attendeeId: Id; details: AttendeeDetails }
-  | { kind: "new"; displayName: string; details: AttendeeDetails };
+  | {
+      kind: "new";
+      displayName: string;
+      attendeeKind: AttendeeKind;
+      details: AttendeeDetails;
+    };
 
 export interface RosterImportResult {
   added: AttendeeRecord[];
@@ -184,7 +193,8 @@ export interface RosterImportResult {
 /**
  * Fills the empty details of an existing attendee from a sheet. A field that already
  * holds something is left alone — the representative may have typed it, or an earlier
- * import may have — and `displayName` is never written. Returns the record as it now is.
+ * import may have — and `displayName` and `kind` are never written: a merge fills, it
+ * does not reclassify. Returns the record as it now is.
  */
 function fillDetails(existing: AttendeeRecord, details: AttendeeDetails): AttendeeRecord {
   const fill = (current: string, incoming: string) =>
@@ -218,6 +228,7 @@ export async function applyRosterImport(
         const record = attendeeFrom({
           eventId,
           displayName: decision.displayName,
+          kind: decision.attendeeKind,
           ...decision.details,
           source: "imported",
         });

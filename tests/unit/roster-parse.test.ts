@@ -115,6 +115,15 @@ describe("the messy .xlsx", () => {
       institution: "Northgate Regional",
     });
     expect(people[4]!.institution).toBe("Northgate Regional");
+    // The title column decides the class: Dr is a clinician, Mr and no title are staff.
+    expect(people.map((p) => p.kind)).toEqual([
+      "hcp",
+      "hcp",
+      "staff",
+      "hcp",
+      "staff",
+      "hcp",
+    ]);
   });
 });
 

@@ -24,6 +24,8 @@
  * whole mapping every time.
  */
 
+import type { AttendeeKind } from "@/lib/db";
+
 export type RosterField =
   "name" | "givenName" | "title" | "role" | "specialty" | "institution";
 
@@ -178,9 +180,22 @@ export interface ImportedPerson {
   row: number;
   /** Composed: title, given name, name — so the greeting keeps its title. */
   displayName: string;
+  /** `hcp` when the mapped title column reads Dr or Prof; otherwise `staff`. */
+  kind: AttendeeKind;
   role: string;
   specialty: string;
   institution: string;
+}
+
+/**
+ * The titles a sign-in sheet writes for a clinician. A title column is the one thing on
+ * a sheet that says "clinician" without saying anything else; a department or a role
+ * column does not (`fieldnote-1o6`), which is why neither is read here.
+ */
+const CLINICIAN_TITLE = /^(?:dr|prof|professor|doctor)\.?$/i;
+
+export function kindFromTitle(title: string): AttendeeKind {
+  return CLINICIAN_TITLE.test(title.trim()) ? "hcp" : "staff";
 }
 
 const cellAt = (row: readonly string[], index: number | null) =>
@@ -212,6 +227,7 @@ export function peopleFrom(
     people.push({
       row: r,
       displayName,
+      kind: kindFromTitle(cellAt(row, mapping.title)),
       // ADR-0007: whatever lands in `role` is what the tokenizer's role pass matches
       // against, word for word. A sheet's "Consultant" column becomes a roster role.
       role: cellAt(row, mapping.role),

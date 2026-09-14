@@ -135,6 +135,24 @@ export class FakeDatabase {
   }
 
   /**
+   * The seam a migration's `upgrade` runs against: `tx.table(name).toCollection()
+   * .modify(fn)` applies `fn` to every row in place, which is what Dexie does inside its
+   * upgrade transaction. Enough to run a registered migration over rows written at the
+   * previous version and read what they became.
+   */
+  table(name: string) {
+    const table = (this as unknown as Record<string, FakeTable<Row>>)[name];
+    if (!table) throw new Error(`no fake table ${name}`);
+    return {
+      toCollection: () => ({
+        modify: async (fn: (row: Row) => void) => {
+          for (const row of table.rows.values()) fn(row);
+        },
+      }),
+    };
+  }
+
+  /**
    * The repository is typed against the Dexie class. The fake covers the members it
    * uses; the assertion is the one place that is stated.
    */

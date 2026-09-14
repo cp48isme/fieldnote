@@ -38,9 +38,11 @@ describe("applyRosterImport", () => {
     const typed = await createAttendee({ eventId: EVENT, displayName: "Dr. Swali" });
     expect(typed.source).toBe("captured");
     const { added } = await applyRosterImport(EVENT, [
-      { kind: "new", displayName: "Dr Green", details: DETAILS },
+      { kind: "new", displayName: "Dr Green", attendeeKind: "hcp", details: DETAILS },
     ]);
     expect(added[0]!.source).toBe("imported");
+    expect(added[0]!.kind).toBe("hcp");
+    expect(typed.kind).toBe("staff");
     expect(added[0]!.role).toBe("Consultant");
     expect(await listAttendees(EVENT)).toHaveLength(2);
   });
@@ -64,6 +66,8 @@ describe("applyRosterImport", () => {
     expect(updated[0]!.institution).toBe("Northgate Regional");
     expect(updated[0]!.specialty).toBe("");
     expect(updated[0]!.source).toBe("captured");
+    // A merge fills; it never reclassifies.
+    expect(updated[0]!.kind).toBe("staff");
   });
 
   it("applies all of it or none of it", async () => {
@@ -71,7 +75,7 @@ describe("applyRosterImport", () => {
     const typed = await createAttendee({ eventId: EVENT, displayName: "Dr. Swali" });
     await expect(
       applyRosterImport(EVENT, [
-        { kind: "new", displayName: "Dr Green", details: DETAILS },
+        { kind: "new", displayName: "Dr Green", attendeeKind: "hcp", details: DETAILS },
         { kind: "merge", attendeeId: "no-such-attendee", details: DETAILS },
       ]),
     ).rejects.toThrow(/not found/);
