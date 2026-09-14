@@ -85,6 +85,14 @@ describe("protectApproved and restoreApproved", () => {
     expect(restoreApproved(guarded.text, held.table)).toBe(text);
   });
 
+  it("leaves a placeholder it did not write alone, so text protected twice is not confused", () => {
+    const once = protectApproved(`${PANEL.body} And more.`, LIBRARY);
+    const twice = protectApproved(once.text, [SENSOR]);
+    expect(twice.used).toEqual([]);
+    expect(twice.text).toBe(once.text);
+    expect(restoreApproved(twice.text, once.table)).toBe(`${PANEL.body} And more.`);
+  });
+
   it("blanks a reworded passage as claim-bearing while an exact one beside it passes", () => {
     const reworded = PANEL.body.replace("eye level", "eye height");
     const held = protectApproved(`${SENSOR.body} ${reworded}`, LIBRARY);

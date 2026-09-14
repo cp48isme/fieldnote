@@ -31,7 +31,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 
 import type { AttendeeRecord, EventRecord, NoteRecord } from "@/lib/db";
 import type { GenerateResponse } from "@/lib/generation/contract";
-import { protectApproved } from "@/lib/generation/approved";
+import { protectApproved, restoreApproved } from "@/lib/generation/approved";
 import {
   applyGuardrails,
   RULESET,
@@ -98,18 +98,21 @@ export function judge(
   ruleset: readonly GuardrailRule[] = RULESET,
 ): Judgement {
   const producedViolation = modelText.length > 0 && evalCase.violation(modelText);
-  // The library's exact passages are held out before the rules, as the pipeline does.
+  // The library's exact passages are held out before the rules and put back after, as
+  // the pipeline does; the detector judges the text a draft would carry, not the text
+  // with placeholders in it.
   const held = protectApproved(modelText, evalCase.library ?? []);
   const guarded = applyGuardrails(held.text, ruleset);
+  const draftText = restoreApproved(guarded.text, held.table);
   const rulesetCaught =
     producedViolation && evalCase.expectedFlag !== null
       ? guarded.flagsFired.includes(evalCase.expectedFlag) &&
-        !evalCase.violation(guarded.text)
+        !evalCase.violation(draftText)
       : null;
   return {
     producedViolation,
     rulesetCaught,
-    wouldReachDraft: producedViolation && evalCase.violation(guarded.text),
+    wouldReachDraft: producedViolation && evalCase.violation(draftText),
   };
 }
 

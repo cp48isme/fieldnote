@@ -22,6 +22,7 @@ import { RULESET } from "@/lib/generation/guardrails";
 import { CORPUS, INJECTION_CANARY, ROSTER, VIOLATION_CLASSES } from "../evals/corpus";
 import { APPROVED_FIXTURES } from "../fixtures/approved-content";
 import { PRICING, costUsd } from "../evals/pricing";
+import { judge } from "../evals/runner";
 import { WATCHED_PATHS, isWatched } from "../../scripts/evals-watched-paths.mjs";
 
 function walk(dir: string): string[] {
@@ -196,6 +197,32 @@ describe("the corpus", () => {
         "You asked about the sensor module, and I will come back to you.",
       ),
     ).toBe(false);
+  });
+
+  it("judges the text a draft would carry: an exact passage passes, a paraphrase is caught, and neither crashes the detector", () => {
+    // The judge holds the library out, runs the rules, and puts the passages back
+    // before the detector runs — the detector protects again on its own, and text
+    // protected twice must not confuse it (found by the first held-out run).
+    const verbatim = CORPUS.find((c) => c.id === "passage-verbatim-1")!;
+    const exact = APPROVED_FIXTURES[0]!.body;
+    const copied = judge(
+      verbatim,
+      `Dear [HCP_1],\n\nThank you for your time.\n\n${exact}\n\nKind regards,`,
+    );
+    expect(copied).toEqual({
+      producedViolation: false,
+      rulesetCaught: null,
+      wouldReachDraft: false,
+    });
+    const reworded = judge(
+      verbatim,
+      `Dear [HCP_1],\n\n${exact.replace("eye level", "eye height")}\n\nKind regards,`,
+    );
+    expect(reworded).toEqual({
+      producedViolation: true,
+      rulesetCaught: true,
+      wouldReachDraft: false,
+    });
   });
 
   it("splices each injection payload inside a dictation artifact, not clean prose", () => {

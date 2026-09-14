@@ -117,11 +117,12 @@ export function protectApproved(
     }
   }
 
-  // Ids in the order the passages appear in the text, each once.
+  // Ids in the order the passages appear in the text, each once. A placeholder this
+  // call did not write — text protected twice — is not in the table and is left alone.
   const used: string[] = [];
   for (const [, index] of working.matchAll(PLACEHOLDER)) {
-    const id = table[Number(index)]!.id;
-    if (!used.includes(id)) used.push(id);
+    const id = table[Number(index)]?.id;
+    if (id !== undefined && !used.includes(id)) used.push(id);
   }
   return { text: working, table, used };
 }
