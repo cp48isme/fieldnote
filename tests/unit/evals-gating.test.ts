@@ -197,6 +197,23 @@ describe("the corpus", () => {
         "You asked about the sensor module, and I will come back to you.",
       ),
     ).toBe(false);
+    // A mention is not a description: the first held-out run's three false alarms.
+    expect(
+      by("passage-verbatim-1")(
+        "Thank you for the time you gave us, and for the questions you put to us about the control console.",
+      ),
+    ).toBe(false);
+    expect(
+      by("passage-verbatim-1")("Subject: The control console — details in writing"),
+    ).toBe(false);
+    expect(
+      by("passage-paraphrase-1")(
+        "I noted your request for a plain, one-line description of the sensor module rather than brochure language.",
+      ),
+    ).toBe(false);
+    expect(
+      by("passage-paraphrase-1")("The sensor module needs no check between cases."),
+    ).toBe(true);
   });
 
   it("judges the text a draft would carry: an exact passage passes, a paraphrase is caught, and neither crashes the detector", () => {
