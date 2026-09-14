@@ -16,6 +16,7 @@ import { FakeDatabase } from "./support/fake-database";
 const person = (displayName: string, row = 0): ImportedPerson => ({
   row,
   displayName,
+  kind: "staff",
   role: "Consultant",
   specialty: "",
   institution: "Northgate Regional",
@@ -99,6 +100,7 @@ describe("proposals are not decisions", () => {
       proposals.map((p) => ({
         kind: "new" as const,
         displayName: p.person.displayName,
+        attendeeKind: p.person.kind,
         details: {
           role: p.person.role,
           specialty: p.person.specialty,

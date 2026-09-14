@@ -15,6 +15,10 @@
  * more: the header is the layout the representative validated, and a third button in it
  * on a phone is a change to that layout; an option in the list she already uses is not.
  * Import is a separate affordance from the dock's add-person flow, which is untouched.
+ *
+ * "People at this event…" (session 10) is the door to the attendee view, for the same
+ * reason: the dock's attribution select shows the same names but a `<select>` cannot
+ * hold a per-option action, and the follow-ups list is a list of drafts, not of people.
  */
 
 import type { EventRecord, Id } from "@/lib/db";
@@ -25,6 +29,7 @@ import type { EventRecord, Id } from "@/lib/db";
  */
 const NEW_EVENT_VALUE = "__new__";
 const IMPORT_ROSTER_VALUE = "__import__";
+const PEOPLE_VALUE = "__people__";
 
 export interface EventSwitcherProps {
   /** Newest first, as `listEvents` returns them. */
@@ -33,6 +38,7 @@ export interface EventSwitcherProps {
   onSwitch: (eventId: Id) => void;
   onStartNew: () => void;
   onImportRoster: () => void;
+  onShowPeople: () => void;
 }
 
 export function EventSwitcher({
@@ -41,6 +47,7 @@ export function EventSwitcher({
   onSwitch,
   onStartNew,
   onImportRoster,
+  onShowPeople,
 }: EventSwitcherProps) {
   return (
     <>
@@ -63,6 +70,10 @@ export function EventSwitcher({
             onImportRoster();
             return;
           }
+          if (value === PEOPLE_VALUE) {
+            onShowPeople();
+            return;
+          }
           onSwitch(value);
         }}
         className="min-h-11 max-w-[60%] flex-1 truncate rounded-lg border px-2 text-base font-semibold"
@@ -73,6 +84,7 @@ export function EventSwitcher({
           </option>
         ))}
         <option value={NEW_EVENT_VALUE}>Start a new event…</option>
+        <option value={PEOPLE_VALUE}>People at this event…</option>
         <option value={IMPORT_ROSTER_VALUE}>Import a sign-in sheet…</option>
       </select>
     </>

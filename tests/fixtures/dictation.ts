@@ -61,6 +61,7 @@ function attendee(
     schemaVersion: 1,
     eventId: "event-fixture",
     displayName,
+    kind: specialty ? "hcp" : "staff",
     role,
     specialty,
     institution: "Northgate Regional",

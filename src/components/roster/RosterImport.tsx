@@ -137,7 +137,12 @@ export function RosterImport({
         if (proposal.candidate && answers.get(proposal.person.row) === "same") {
           return { kind: "merge", attendeeId: proposal.candidate.id, details };
         }
-        return { kind: "new", displayName: proposal.person.displayName, details };
+        return {
+          kind: "new",
+          displayName: proposal.person.displayName,
+          attendeeKind: proposal.person.kind,
+          details,
+        };
       });
       const result = await applyRosterImport(event.id, decisions);
       setStep({ kind: "done", result, error: null });
@@ -206,7 +211,8 @@ export function RosterImport({
         <div className="flex flex-col gap-3">
           <p className="text-sm opacity-80">
             These are the column names found on the sheet. Check which is which; only the
-            name is needed.
+            name is needed. A title column of Dr or Prof marks a person as a clinician;
+            anyone else is added as staff, and either can be changed later.
           </p>
           <ul data-testid="roster-columns" className="flex flex-wrap gap-2 text-xs">
             {step.header.columns.map((label, c) => (

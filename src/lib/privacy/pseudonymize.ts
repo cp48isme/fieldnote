@@ -125,16 +125,17 @@ function placeholder(index: number): string {
 const POSSESSIVE = /['’]s$/;
 
 /**
- * Classifies a roster attendee.
+ * The token class a roster attendee receives: `AttendeeRecord.kind`, and nothing else.
  *
- * `specialty` is populated for clinicians and empty for coordinators and engineers, so it
- * is the field that already carries this distinction — inventing a new one would be a
- * schema change for a cosmetic difference. It is a heuristic and it costs nothing when
- * wrong: both tokens are opaque, and the only consequence of a misclassification is that
- * the model is told "a clinician" where it should have been told "a colleague".
+ * Until schema v4 this read the class off whether `specialty` was non-empty. That held
+ * while the dock was the only writer; session 8's roster import fills `specialty` from a
+ * sheet, and a "Department" column decided whether the model was told "a clinician" or
+ * "a colleague" (`fieldnote-1o6`). The field is set by whoever creates the record and
+ * corrected in the attendee view. Both tokens are opaque, so a wrong class costs the
+ * model a wrong word for the person, never a name.
  */
 function classify(attendee: AttendeeRecord): TokenKind {
-  return attendee.specialty.trim() ? "HCP" : "STAFF";
+  return attendee.kind === "hcp" ? "HCP" : "STAFF";
 }
 
 function escapeRegExp(value: string): string {

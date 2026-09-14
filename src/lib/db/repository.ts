@@ -46,6 +46,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_AUTOSAVE_DEBOUNCE_MS,
   TABLES,
+  type AttendeeKind,
   type AttendeeRecord,
   type AttendeeSource,
   type AuditRecordRecord,
@@ -134,6 +135,8 @@ export async function deleteEvent(id: Id): Promise<void> {
 export interface NewAttendeeInput {
   eventId: Id;
   displayName: string;
+  /** Defaults to `staff`: the dock asks for a name only, and the view corrects the class. */
+  kind?: AttendeeKind;
   role?: string;
   specialty?: string;
   institution?: string;
@@ -145,6 +148,7 @@ function attendeeFrom(input: NewAttendeeInput): AttendeeRecord {
   return stamp({
     eventId: input.eventId,
     displayName: input.displayName,
+    kind: input.kind ?? ("staff" as const),
     role: input.role ?? "",
     specialty: input.specialty ?? "",
     institution: input.institution ?? "",
@@ -174,7 +178,12 @@ export interface AttendeeDetails {
  */
 export type RosterImportDecision =
   | { kind: "merge"; attendeeId: Id; details: AttendeeDetails }
-  | { kind: "new"; displayName: string; details: AttendeeDetails };
+  | {
+      kind: "new";
+      displayName: string;
+      attendeeKind: AttendeeKind;
+      details: AttendeeDetails;
+    };
 
 export interface RosterImportResult {
   added: AttendeeRecord[];
@@ -184,7 +193,8 @@ export interface RosterImportResult {
 /**
  * Fills the empty details of an existing attendee from a sheet. A field that already
  * holds something is left alone — the representative may have typed it, or an earlier
- * import may have — and `displayName` is never written. Returns the record as it now is.
+ * import may have — and `displayName` and `kind` are never written: a merge fills, it
+ * does not reclassify. Returns the record as it now is.
  */
 function fillDetails(existing: AttendeeRecord, details: AttendeeDetails): AttendeeRecord {
   const fill = (current: string, incoming: string) =>
@@ -218,6 +228,7 @@ export async function applyRosterImport(
         const record = attendeeFrom({
           eventId,
           displayName: decision.displayName,
+          kind: decision.attendeeKind,
           ...decision.details,
           source: "imported",
         });
@@ -244,6 +255,53 @@ export async function listAttendees(eventId: Id): Promise<AttendeeRecord[]> {
   return decryptAll(TABLES.attendees, rows);
 }
 
+export async function getAttendee(id: Id): Promise<AttendeeRecord | undefined> {
+  const row = await getDatabase().attendees.get(id);
+  return row ? decryptRecord(TABLES.attendees, row) : undefined;
+}
+
+/** Every attendee on the device, across events. The attendee view's history reads this. */
+export async function listAllAttendees(): Promise<AttendeeRecord[]> {
+  const rows = await getDatabase().attendees.toArray();
+  return decryptAll(TABLES.attendees, rows);
+}
+
+/** The five fields the attendee view edits. `source` is not among them: it is history. */
+export type AttendeeEdit = Pick<
+  AttendeeRecord,
+  "displayName" | "kind" | "role" | "specialty" | "institution"
+>;
+
+/**
+ * The attendee view's save. A display-name change is an ordinary update: the
+ * pseudonymizer builds its roster forms from `displayName` at generation time, so a
+ * rename applies to the next generation and touches no existing draft or audit record —
+ * a draft already generated keeps the name it was generated with, and its audit record
+ * holds hashes that never contained a name. `eventId` and `source` are not editable.
+ */
+export async function updateAttendee(
+  id: Id,
+  edit: AttendeeEdit,
+): Promise<AttendeeRecord> {
+  const db = getDatabase();
+  const existing = await db.attendees.get(id);
+  if (!existing) throw new Error(`Attendee ${id} not found`);
+  const decrypted = decryptRecord(TABLES.attendees, existing);
+  const displayName = edit.displayName.trim();
+  if (displayName.length === 0) throw new Error("An attendee needs a name");
+  const updated: AttendeeRecord = {
+    ...decrypted,
+    displayName,
+    kind: edit.kind,
+    role: edit.role.trim(),
+    specialty: edit.specialty.trim(),
+    institution: edit.institution.trim(),
+    updatedAt: now(),
+  };
+  await db.attendees.put(encryptRecord(TABLES.attendees, updated));
+  return updated;
+}
+
 // --- Notes -----------------------------------------------------------------
 
 export interface NewNoteInput {
@@ -268,6 +326,12 @@ export async function createNote(input: NewNoteInput): Promise<NoteRecord> {
 export async function getNote(id: Id): Promise<NoteRecord | undefined> {
   const row = await getDatabase().notes.get(id);
   return row ? decryptRecord(TABLES.notes, row) : undefined;
+}
+
+/** Every note attributed to one attendee record, oldest first. */
+export async function listNotesForAttendee(attendeeId: Id): Promise<NoteRecord[]> {
+  const rows = await getDatabase().notes.where("attendeeId").equals(attendeeId).toArray();
+  return decryptAll(TABLES.notes, rows).sort((a, b) => a.createdAt - b.createdAt);
 }
 
 export async function listNotes(eventId: Id): Promise<NoteRecord[]> {
@@ -381,6 +445,15 @@ export async function createDraftWithAudit(
 export async function getDraft(id: Id): Promise<DraftRecord | undefined> {
   const row = await getDatabase().drafts.get(id);
   return row ? decryptRecord(TABLES.drafts, row) : undefined;
+}
+
+/** Every draft addressed to one attendee record, newest first. */
+export async function listDraftsForAttendee(attendeeId: Id): Promise<DraftRecord[]> {
+  const rows = await getDatabase()
+    .drafts.where("attendeeId")
+    .equals(attendeeId)
+    .toArray();
+  return decryptAll(TABLES.drafts, rows).sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /** Newest first: the review question is "what did I just generate". */

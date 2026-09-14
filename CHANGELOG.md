@@ -7,6 +7,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 10 — ADR-0009, the attendee view, and the clinician field
+
+- ADR-0009: the briefing is a document the representative writes and downloads; the
+  application lays it out and never sends it; the model writes none of it; deal
+  positioning is not in the public build. Plan §3.2's suggested openers and selected
+  talking points are withdrawn; photo upload moves to session 11.
+- Schema v4: `Attendee.kind` is `hcp` or `staff`, plan §4.1's own words, backfilled from
+  the old heuristic so nothing stored changes class. The pseudonymizer reads the field
+  and nothing else; the dock writes `staff`; import writes `hcp` from a title of Dr or
+  Prof; a merge never reclassifies. The migration has a unit test.
+- The attendee view: one person's record, editable, with `source` shown read-only, their
+  notes and drafts across every event on the device joined by canonical name and saying
+  so, and a first line saying nothing is fetched. Reached from the event switcher's
+  "People at this event…", beside the other two options.
+
 ### Session 8 — roster import
 
 - Sign-in sheets and registration lists import on the device: `.xlsx` through

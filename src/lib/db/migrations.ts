@@ -126,6 +126,33 @@ export const MIGRATIONS: Migration[] = [
         });
     },
   },
+  {
+    // Session 10: the token class is a field, not a reading of `specialty`. The backfill
+    // is the old heuristic, so nothing already stored changes class: a non-empty
+    // specialty becomes `hcp`, anything else `staff`. From here the field is the truth
+    // and `specialty` is just a specialty. No index changes.
+    version: 4,
+    stores: {
+      [TABLES.events]: "id, status, startsAt, updatedAt",
+      [TABLES.attendees]: "id, eventId, updatedAt",
+      [TABLES.notes]: "id, eventId, attendeeId, updatedAt",
+      [TABLES.drafts]: "id, eventId, attendeeId, state, updatedAt",
+      [TABLES.auditRecords]: "id, draftId, eventId, createdAt",
+      [TABLES.voiceProfiles]: "id, updatedAt",
+      [TABLES.approvedContent]: "id, updatedAt",
+      [TABLES.settings]: "id",
+      [TABLES.sessionMarkers]: "id, startedAt, endedAt",
+    },
+    upgrade: async (tx) => {
+      await tx
+        .table(TABLES.attendees)
+        .toCollection()
+        .modify((attendee: Partial<AttendeeRecord>) => {
+          attendee.kind ??= (attendee.specialty ?? "").trim() ? "hcp" : "staff";
+          attendee.schemaVersion = 4;
+        });
+    },
+  },
 ];
 
 /**

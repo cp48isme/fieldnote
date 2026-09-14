@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -91,9 +91,23 @@ export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
  */
 export type AttendeeSource = "captured" | "imported";
 
+/**
+ * Which of plan §4.1's two token classes a person belongs to: an HCP — a clinician, the
+ * `[HCP_n]` token — or staff, `[STAFF_n]`. The plan's own words, and the tokenizer's.
+ *
+ * A field since v4 (session 10). Until then the pseudonymizer read the class off whether
+ * `specialty` was non-empty, which was true of clinicians only while the dock was the
+ * only writer; session 8's import fills `specialty` from a sheet, and a "Department"
+ * column made the heuristic decide whether the model was told "a clinician" or "a
+ * colleague" (`fieldnote-1o6`). The dock writes `staff`; import writes `hcp` when the
+ * mapped title column reads Dr or Prof; the attendee view lets it be corrected.
+ */
+export type AttendeeKind = "hcp" | "staff";
+
 export interface AttendeeRecord extends BaseRecord {
   eventId: Id;
   displayName: string;
+  kind: AttendeeKind;
   role: string;
   specialty: string;
   institution: string;
@@ -104,6 +118,10 @@ export const ATTENDEE_POLICIES: FieldPolicies<AttendeeRecord> = {
   ...BASE_POLICY,
   eventId: { encryption: "clear", why: "Foreign key; must be indexable." },
   displayName: { encryption: "eligible", why: "Directly identifying." },
+  kind: {
+    encryption: "clear",
+    why: "Enum; the token class the pseudonymizer issues. No identity in it, like source.",
+  },
   role: {
     encryption: "eligible",
     why: "Judgement call: a role is not identifying alone, but is identifying alongside institution in a small department.",
