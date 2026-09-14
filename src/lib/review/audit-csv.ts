@@ -32,9 +32,11 @@ export const AUDIT_CSV_COLUMNS = [
   "exportedAt",
   "humanEdited",
   "editDistance",
+  "passagesUsed",
+  "libraryVersion",
 ] as const;
 
-/** Rule ids joined inside one cell; none of them contains this character. */
+/** Rule ids and passage ids joined inside one cell; none of them contains this character. */
 const FLAG_SEPARATOR = "|";
 
 function iso(timestamp: number | null): string {
@@ -70,6 +72,8 @@ export function auditRecordToRow(
     iso(record.exportedAt),
     record.humanEdited === null ? "" : String(record.humanEdited),
     record.editDistance === null ? "" : String(record.editDistance),
+    record.passagesUsed.join(FLAG_SEPARATOR),
+    record.libraryVersion ?? "",
   ];
 }
 

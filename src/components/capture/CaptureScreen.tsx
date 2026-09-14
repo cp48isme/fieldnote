@@ -372,6 +372,8 @@ export function CaptureScreen() {
           guardrailRulesetVersion: outcome.guardrailRulesetVersion,
           inputHash: outcome.inputHash,
           outputHash: outcome.outputHash,
+          passagesUsed: [],
+          libraryVersion: null,
         });
       }
       const count = batch.drafts.length;

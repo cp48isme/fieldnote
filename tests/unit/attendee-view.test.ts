@@ -77,6 +77,8 @@ describe("updateAttendee", () => {
       guardrailRulesetVersion: "1.2.0",
       inputHash: "a".repeat(64),
       outputHash: "b".repeat(64),
+      passagesUsed: [],
+      libraryVersion: null,
     });
     await updateAttendee(typed.id, {
       displayName: "Dr. Peter Vance",

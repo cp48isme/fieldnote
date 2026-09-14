@@ -27,6 +27,8 @@ function record(overrides: Partial<AuditRecordRecord> = {}): AuditRecordRecord {
     exportedAt: null,
     humanEdited: null,
     editDistance: null,
+    passagesUsed: [],
+    libraryVersion: null,
     ...overrides,
   };
 }
