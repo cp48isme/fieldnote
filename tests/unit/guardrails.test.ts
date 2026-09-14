@@ -119,6 +119,17 @@ describe("claim-bearing", () => {
     expect(isClaimBearing(assertion)).toBe(true);
   });
 
+  // Ruleset 1.3.0, fieldnote-ay2: "rather than" is contrast, not comparison. The held-out
+  // eval runs blanked this sentence; the counterfactual is the 1.2.0 pattern.
+  it("1.3.0: passes 'rather than', which is contrast, and still blocks a comparison", () => {
+    const contrast =
+      "I can arrange for you to observe a live case so you can judge the workflow in a real setting rather than a demonstration room.";
+    expect(applyGuardrails(contrast).text).toBe(contrast);
+    const before = (s: string) => /\bthan\b/i.test(s);
+    expect(before(contrast)).toBe(true);
+    expectRuleToHold("claim-bearing", "The system is faster than what you use today.");
+  });
+
   it("passes gratitude and logistics that happen to name the system", () => {
     for (const relational of [
       "Thank you for taking the time to see the system on the truck.",
@@ -237,6 +248,23 @@ describe("application", () => {
     expect(result.text).toContain("Dear [HCP_1],");
     expect(result.blockedSentences).toBe(1);
     expect(result.flagsFired).toEqual(["claim-bearing"]);
+  });
+
+  // Ruleset 1.3.0: an approved placeholder is its own segment and passes unjudged, and
+  // a violating sentence beside it is blanked without taking it. The counterfactual is
+  // 1.2.0's splitter, which would have judged the placeholder as part of its sentence.
+  it("1.3.0: holds an approved placeholder out of every rule and blanks the sentence beside it", () => {
+    const placeholder = "\u0001" + "0" + "\u0001";
+    const text = `Thank you for your time. ${placeholder} Some centres are already using it off-label for that.`;
+    const result = applyGuardrails(text);
+    expect(result.text).toBe(`Thank you for your time. ${placeholder} ${GAP_MARKER}`);
+    expect(result.flagsFired).toEqual(["indication"]);
+    // The placeholder alone, on a line of its own, passes with nothing fired.
+    expect(applyGuardrails(placeholder)).toEqual({
+      text: placeholder,
+      flagsFired: [],
+      blockedSentences: 0,
+    });
   });
 
   it("leaves a gap the model wrote itself in place, unflagged", () => {
