@@ -255,6 +255,53 @@ export async function listAttendees(eventId: Id): Promise<AttendeeRecord[]> {
   return decryptAll(TABLES.attendees, rows);
 }
 
+export async function getAttendee(id: Id): Promise<AttendeeRecord | undefined> {
+  const row = await getDatabase().attendees.get(id);
+  return row ? decryptRecord(TABLES.attendees, row) : undefined;
+}
+
+/** Every attendee on the device, across events. The attendee view's history reads this. */
+export async function listAllAttendees(): Promise<AttendeeRecord[]> {
+  const rows = await getDatabase().attendees.toArray();
+  return decryptAll(TABLES.attendees, rows);
+}
+
+/** The five fields the attendee view edits. `source` is not among them: it is history. */
+export type AttendeeEdit = Pick<
+  AttendeeRecord,
+  "displayName" | "kind" | "role" | "specialty" | "institution"
+>;
+
+/**
+ * The attendee view's save. A display-name change is an ordinary update: the
+ * pseudonymizer builds its roster forms from `displayName` at generation time, so a
+ * rename applies to the next generation and touches no existing draft or audit record —
+ * a draft already generated keeps the name it was generated with, and its audit record
+ * holds hashes that never contained a name. `eventId` and `source` are not editable.
+ */
+export async function updateAttendee(
+  id: Id,
+  edit: AttendeeEdit,
+): Promise<AttendeeRecord> {
+  const db = getDatabase();
+  const existing = await db.attendees.get(id);
+  if (!existing) throw new Error(`Attendee ${id} not found`);
+  const decrypted = decryptRecord(TABLES.attendees, existing);
+  const displayName = edit.displayName.trim();
+  if (displayName.length === 0) throw new Error("An attendee needs a name");
+  const updated: AttendeeRecord = {
+    ...decrypted,
+    displayName,
+    kind: edit.kind,
+    role: edit.role.trim(),
+    specialty: edit.specialty.trim(),
+    institution: edit.institution.trim(),
+    updatedAt: now(),
+  };
+  await db.attendees.put(encryptRecord(TABLES.attendees, updated));
+  return updated;
+}
+
 // --- Notes -----------------------------------------------------------------
 
 export interface NewNoteInput {
@@ -279,6 +326,12 @@ export async function createNote(input: NewNoteInput): Promise<NoteRecord> {
 export async function getNote(id: Id): Promise<NoteRecord | undefined> {
   const row = await getDatabase().notes.get(id);
   return row ? decryptRecord(TABLES.notes, row) : undefined;
+}
+
+/** Every note attributed to one attendee record, oldest first. */
+export async function listNotesForAttendee(attendeeId: Id): Promise<NoteRecord[]> {
+  const rows = await getDatabase().notes.where("attendeeId").equals(attendeeId).toArray();
+  return decryptAll(TABLES.notes, rows).sort((a, b) => a.createdAt - b.createdAt);
 }
 
 export async function listNotes(eventId: Id): Promise<NoteRecord[]> {
@@ -392,6 +445,15 @@ export async function createDraftWithAudit(
 export async function getDraft(id: Id): Promise<DraftRecord | undefined> {
   const row = await getDatabase().drafts.get(id);
   return row ? decryptRecord(TABLES.drafts, row) : undefined;
+}
+
+/** Every draft addressed to one attendee record, newest first. */
+export async function listDraftsForAttendee(attendeeId: Id): Promise<DraftRecord[]> {
+  const rows = await getDatabase()
+    .drafts.where("attendeeId")
+    .equals(attendeeId)
+    .toArray();
+  return decryptAll(TABLES.drafts, rows).sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /** Newest first: the review question is "what did I just generate". */

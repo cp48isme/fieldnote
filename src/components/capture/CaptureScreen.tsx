@@ -54,6 +54,8 @@ import {
   saveDraftBody,
   saveNoteBody,
   setActiveEventId,
+  updateAttendee,
+  type AttendeeEdit,
   type AttendeeRecord,
   type AuditRecordRecord,
   type DraftRecord,
@@ -66,6 +68,8 @@ import { auditLogToCsv } from "@/lib/review/audit-csv";
 import { useDebouncedAutosave } from "@/lib/useDebouncedAutosave";
 import { useSessionLifecycle } from "@/lib/useSessionLifecycle";
 
+import { AttendeeView } from "../attendees/AttendeeView";
+import { PeopleList } from "../attendees/PeopleList";
 import { DraftDetail } from "../review/DraftDetail";
 import { FollowUps } from "../review/FollowUps";
 import { RosterImport } from "../roster/RosterImport";
@@ -93,6 +97,18 @@ export function CaptureScreen() {
    * mid-note, and a dock with a textarea under a file picker is two things to focus.
    */
   const [importingRoster, setImportingRoster] = useState(false);
+  /**
+   * The people list, or one person open in the attendee view. Like the import, it
+   * replaces the log and the dock; reading a person's history is not done mid-note.
+   */
+  const [peopleView, setPeopleView] = useState<"closed" | "list" | AttendeeRecord>(
+    "closed",
+  );
+  /**
+   * The recipient's name for a draft opened from the attendee view, which may belong to
+   * another event and so to an attendee not in `attendees`.
+   */
+  const [openRecipientName, setOpenRecipientName] = useState<string | null>(null);
   const [attendees, setAttendees] = useState<AttendeeRecord[]>([]);
   /** Oldest first, as `listNotes` returns them. Reversed for display. */
   const [notes, setNotes] = useState<NoteRecord[]>([]);
@@ -498,6 +514,10 @@ export function CaptureScreen() {
                 void autosave.flush();
                 setImportingRoster(true);
               }}
+              onShowPeople={() => {
+                void autosave.flush();
+                setPeopleView("list");
+              }}
             />
           ) : (
             <h1 className="truncate text-base font-semibold">Fieldnote</h1>
@@ -554,7 +574,34 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && importingRoster && (
+          {event && peopleView === "list" && (
+            <PeopleList
+              attendees={attendees}
+              onOpen={(attendee) => setPeopleView(attendee)}
+              onClose={() => setPeopleView("closed")}
+            />
+          )}
+
+          {event && peopleView !== "closed" && peopleView !== "list" && (
+            <AttendeeView
+              key={peopleView.id}
+              attendee={peopleView}
+              onSave={async (edit: AttendeeEdit) => {
+                const updated = await updateAttendee(peopleView.id, edit);
+                setAttendees(await listAttendees(event.id));
+                setPeopleView(updated);
+              }}
+              onOpenDraft={(draft) => {
+                setOpenRecipientName(peopleView.displayName);
+                setPeopleView("closed");
+                setView("review");
+                void onOpenDraft(draft);
+              }}
+              onBack={() => setPeopleView("list")}
+            />
+          )}
+
+          {event && importingRoster && peopleView === "closed" && (
             <RosterImport
               event={event}
               attendees={attendees}
@@ -563,18 +610,23 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && !startingNewEvent && !importingRoster && view === "capture" && (
-            <NoteLog
-              notes={[...notes].reverse()}
-              attendees={attendees}
-              activeNoteId={activeNote?.id ?? null}
-              onOpenNote={(note) => void moveTo(note)}
-            />
-          )}
+          {event &&
+            !startingNewEvent &&
+            !importingRoster &&
+            peopleView === "closed" &&
+            view === "capture" && (
+              <NoteLog
+                notes={[...notes].reverse()}
+                attendees={attendees}
+                activeNoteId={activeNote?.id ?? null}
+                onOpenNote={(note) => void moveTo(note)}
+              />
+            )}
 
           {event &&
             !startingNewEvent &&
             !importingRoster &&
+            peopleView === "closed" &&
             view === "review" &&
             !openDraft && (
               <FollowUps
@@ -593,6 +645,7 @@ export function CaptureScreen() {
           {event &&
             !startingNewEvent &&
             !importingRoster &&
+            peopleView === "closed" &&
             view === "review" &&
             openDraft && (
               <DraftDetail
@@ -600,6 +653,7 @@ export function CaptureScreen() {
                 audit={openAudit}
                 recipientName={
                   attendees.find((a) => a.id === openDraft.attendeeId)?.displayName ??
+                  openRecipientName ??
                   "Unknown recipient"
                 }
                 body={draftBody}
@@ -613,20 +667,24 @@ export function CaptureScreen() {
         </div>
       </div>
 
-      {event && !startingNewEvent && !importingRoster && view === "capture" && (
-        <CaptureDock
-          body={body}
-          onBodyChange={onBodyChange}
-          attendees={attendees}
-          attendeeId={attendeeId}
-          onAttributionChange={(next) => void onAttributionChange(next)}
-          onAddAttendee={(displayName) => void onAddAttendee(displayName)}
-          onNewNote={() => void moveTo(null)}
-          canStartNewNote={activeNote !== null || body.length > 0}
-          saveState={autosave.state}
-          saveError={autosave.error}
-        />
-      )}
+      {event &&
+        !startingNewEvent &&
+        !importingRoster &&
+        peopleView === "closed" &&
+        view === "capture" && (
+          <CaptureDock
+            body={body}
+            onBodyChange={onBodyChange}
+            attendees={attendees}
+            attendeeId={attendeeId}
+            onAttributionChange={(next) => void onAttributionChange(next)}
+            onAddAttendee={(displayName) => void onAddAttendee(displayName)}
+            onNewNote={() => void moveTo(null)}
+            canStartNewNote={activeNote !== null || body.length > 0}
+            saveState={autosave.state}
+            saveError={autosave.error}
+          />
+        )}
     </main>
   );
 }
