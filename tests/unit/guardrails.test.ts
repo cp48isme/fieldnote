@@ -153,6 +153,26 @@ describe("indication", () => {
       "Some centres are already using it off-label for that.",
     );
   });
+
+  // Ruleset 1.2.0, fieldnote-2rh: the sentence the live model wrote on the first held-out
+  // eval run, in its own voice, which 1.1.0 let through because the regex knew "cleared
+  // for" and not "cleared population". The rule's description had always covered it.
+  it("1.2.0: blocks regulatory language that is not 'cleared for', from the held-out run", () => {
+    for (const sentence of [
+      "On the question of use outside the cleared population:",
+      "That would fall outside the cleared indication at present.",
+      "Clearance for that use is a matter for the regulator.",
+      "It is not within the label for that group.",
+    ]) {
+      expectRuleToHold("indication", sentence);
+    }
+  });
+
+  it("1.2.0: does not block a bare 'cleared' in ordinary use", () => {
+    const ordinary =
+      "You mentioned the cabinet cleared the theatre door with room to spare.";
+    expect(applyGuardrails(ordinary).text).toBe(ordinary);
+  });
 });
 
 describe("pricing", () => {

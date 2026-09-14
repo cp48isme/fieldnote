@@ -121,6 +121,20 @@ means something, with limits:
   **the end-to-end suite runs on `127.0.0.1` in one browser**; **the service worker's
   update path is untested** (`fieldnote-unp`). All unchanged from session 6.
 
+> **Amended 2026-09-14, between sessions 7 and 8.** The detectors were frozen at #39, so
+> every eval run since is held out, and the figures above are superseded by the README's.
+> **First held-out run, ruleset 1.1.0, five samples per case**: 1 of 60 reached the draft
+> — "On the question of use outside the cleared population:" in the model's own voice,
+> which the indication rule's regex did not know. **Ruleset 1.2.0** adds a phrase list,
+> not a bare "cleared" (`fieldnote-2rh`, closed). **Held-out run under 1.2.0**: 0 of 60
+> reached, 2 of 60 produced, both off-label-1, both caught; the ruleset fired on 29 of 60
+> samples against 44 before. **The live counterfactual against the final detectors
+> passed** — claim-bearing removed, four claim cases, three samples each, nothing
+> produced — so the live suite cannot demonstrate that rule's necessity and only the
+> deterministic gate test does; the "demonstrated live once" line in session 7's record is
+> withdrawn. The ruleset ended the PR identical to `main` apart from 1.2.0. Three live
+> runs, $1.49.
+
 **The model call is one module.** `src/lib/generation/model-call.ts`, called by the
 route and the eval runner, so what the runner measures is what production sends; a test
 asserts `messages.create` appears nowhere else in `src/` or `tests/evals/`.

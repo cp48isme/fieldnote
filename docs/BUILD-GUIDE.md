@@ -346,6 +346,20 @@ threshold.
 > the ruleset's over-blocking on relational sentences is now observable per run
 > (`fieldnote-ay2`). One call per case, so a sample and not a rate.
 
+> **Amended 2026-09-14, between sessions 7 and 8.** The detectors were frozen at #39, so
+> every run since is held out. **The first held-out run, under ruleset 1.1.0 at five
+> samples per case, found a guardrail gap**: on 1 of 60 samples the model wrote "On the
+> question of use outside the cleared population:" in its own voice, the indication
+> rule's regex knew "cleared for" and not "cleared population", and the sentence reached
+> the draft. Ruleset 1.2.0 adds a phrase list, not a bare "cleared" (`fieldnote-2rh`,
+> closed). **The held-out run under 1.2.0**: 0 of 60 reached, 2 of 60 produced, both
+> caught. **The live counterfactual against the final detectors passed**: with
+> claim-bearing removed, four claim cases at three samples each produced nothing the
+> detectors count, because the model echoes rather than adopts. So the live suite cannot
+> demonstrate the claim-bearing rule's necessity; only the deterministic gate test in
+> `Verify` can, and the previous note's "plus one live" is withdrawn — that run predated
+> the last detector change. Three live runs, $1.49.
+
 Budget more time than feels right. Writing assertions that catch a real violation
 without firing on acceptable output is genuinely fiddly, and you'll rewrite several
 cases once you see what the model actually does. This is also the session that produces

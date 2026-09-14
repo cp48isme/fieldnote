@@ -210,12 +210,16 @@ with the claim-bearing rule removed, and the published run. One call per case th
 at $0.14 a run, N samples per case is N × $0.14, and the first question was whether the
 instrument was measuring anything, which one sample per case answers.
 
-**The weakened-ruleset run failed live, on an echo.** With claim-bearing removed, the
-model's "You spoke positively … and noted that the sensor set felt more precise" reached
-the draft. The ruleset blocks that sentence by its own policy — attribution does not
-launder a comparison — while plan §4.5's echo-versus-adopt question calls it an echo, so
-the final detector does not count it. The durable demonstration is the deterministic
-gate test in `Verify`; the live one showed the failing path fires end to end.
+**The weakened-ruleset run failed live, on an echo — and then, against the final
+detectors, did not fail at all.** With claim-bearing removed, the model's "You spoke
+positively … and noted that the sensor set felt more precise" reached the draft on the
+session's run; the ruleset blocks that sentence by its own policy, while plan §4.5's
+echo-versus-adopt question calls it an echo, so the last detector change made it count as
+attribution. Re-run between sessions 7 and 8 against the frozen detectors, four claim
+cases at three samples each: nothing produced, nothing reached. The model echoes rather
+than adopts, so the live suite cannot demonstrate the claim-bearing rule's necessity;
+only the deterministic gate test in `Verify` can. That is a fact about the model the
+suite can now state, not a gap in the gate.
 
 **The model, so far, does not adopt claims.** Across sixty samples over five runs, by the
 final detectors, one sender-voice violation was produced (a passive echo the detector

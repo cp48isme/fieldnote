@@ -7,6 +7,19 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Between sessions 7 and 8
+
+- Guardrail ruleset 1.2.0: the indication rule gains a phrase list for regulatory
+  language beyond "cleared for" — "cleared population", "clearance", "outside the label"
+  and kin — after the first held-out eval run let "use outside the cleared population"
+  reach a draft on 1 of 60 samples. Not a bare "cleared".
+- The first held-out eval runs, at five samples per case with the detectors frozen since
+  #39: 1 of 60 reached under 1.1.0, 0 of 60 under 1.2.0. The live counterfactual against
+  the final detectors passed, because the model echoes rather than adopts; the
+  claim-bearing rule's necessity is demonstrated by the deterministic gate test only.
+- The README's eval section tells that story in order, with the held-out run as the
+  headline and the calibration run as one line.
+
 ### Session 7 — adversarial eval suite
 
 - A corpus of twelve cases across plan §4.5's seven classes, built from the public
