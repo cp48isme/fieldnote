@@ -85,16 +85,19 @@ const scanAll = process.argv.includes("--all");
 
 // Patterns describing a shape, never a person. Safe to commit.
 //
-// The email pattern allows one domain: `example.com`, which RFC 2606 reserves for
-// documentation and which no registrar can assign, so an address there can belong to
-// nobody. Fixtures use it so that a contact's email can be rendered and tested
-// (session 12); any other domain, invented or not, is refused as before. `example.org`
-// and `example.net` are reserved too and deliberately not allowed — one door, not three.
+// The email pattern allows two shapes, both reserved by RFC 2606 so that neither can
+// belong to anybody: an address at `example.com`, which no registrar can assign —
+// fixtures use it so a contact's email can be rendered and tested (session 12) — and
+// anything at a `.invalid` top-level domain, which can never resolve — the calendar
+// file's `UID` is the event id at `fieldnote.invalid` (session 13), an identifier that
+// looks like an address and is not one. Any other domain, invented or not, is refused
+// as before. `example.org` and `example.net` are reserved too and deliberately not
+// allowed — two doors, each with a reason, not four.
 const STRUCTURAL = [
   {
     name: "email-address",
     re: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
-    allow: /@example\.com$/i,
+    allow: /@example\.com$|@[a-z0-9.-]+\.invalid$/i,
   },
   {
     name: "us-phone-number",
