@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -82,6 +82,16 @@ export interface EventRecord extends BaseRecord {
   itinerary: string;
   logistics: string;
   contingency: string;
+  /**
+   * Where the event actually is (plan §3.3, session 12). `address` is the street address
+   * as she would give it; `coordinates` is one string, "lat, lng", validated on entry to
+   * two decimal numbers in range (`src/lib/location/coordinates.ts`). One string rather
+   * than two numbers so the cipher keeps two shapes. Coordinates matter more than the
+   * address: a truck in a parking lot is not at the building's street address, and the
+   * map links in the pre-event email are built from these.
+   */
+  address: string;
+  coordinates: string;
 }
 
 export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
@@ -115,6 +125,14 @@ export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
   contingency: {
     encryption: "eligible",
     why: "Free text; may name people to call and where to go.",
+  },
+  address: {
+    encryption: "eligible",
+    why: "A real site's street address; identifying in combination with the date.",
+  },
+  coordinates: {
+    encryption: "eligible",
+    why: "A location to a few metres, kept as one string so the seam's shapes stay two.",
   },
 };
 
@@ -328,9 +346,17 @@ export type DraftState = "generated" | "reviewed" | "exported" | "blocked";
 export type DraftBlockReason =
   "truncated" | "refusal" | "request-failed" | "defect" | "output-blocked";
 
+/**
+ * What a draft is (session 12, ADR-0011). A `follow-up` is the model's draft after an
+ * event; a `pre-event` email is composed from records before it, with no model. Both
+ * are drafts: the gate exists for what leaves the device, not for what the model did.
+ */
+export type DraftKind = "follow-up" | "pre-event";
+
 export interface DraftRecord extends BaseRecord {
   eventId: Id;
   attendeeId: Id | null;
+  kind: DraftKind;
   /** The text the representative edits and exports. Empty when blocked. */
   body: string;
   /**
@@ -348,7 +374,8 @@ export interface DraftRecord extends BaseRecord {
    * audit trail, because a UI that depends on the audit log inverts the relationship.
    */
   flagsFired: string[];
-  promptTemplateVersion: string;
+  /** Null for a pre-event email: no prompt ran (ADR-0011). Mirrors the audit record. */
+  promptTemplateVersion: string | null;
   guardrailRulesetVersion: string;
 }
 
@@ -356,6 +383,10 @@ export const DRAFT_POLICIES: FieldPolicies<DraftRecord> = {
   ...BASE_POLICY,
   eventId: { encryption: "clear", why: "Foreign key; must be indexable." },
   attendeeId: { encryption: "clear", why: "Opaque foreign key; must be indexable." },
+  kind: {
+    encryption: "clear",
+    why: "Enum; what the draft is. The review surface labels it.",
+  },
   body: {
     encryption: "eligible",
     why: "Correspondence addressed to an identified person, post-rehydration.",
@@ -376,7 +407,10 @@ export const DRAFT_POLICIES: FieldPolicies<DraftRecord> = {
     encryption: "clear",
     why: "Guardrail rule ids; no identity. Not a string, so could not be eligible.",
   },
-  promptTemplateVersion: { encryption: "clear", why: "Version string; no identity." },
+  promptTemplateVersion: {
+    encryption: "clear",
+    why: "Version string; no identity. Null when no prompt ran (ADR-0011).",
+  },
   guardrailRulesetVersion: { encryption: "clear", why: "Version string; no identity." },
 };
 
@@ -398,8 +432,10 @@ export const DRAFT_POLICIES: FieldPolicies<DraftRecord> = {
 export interface AuditRecordRecord extends BaseRecord {
   draftId: Id;
   eventId: Id;
-  model: string;
-  promptTemplateVersion: string;
+  /** Null when the draft was composed with no model (a pre-event email, ADR-0011). */
+  model: string | null;
+  /** Null when no prompt ran, which is the same case. */
+  promptTemplateVersion: string | null;
   guardrailRulesetVersion: string;
   /**
    * SHA-256, hex, of the request body exactly as it crossed the boundary — pseudonymized
@@ -445,8 +481,14 @@ export const AUDIT_POLICIES: FieldPolicies<AuditRecordRecord> = {
     encryption: "clear",
     why: "Foreign key; must be indexable. May point at a deleted event (ADR-0008).",
   },
-  model: { encryption: "clear", why: "Model identifier; no identity." },
-  promptTemplateVersion: { encryption: "clear", why: "Version string; no identity." },
+  model: {
+    encryption: "clear",
+    why: "Model identifier; no identity. Null means composed with no model (ADR-0011): a pre-event email is a draft under the gate, and the record says honestly that nothing generated it.",
+  },
+  promptTemplateVersion: {
+    encryption: "clear",
+    why: "Version string; no identity. Null when no prompt ran, the same case as a null model.",
+  },
   guardrailRulesetVersion: { encryption: "clear", why: "Version string; no identity." },
   inputHash: { encryption: "clear", why: "Hash, not content. That is the point of it." },
   outputHash: { encryption: "clear", why: "Hash, not content." },

@@ -32,6 +32,8 @@ export const BRIEFING_EVENT: EventRecord = {
     "Park at the north gate. Badges at reception; ask for the theatre coordinator.",
   contingency:
     "If the lift is out of service, use the loading bay on the east side and allow twenty minutes.",
+  address: "Northgate Regional Hospital, 12 Ridge Road",
+  coordinates: "51.5007, -0.1246",
 };
 
 function contact(

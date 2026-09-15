@@ -89,6 +89,18 @@ describe("auditLogToCsv", () => {
     expect(row[AUDIT_CSV_COLUMNS.indexOf("flagsFired")]).toBe("");
   });
 
+  it("writes an empty model and template for a draft composed with no model (ADR-0011)", () => {
+    const csv = auditLogToCsv(
+      [record({ model: null, promptTemplateVersion: null })],
+      new Set(["event-1"]),
+    );
+    const row = csv.split("\r\n")[1]!.split(",");
+    expect(row[AUDIT_CSV_COLUMNS.indexOf("model")]).toBe("");
+    expect(row[AUDIT_CSV_COLUMNS.indexOf("promptTemplateVersion")]).toBe("");
+    expect(row[AUDIT_CSV_COLUMNS.indexOf("guardrailRulesetVersion")]).toBe("1.1.0");
+    expect(row).toHaveLength(AUDIT_CSV_COLUMNS.length);
+  });
+
   it("quotes a value carrying a comma, so the column count holds", () => {
     const csv = auditLogToCsv([record({ model: "a,b" })], new Set());
     expect(csv.split("\r\n")[1]).toContain('"a,b"');

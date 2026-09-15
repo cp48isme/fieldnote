@@ -33,6 +33,8 @@ const EVENT: EventRecord = {
   itinerary: "",
   logistics: "",
   contingency: "",
+  address: "",
+  coordinates: "",
 };
 
 let noteCounter = 0;

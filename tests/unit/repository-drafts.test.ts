@@ -60,6 +60,7 @@ function draftInput(overrides: Partial<NewDraftInput> = {}): NewDraftInput {
   return {
     eventId: "event-1",
     attendeeId: "att-1",
+    kind: "follow-up",
     body: GENERATED,
     blocked: null,
     flagsFired: ["claim-bearing"],
@@ -107,6 +108,24 @@ describe("no draft without its audit record", () => {
     const surface = await import("@/lib/db");
     expect("createDraft" in surface).toBe(false);
     expect("putDraft" in surface).toBe(false);
+  });
+});
+
+describe("a pre-event draft (ADR-0011)", () => {
+  it("persists with a null model and template, and walks the same gate", async () => {
+    const { draft, audit } = await createDraftWithAudit(
+      draftInput({ kind: "pre-event", model: null, promptTemplateVersion: null }),
+    );
+    expect(draft.kind).toBe("pre-event");
+    expect(draft.promptTemplateVersion).toBeNull();
+    expect(audit.model).toBeNull();
+    expect(audit.promptTemplateVersion).toBeNull();
+    expect(audit.guardrailRulesetVersion).toBe("1.1.0");
+    await expect(exportDraft(draft.id, GENERATED)).rejects.toThrow(DraftStateError);
+    await markReviewed(draft.id);
+    const { audit: after } = await exportDraft(draft.id, GENERATED);
+    expect(after.exportedAt).not.toBeNull();
+    expect(after.model).toBeNull();
   });
 });
 

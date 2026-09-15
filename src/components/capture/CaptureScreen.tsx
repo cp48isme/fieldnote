@@ -389,6 +389,7 @@ export function CaptureScreen() {
         await createDraftWithAudit({
           eventId: event.id,
           attendeeId: outcome.attendeeId,
+          kind: "follow-up",
           body: outcome.body,
           blocked: outcome.blocked,
           flagsFired: outcome.flagsFired,
