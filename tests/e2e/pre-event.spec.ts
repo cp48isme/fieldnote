@@ -8,7 +8,8 @@ import { buildPng } from "../../scripts/build-photo-fixture.mjs";
 /**
  * The pre-event email in a real browser: the location saved with its coordinates
  * validated, a phone-sized site map resized to 1600 PNG and stored, downloaded, and
- * drawn into the briefing; a passage selected from the library; a comparison typed into
+ * drawn into the briefing; the start and end saved and the calendar file downloaded
+ * (session 13); a passage selected from the library; a comparison typed into
  * the logistics; and Compose writing a draft that lands in the review surface as a
  * pre-event email, opens with the gap and the passage, exports to the clipboard, and
  * appears in the audit CSV with an empty model cell. Every request is recorded: the
@@ -108,6 +109,33 @@ test.describe("pre-event email", () => {
     const mapBytes = readFileSync((await download.path())!);
     expect([...mapBytes.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
 
+    // The times: the calendar file is disabled until both are saved, then downloads
+    // as text/calendar with both ends and no free text.
+    await expect(page.getByTestId("pre-event-calendar-download")).toBeDisabled();
+    await expect(page.getByTestId("pre-event-calendar-state")).toContainText(
+      "Needs a saved start",
+    );
+    await page.getByTestId("pre-event-starts").fill("2026-10-02T08:00");
+    await page.getByTestId("pre-event-ends").fill("2026-10-02T07:00");
+    await page.getByTestId("pre-event-times-save").click();
+    await expect(page.getByTestId("pre-event-times-state")).toContainText(
+      "end after it starts",
+    );
+    await page.getByTestId("pre-event-ends").fill("2026-10-02T16:00");
+    await page.getByTestId("pre-event-times-save").click();
+    await expect(page.getByTestId("pre-event-times-state")).toContainText("Saved");
+    await expect(page.getByTestId("pre-event-calendar-download")).toBeEnabled();
+    const icsDownloading = page.waitForEvent("download");
+    await page.getByTestId("pre-event-calendar-download").click();
+    const icsDownload = await icsDownloading;
+    expect(icsDownload.suggestedFilename()).toBe("event-halewood-mobile-unit-bay-3.ics");
+    const ics = readFileSync((await icsDownload.path())!, "utf8");
+    expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
+    expect(ics).toMatch(/\r\nDTSTART:\d{8}T\d{6}Z\r\nDTEND:\d{8}T\d{6}Z\r\n/);
+    expect(ics).toContain("SUMMARY:Halewood mobile unit\\, bay 3\r\n");
+    expect(ics).toContain("GEO:53.354700;-2.835100\r\n");
+    expect(ics).not.toMatch(/ATTENDEE|ORGANIZER|Please arrive/);
+
     // 2. Logistics, with a comparison in it.
     await page.getByTestId("pre-event-logistics-text").fill(LOGISTICS);
     await page.getByTestId("pre-event-logistics-save").click();
@@ -147,6 +175,7 @@ test.describe("pre-event email", () => {
     await expect(editor).not.toHaveValue(/faster than anything/);
     await expect(editor).toHaveValue(new RegExp(escapeRegExp(GAP)));
     await expect(editor).toHaveValue(/Site map attached\./);
+    await expect(editor).toHaveValue(/Calendar invitation attached\./);
     await expect(editor).toHaveValue(/Apple Maps: https:\/\/maps\.apple\.com/);
     await expect(editor).toHaveValue(new RegExp(escapeRegExp(PASSAGE.body)));
     await expect(page.getByTestId("draft-flags")).not.toContainText(
