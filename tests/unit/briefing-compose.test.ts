@@ -16,6 +16,7 @@ import {
   BRIEFING_CONTACTS,
   BRIEFING_EVENT,
   GENERATED_AT,
+  fixturePhoto,
 } from "../fixtures/briefing";
 
 const input: BriefingInput = {
@@ -34,7 +35,9 @@ const textOf = (doc: ReturnType<typeof composeBriefing>) =>
           ? [b.title, ...b.lines].join("\n")
           : b.kind === "field"
             ? `${b.label}: ${b.text}`
-            : b.text,
+            : b.kind === "image"
+              ? `[${b.caption}]`
+              : b.text,
       ),
     ])
     .join("\n");
@@ -62,7 +65,12 @@ describe("composeBriefing", () => {
     expect(contacts[0]).toMatchObject({
       kind: "card",
       title: "Priya Anand",
-      lines: ["Site coordinator", "01234 567890", "Meets us at the loading bay."],
+      lines: [
+        "Site coordinator",
+        "01234 567890",
+        "p.anand@example.com",
+        "Meets us at the loading bay.",
+      ],
     });
     expect(doc.sections[3]!.blocks[0]).toEqual({
       kind: "paragraph",
@@ -92,6 +100,27 @@ describe("composeBriefing", () => {
     expect((cards[0] as { image: unknown }).image).toBeNull();
   });
 
+  it("carries the location and the site map in the Event section when stored", () => {
+    const doc = composeBriefing({ ...input, siteMap: fixturePhoto(BRIEFING_EVENT.id) });
+    const event = doc.sections[0]!.blocks;
+    expect(event).toContainEqual({
+      kind: "field",
+      label: "Address",
+      text: BRIEFING_EVENT.address,
+    });
+    expect(event).toContainEqual({
+      kind: "field",
+      label: "Coordinates",
+      text: BRIEFING_EVENT.coordinates,
+    });
+    const image = event.find((b) => b.kind === "image");
+    expect(image).toMatchObject({ kind: "image", caption: "Site map" });
+    // Without one, no image block and no placeholder for it.
+    expect(
+      composeBriefing(input).sections[0]!.blocks.some((b) => b.kind === "image"),
+    ).toBe(false);
+  });
+
   it("omits an empty dossier field and says so when nothing was entered", () => {
     const bare = composeBriefing({
       ...input,
@@ -104,6 +133,8 @@ describe("composeBriefing", () => {
         itinerary: "",
         logistics: "",
         contingency: "  ",
+        address: "",
+        coordinates: "",
       },
       contacts: [],
       attendees: [],
@@ -138,6 +169,7 @@ describe("composeBriefing", () => {
       event: true,
       contacts: true,
       attendees: true,
+      siteMap: true,
       generatedAt: true,
     } satisfies Record<keyof BriefingInput, true>;
     expect(Object.keys(keys)).not.toContain("notes");

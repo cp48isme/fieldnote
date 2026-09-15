@@ -7,10 +7,12 @@
  * it: every string here is a record field the representative entered, a label, or the
  * page's own statement of its limits.
  *
- * WHAT IS IN IT. The dossier — the five event fields she filled, empty ones omitted;
- * contacts as cards; attendees one per block with the photo, the record's fields, and
- * her briefing notes; the contingency plan last. No talking-points section: those are
- * in the attendee blocks, written by her. No deal positioning, no field for it.
+ * WHAT IS IN IT. The dossier — the location and the five event fields she filled, empty
+ * ones omitted, and the site map when one is stored (plan §3.2 puts it in the
+ * briefing's logistics; session 12 stores it); contacts as cards; attendees one per
+ * block with the photo, the record's fields, and her briefing notes; the contingency
+ * plan last. No talking-points section: those are in the attendee blocks, written by
+ * her. No deal positioning, no field for it.
  *
  * WHAT IS NOT IN IT. The dictated notes. They were captured for follow-ups; a document
  * that gets forwarded and printed does not carry them, and `BriefingInput` has no place
@@ -33,6 +35,8 @@ export interface BriefingInput {
   event: EventRecord;
   contacts: readonly ContactRecord[];
   attendees: readonly BriefingAttendee[];
+  /** The event's site map, when one is stored (session 12). Omitted or null means none. */
+  siteMap?: ImageRecord | null;
   /** Epoch milliseconds; the document carries it, so it is an input, not a clock read. */
   generatedAt: number;
 }
@@ -47,6 +51,7 @@ export interface BriefingImage {
 export type BriefingBlock =
   | { kind: "paragraph"; text: string }
   | { kind: "field"; label: string; text: string }
+  | { kind: "image"; caption: string; image: BriefingImage }
   | {
       kind: "card";
       title: string;
@@ -124,9 +129,31 @@ export function composeBriefing(input: BriefingInput): BriefingDocument {
   if (present(event.siteLabel)) {
     eventBlocks.push({ kind: "field", label: "Site", text: event.siteLabel.trim() });
   }
+  if (present(event.address)) {
+    eventBlocks.push({ kind: "field", label: "Address", text: event.address.trim() });
+  }
+  if (present(event.coordinates)) {
+    eventBlocks.push({
+      kind: "field",
+      label: "Coordinates",
+      text: event.coordinates.trim(),
+    });
+  }
   for (const [key, label] of DOSSIER) {
     const text = String(event[key]);
     if (present(text)) eventBlocks.push({ kind: "field", label, text: text.trim() });
+  }
+  if (input.siteMap) {
+    eventBlocks.push({
+      kind: "image",
+      caption: "Site map",
+      image: {
+        bytes: input.siteMap.bytes,
+        mediaType: input.siteMap.mediaType,
+        width: input.siteMap.width,
+        height: input.siteMap.height,
+      },
+    });
   }
   if (eventBlocks.length === 0)
     eventBlocks.push({ kind: "paragraph", text: NOTHING_ENTERED });

@@ -16,6 +16,7 @@ import {
   BRIEFING_CONTACTS,
   BRIEFING_EVENT,
   GENERATED_AT,
+  fixturePhoto,
 } from "../fixtures/briefing";
 
 const input = {
@@ -40,6 +41,16 @@ describe("renderBriefing", () => {
     console.info(
       `briefing fixture: ${back.getPageCount()} page(s), ${bytes.length} bytes`,
     );
+  });
+
+  it("draws a stored site map across the Event section as a second embedded image", async () => {
+    const bytes = await renderBriefing(
+      composeBriefing({ ...input, siteMap: fixturePhoto(BRIEFING_EVENT.id) }),
+    );
+    const source = new TextDecoder("latin1").decode(bytes);
+    expect(source.match(/\/Subtype \/Image/g)?.length).toBe(2);
+    const back = await PDFDocument.load(bytes);
+    expect(back.getPageCount()).toBeGreaterThanOrEqual(2);
   });
 
   it("breaks across pages rather than running off one, and numbers every page", async () => {

@@ -521,8 +521,32 @@ Template, location block, universal map links for Apple and Google Maps, site ma
 upload.
 
 > **Note, 2026-09-15, session 11.** The site map goes in the `images` table with
-> `purpose: "site-map"`, owned by the event; the value exists and nothing writes it yet.
-> The photo resize and the bytes-shaped cipher are already there for it.
+> `purpose: "site-map"`, owned by the event. (Corrected later the same day: session 12
+> writes it, from the pre-event screen, at 1600 pixels as PNG; the note as first written
+> said the resize was already there for it, and it was, at a photo's settings.)
+
+> **Amended 2026-09-15, session 12, on completion.** Two questions the plan left open
+> were settled by the owner and recorded as **ADR-0011**: a pre-event email is a draft
+> under the review gate, model or not — one `DraftRecord` per recipient of kind
+> `pre-event`, the same state machine, detail view, and clipboard export, an audit
+> record with a null model and null template — because the gate exists for what leaves
+> the device; and the ruleset runs over the whole email, her logistics included, because
+> §4.2 is about what is claim-bearing and not who wrote it. What shipped: schema v7
+> (`DraftRecord.kind`, the event's `address` and `coordinates` as one validated
+> string, nullable audit fields); the composer in `src/lib/preevent/compose.ts` — subject,
+> greeting from the record, her logistics, the location block with Apple Maps and Google
+> Maps links built from the coordinates as text never fetched, "Site map attached." while
+> one is stored, the selected passages verbatim, a sign-off — the body through
+> `applyGuardrails` with the library held out; the screen from the switcher in that
+> order; the review surface labelling the kind and explaining a gap without naming a
+> model. **The site map decision:** it cannot ride the clipboard, so it downloads from the
+> composer as a file for her to attach in Mail, and the briefing draws it in its Event
+> section (plan §3.2). The resize took its settings as a parameter for it: 512 JPEG for a
+> photo, 1600 PNG for a map. Also folded in from session 11's review: `CLAUDE.md`'s
+> decision-record list completed, the attendee view's remove-with-confirmation, and the
+> denylist allowing `example.com` so a contact fixture can carry an address. **Not in
+> it:** the `.ics` (session 13, which now has a bead for the end time the schema lacks),
+> the forwardable block (session 14; the composer has a place for it and nothing more).
 
 ### Session 13 — Calendar generation
 *~2 hours*

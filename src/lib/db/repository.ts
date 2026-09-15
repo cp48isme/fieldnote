@@ -41,6 +41,8 @@ import { editDistance } from "@/lib/review/edit-distance";
 
 import { encryptRecord, decryptAll, decryptRecord } from "./cipher";
 import { getDatabase } from "./database";
+import { parseCoordinates } from "@/lib/location/coordinates";
+
 import { kindFromDisplayName } from "./attendee-kind";
 import { assertTransition, canEdit } from "./draft-state";
 import {
@@ -54,6 +56,7 @@ import {
   type AuditRecordRecord,
   type ContactRecord,
   type DraftBlockReason,
+  type DraftKind,
   type DraftRecord,
   type EventRecord,
   type Id,
@@ -111,6 +114,8 @@ export async function createEvent(input: NewEventInput): Promise<EventRecord> {
     itinerary: "",
     logistics: "",
     contingency: "",
+    address: "",
+    coordinates: "",
   });
   await getDatabase().events.put(encryptRecord(TABLES.events, record));
   return record;
@@ -146,6 +151,37 @@ export async function updateEventDossier(
     itinerary: dossier.itinerary,
     logistics: dossier.logistics,
     contingency: dossier.contingency,
+    updatedAt: now(),
+  };
+  await db.events.put(encryptRecord(TABLES.events, updated));
+  return updated;
+}
+
+/** The location the pre-event email's map links are built from (session 12). */
+export type EventLocation = Pick<EventRecord, "address" | "coordinates">;
+
+/**
+ * Saves the address and the coordinates. Coordinates are validated here, on entry: empty
+ * is allowed (no map links), anything else must parse as "lat, lng" in range, so a typo
+ * never becomes a link to the wrong continent.
+ */
+export async function updateEventLocation(
+  id: Id,
+  location: EventLocation,
+): Promise<EventRecord> {
+  const coordinates = location.coordinates.trim();
+  if (coordinates.length > 0 && parseCoordinates(coordinates) === null) {
+    throw new Error(
+      'Coordinates must be two decimal numbers, latitude then longitude, like "51.5007, -0.1246".',
+    );
+  }
+  const db = getDatabase();
+  const existing = await db.events.get(id);
+  if (!existing) throw new Error(`Event ${id} not found`);
+  const updated: EventRecord = {
+    ...decryptRecord(TABLES.events, existing),
+    address: location.address.trim(),
+    coordinates,
     updatedAt: now(),
   };
   await db.events.put(encryptRecord(TABLES.events, updated));
@@ -585,12 +621,16 @@ export async function attributeNote(id: Id, attendeeId: Id | null): Promise<Note
 export interface NewDraftInput {
   eventId: Id;
   attendeeId: Id | null;
+  /** A follow-up from the model, or a pre-event email composed from records (ADR-0011). */
+  kind: DraftKind;
   /** Rehydrated, guarded text. Empty when blocked. */
   body: string;
   blocked: DraftBlockReason | null;
   flagsFired: string[];
-  model: string;
-  promptTemplateVersion: string;
+  /** Null when nothing generated the draft: a pre-event email is composed, not generated. */
+  model: string | null;
+  /** Null when no prompt ran, which is the same case. */
+  promptTemplateVersion: string | null;
   guardrailRulesetVersion: string;
   inputHash: string | null;
   outputHash: string | null;
@@ -615,6 +655,7 @@ export async function createDraftWithAudit(
   const draft: DraftRecord = stamp({
     eventId: input.eventId,
     attendeeId: input.attendeeId,
+    kind: input.kind,
     body: input.body,
     generatedBody: input.body,
     state: input.blocked === null ? ("generated" as const) : ("blocked" as const),

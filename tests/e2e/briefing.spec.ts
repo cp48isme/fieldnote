@@ -55,15 +55,19 @@ test.describe("briefing", () => {
     await page.getByTestId("briefing-event-save").click();
     await expect(page.getByTestId("briefing-event-state")).toContainText("Saved");
 
-    // 2. A contact, with no email: the denylist refuses any address-shaped string.
+    // 2. A contact, with an address at the one domain the denylist allows.
     await expect(page.getByTestId("briefing-contacts-empty")).toBeVisible();
     await page.getByTestId("briefing-contact-add").click();
     await page.getByTestId("briefing-contact-name").fill(CONTACT_NAME);
     await page.getByTestId("briefing-contact-function").fill("Site coordinator");
     await page.getByTestId("briefing-contact-phone").fill("01234 567890");
+    await page.getByTestId("briefing-contact-email").fill("p.anand@example.com");
     await page.getByTestId("briefing-contact-save").click();
     await expect(page.getByTestId("briefing-contact")).toHaveCount(1);
     await expect(page.getByTestId("briefing-contact")).toContainText("Site coordinator");
+    await expect(page.getByTestId("briefing-contact")).toContainText(
+      "p.anand@example.com",
+    );
 
     // Persisted: a reload finds both.
     await page.reload();

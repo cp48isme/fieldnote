@@ -13,9 +13,10 @@
  * font is a fifth package and a font file, deferred until a real roster needs it
  * (ADR-0010).
  *
- * IMAGES. JPEG and PNG, the two shapes the store holds (`image/jpeg` from the device
- * resize; `image/png` is what a fixture or a later site map may be). Drawn into a fixed
- * box beside the attendee's name, scaled to fit, never cropped.
+ * IMAGES. JPEG and PNG, the two shapes the store holds (`image/jpeg` from the photo
+ * resize; `image/png` from the site-map resize, or a fixture). A photo is drawn into a
+ * fixed box beside the attendee's name; a site map across the content width, up to a
+ * page's worth of height. Scaled to fit, never cropped.
  *
  * THE FOOTER. Every page, two lines: the event and the generation time with "Page n of
  * m" beside them, then the expected-attendance line whole. Drawn in a second pass once
@@ -31,6 +32,8 @@ const MARGIN = 48;
 const CONTENT_WIDTH = PAGE.width - MARGIN * 2;
 const BOTTOM = MARGIN + 40; // room for the two-line footer
 const PHOTO_BOX = { width: 72, height: 96 } as const;
+/** A site map's box: the content width, and no more than this tall. */
+const MAP_MAX_HEIGHT = 420;
 const INK = rgb(0.1, 0.1, 0.12);
 const MUTED = rgb(0.4, 0.4, 0.45);
 const RULE = rgb(0.8, 0.8, 0.82);
@@ -156,6 +159,27 @@ async function embed(doc: PDFDocument, image: BriefingImage): Promise<PDFImage |
   return null;
 }
 
+async function drawImageBlock(
+  layout: Layout,
+  block: BriefingBlock & { kind: "image" },
+): Promise<void> {
+  const embedded = await embed(layout.doc, block.image);
+  if (!embedded) return;
+  const scale = Math.min(
+    CONTENT_WIDTH / embedded.width,
+    MAP_MAX_HEIGHT / embedded.height,
+    1,
+  );
+  const width = embedded.width * scale;
+  const height = embedded.height * scale;
+  const captionLine = SIZE.label * LEADING;
+  layout.ensure(captionLine + height + 8);
+  layout.text(block.caption.toUpperCase(), layout.fonts.bold, SIZE.label, MUTED);
+  layout.page.drawImage(embedded, { x: MARGIN, y: layout.y - height, width, height });
+  layout.y -= height;
+  layout.space(10);
+}
+
 async function drawCard(
   layout: Layout,
   block: BriefingBlock & { kind: "card" },
@@ -224,6 +248,8 @@ export async function renderBriefing(document: BriefingDocument): Promise<Uint8A
         layout.text(block.label.toUpperCase(), fonts.bold, SIZE.label, MUTED);
         layout.text(block.text, fonts.regular, SIZE.body);
         layout.space(6);
+      } else if (block.kind === "image") {
+        await drawImageBlock(layout, block);
       } else {
         await drawCard(layout, block);
       }

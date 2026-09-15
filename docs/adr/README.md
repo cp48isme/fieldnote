@@ -21,6 +21,7 @@ the artifact.
 | [0008](0008-audit-records-survive-event-deletion.md) | Audit records survive event deletion | Accepted, amended 2026-09-11 and 2026-09-14 | 2026-09-11 |
 | [0009](0009-briefing-is-downloaded-never-sent.md) | The briefing is a document the representative writes and downloads; the application lays it out and never sends it | Accepted | 2026-09-14 |
 | [0010](0010-pdf-generation-library.md) | `pdf-lib` for producing the briefing document | Accepted | 2026-09-15 |
+| [0011](0011-pre-event-email-is-a-draft.md) | A pre-event email is a draft under the review gate, model or not | Accepted | 2026-09-15 |
 
 ## What each one settles
 
@@ -72,6 +73,12 @@ points rather than deferring them.
 the registry and advisory material for each, and the deciding reason — the smaller thing
 to trust, a library of primitives with no script, form, or HTML capability — set against
 the cost it carries, which is that it is unmaintained and the record says so.
+
+**0011** settles the two questions plan §3.3 left open for the pre-event email: it is a
+draft under the review gate, with an audit record carrying a null model, because the gate
+exists for what leaves the device and not for what the model did; and the ruleset judges
+the whole email, the representative's own paragraph included, because §4.2 is about what
+is claim-bearing and not who wrote it.
 
 ## Numbering
 

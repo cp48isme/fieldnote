@@ -25,6 +25,7 @@ import { composeBriefing } from "@/lib/briefing/compose";
 import { renderBriefing } from "@/lib/briefing/render";
 import {
   createContact,
+  getImage,
   listContacts,
   listImages,
   removeContact,
@@ -93,6 +94,7 @@ export function BriefingScreen({
   );
   const [contacts, setContacts] = useState<ContactRecord[]>([]);
   const [photos, setPhotos] = useState<Map<string, ImageRecord>>(new Map());
+  const [siteMap, setSiteMap] = useState<ImageRecord | null>(null);
   const [editingContact, setEditingContact] = useState<"none" | "new" | string>("none");
   const [contactDraft, setContactDraft] = useState<ContactInput>(EMPTY_CONTACT);
   const [contactError, setContactError] = useState<string | null>(null);
@@ -107,6 +109,9 @@ export function BriefingScreen({
     let cancelled = false;
     void listContacts(event.id).then((loaded) => {
       if (!cancelled) setContacts(loaded);
+    });
+    void getImage(event.id, "site-map").then((stored) => {
+      if (!cancelled) setSiteMap(stored ?? null);
     });
     return () => {
       cancelled = true;
@@ -195,6 +200,7 @@ export function BriefingScreen({
           attendee,
           photo: photos.get(attendee.id) ?? null,
         })),
+        siteMap,
         generatedAt,
       });
       const bytes = await renderBriefing(document);
@@ -260,6 +266,11 @@ export function BriefingScreen({
               })}`
             : ""}
           {event.siteLabel ? ` · ${event.siteLabel}` : ""}
+        </p>
+        <p data-testid="briefing-site-map-state" className="text-xs opacity-60">
+          {siteMap
+            ? "A site map is stored for this event and goes on the briefing. It is edited on the pre-event email screen."
+            : "No site map yet. One can be added on the pre-event email screen, and goes on the briefing too."}
         </p>
         {DOSSIER_FIELDS.map(([key, label, hint]) => (
           <label key={key} className="flex flex-col gap-1 text-sm">

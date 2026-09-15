@@ -69,6 +69,7 @@ describe("updateAttendee", () => {
     const { draft } = await createDraftWithAudit({
       eventId: "e",
       attendeeId: typed.id,
+      kind: "follow-up",
       body: "Dear Vance,\n\nThank you.",
       blocked: null,
       flagsFired: [],

@@ -24,6 +24,7 @@ import {
   saveAttendeeBriefingNotes,
   updateContact,
   updateEventDossier,
+  updateEventLocation,
 } from "@/lib/db";
 import { setDatabase } from "@/lib/db/database";
 
@@ -64,6 +65,27 @@ describe("the dossier and the briefing notes", () => {
     const saved = await saveAttendeeBriefingNotes(attendee.id, "Ask about the trolley.");
     expect(saved.briefingNotes).toBe("Ask about the trolley.");
     expect(saved.displayName).toBe("Dr. Vance");
+  });
+});
+
+describe("the location", () => {
+  it("saves an address and coordinates, and refuses coordinates that do not parse", async () => {
+    const event = await createEvent({ name: "Northgate" });
+    expect(event.address).toBe("");
+    expect(event.coordinates).toBe("");
+    const saved = await updateEventLocation(event.id, {
+      address: " 12 Ridge Road ",
+      coordinates: " 51.5007, -0.1246 ",
+    });
+    expect(saved.address).toBe("12 Ridge Road");
+    expect(saved.coordinates).toBe("51.5007, -0.1246");
+    await expect(
+      updateEventLocation(event.id, { address: "", coordinates: "north lot" }),
+    ).rejects.toThrow(/latitude then longitude/);
+    // Empty coordinates are allowed: no map links, no guess.
+    const cleared = await updateEventLocation(event.id, { address: "", coordinates: "" });
+    expect(cleared.coordinates).toBe("");
+    expect((await getEvent(event.id))?.coordinates).toBe("");
   });
 });
 
@@ -157,8 +179,8 @@ describe("contacts", () => {
     name: "Priya Anand",
     function: "Site coordinator",
     phone: "01234 567890",
-    // The denylist refuses any address-shaped string in a tracked file, invented or not.
-    email: "",
+    // `example.com` is the one domain the denylist allows (RFC 2606 reserves it).
+    email: "p.anand@example.com",
     notes: "Meets us at the loading bay.",
   };
 

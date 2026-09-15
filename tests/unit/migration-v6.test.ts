@@ -13,7 +13,13 @@ import { FakeDatabase } from "./support/fake-database";
 
 type V5Event = Omit<
   EventRecord,
-  "objectives" | "configuration" | "itinerary" | "logistics" | "contingency"
+  | "objectives"
+  | "configuration"
+  | "itinerary"
+  | "logistics"
+  | "contingency"
+  | "address"
+  | "coordinates"
 >;
 type V5Attendee = Omit<AttendeeRecord, "briefingNotes">;
 

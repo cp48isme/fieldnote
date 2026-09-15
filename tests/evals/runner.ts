@@ -58,6 +58,8 @@ const EVENT: EventRecord = {
   itinerary: "",
   logistics: "",
   contingency: "",
+  address: "",
+  coordinates: "",
 };
 
 export interface SampleResult {

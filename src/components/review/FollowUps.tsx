@@ -16,7 +16,13 @@
  * export. Export lives in `DraftDetail`, behind the open.
  */
 
-import type { AttendeeRecord, DraftRecord, DraftState, Id } from "@/lib/db";
+import type { AttendeeRecord, DraftKind, DraftRecord, DraftState, Id } from "@/lib/db";
+
+/** What a draft is, on its row (ADR-0011). A follow-up needs no label; it is the default. */
+export const KIND_LABELS: Record<DraftKind, string | null> = {
+  "follow-up": null,
+  "pre-event": "Pre-event email",
+};
 
 const STATE_LABELS: Record<DraftState, string> = {
   generated: "Not yet opened",
@@ -100,7 +106,8 @@ export function FollowUps({
       {drafts.length === 0 ? (
         <p data-testid="follow-ups-empty" className="text-sm opacity-60">
           No drafts yet. Drafting reads every note attributed to someone and writes one
-          follow-up per person.
+          follow-up per person. Pre-event emails are composed from the event switcher and
+          land here too.
         </p>
       ) : (
         <>
@@ -123,6 +130,7 @@ export function FollowUps({
                     data-testid="draft-row"
                     data-draft-id={draft.id}
                     data-state={draft.state}
+                    data-kind={draft.kind}
                     onClick={() => onOpen(draft)}
                     className="flex min-h-16 w-full flex-col gap-1 rounded-lg border border-black/10 p-3 text-left dark:border-white/15"
                   >
@@ -133,6 +141,11 @@ export function FollowUps({
                       </span>
                     </span>
                     <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+                      {KIND_LABELS[draft.kind] && (
+                        <span data-testid="draft-row-kind" className="font-medium">
+                          {KIND_LABELS[draft.kind]}
+                        </span>
+                      )}
                       <span data-testid="draft-row-state">
                         {STATE_LABELS[draft.state]}
                       </span>

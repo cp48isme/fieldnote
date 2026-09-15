@@ -1,7 +1,8 @@
 /**
  * A synthetic event, its contacts, and its attendees, for the briefing tests. Every
- * name, place, number, and sentence is invented, per ADR-0001. Contact emails are
- * empty: the denylist refuses any address-shaped string in a tracked file.
+ * name, place, number, and sentence is invented, per ADR-0001. Contact emails are at
+ * `example.com`, the one domain the denylist allows: RFC 2606 reserves it, so an address
+ * there belongs to nobody.
  */
 
 import { readFileSync } from "node:fs";
@@ -32,6 +33,8 @@ export const BRIEFING_EVENT: EventRecord = {
     "Park at the north gate. Badges at reception; ask for the theatre coordinator.",
   contingency:
     "If the lift is out of service, use the loading bay on the east side and allow twenty minutes.",
+  address: "Northgate Regional Hospital, 12 Ridge Road",
+  coordinates: "51.5007, -0.1246",
 };
 
 function contact(
@@ -40,6 +43,7 @@ function contact(
   fn: string,
   phone: string,
   notes: string,
+  email = "",
 ): ContactRecord {
   return {
     id,
@@ -50,7 +54,7 @@ function contact(
     name,
     function: fn,
     phone,
-    email: "",
+    email,
     notes,
   };
 }
@@ -62,6 +66,7 @@ export const BRIEFING_CONTACTS: readonly ContactRecord[] = [
     "Site coordinator",
     "01234 567890",
     "Meets us at the loading bay.",
+    "p.anand@example.com",
   ),
   contact("con-2", "Tom Okafor", "Truck operator", "01234 567891", ""),
   contact(

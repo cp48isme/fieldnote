@@ -61,8 +61,9 @@ export function auditRecordToRow(
     record.eventId,
     existingEventIds.has(record.eventId) ? "present" : "deleted",
     iso(record.createdAt),
-    record.model,
-    record.promptTemplateVersion,
+    // Empty when the draft was composed with no model (ADR-0011): the honest cell.
+    record.model ?? "",
+    record.promptTemplateVersion ?? "",
     record.guardrailRulesetVersion,
     record.blocked ?? "",
     record.flagsFired.join(FLAG_SEPARATOR),
