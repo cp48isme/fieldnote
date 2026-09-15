@@ -66,12 +66,14 @@ import {
   type NoteRecord,
 } from "@/lib/db";
 import { generateDrafts } from "@/lib/generation/pipeline";
+import { downloadBytes } from "@/lib/download";
 import { auditLogToCsv } from "@/lib/review/audit-csv";
 import { useDebouncedAutosave } from "@/lib/useDebouncedAutosave";
 import { useSessionLifecycle } from "@/lib/useSessionLifecycle";
 
 import { AttendeeView } from "../attendees/AttendeeView";
 import { PeopleList } from "../attendees/PeopleList";
+import { BriefingScreen } from "../briefing/BriefingScreen";
 import { LibraryScreen } from "../library/LibraryScreen";
 import { DraftDetail } from "../review/DraftDetail";
 import { FollowUps } from "../review/FollowUps";
@@ -114,6 +116,13 @@ export function CaptureScreen() {
    */
   const [libraryView, setLibraryView] = useState(false);
   const [libraryPassages, setLibraryPassages] = useState<ApprovedContentRecord[]>([]);
+  /**
+   * The briefing screen (session 11), replacing the log and the dock like the others.
+   * A person opened from it goes to the attendee view and comes back here on Back,
+   * which is what `attendeeReturn` remembers.
+   */
+  const [briefingView, setBriefingView] = useState(false);
+  const [attendeeReturn, setAttendeeReturn] = useState<"list" | "briefing">("list");
   /**
    * The recipient's name for a draft opened from the attendee view, which may belong to
    * another event and so to an attendee not in `attendees`.
@@ -469,12 +478,11 @@ export function CaptureScreen() {
   const onExportAuditLog = useCallback(async () => {
     const [records, all] = await Promise.all([listAuditRecords(), listEvents()]);
     const csv = auditLogToCsv(records, new Set(all.map((candidate) => candidate.id)));
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `fieldnote-audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadBytes(
+      csv,
+      `fieldnote-audit-log-${new Date().toISOString().slice(0, 10)}.csv`,
+      "text/csv",
+    );
   }, []);
 
   const toggleView = useCallback(async () => {
@@ -531,19 +539,30 @@ export function CaptureScreen() {
               onImportRoster={() => {
                 void autosave.flush();
                 setLibraryView(false);
+                setBriefingView(false);
                 setImportingRoster(true);
               }}
               onShowPeople={() => {
                 void autosave.flush();
                 setLibraryView(false);
+                setBriefingView(false);
+                setAttendeeReturn("list");
                 setPeopleView("list");
               }}
               onShowLibrary={() => {
                 void autosave.flush();
                 setImportingRoster(false);
+                setBriefingView(false);
                 setPeopleView("closed");
                 void listApprovedContent().then(setLibraryPassages);
                 setLibraryView(true);
+              }}
+              onShowBriefing={() => {
+                void autosave.flush();
+                setImportingRoster(false);
+                setLibraryView(false);
+                setPeopleView("closed");
+                setBriefingView(true);
               }}
             />
           ) : (
@@ -624,11 +643,38 @@ export function CaptureScreen() {
                 setView("review");
                 void onOpenDraft(draft);
               }}
-              onBack={() => setPeopleView("list")}
+              onBack={() => {
+                // The view saves briefing notes itself; the briefing reads them off
+                // this list, so re-read it before showing the briefing again.
+                void listAttendees(event.id).then(setAttendees);
+                if (attendeeReturn === "briefing") {
+                  setPeopleView("closed");
+                  setBriefingView(true);
+                } else {
+                  setPeopleView("list");
+                }
+              }}
             />
           )}
 
-          {event && libraryView && peopleView === "closed" && (
+          {event && briefingView && peopleView === "closed" && (
+            <BriefingScreen
+              event={event}
+              attendees={attendees}
+              onEventChanged={(updated) => {
+                setEvent(updated);
+                void listEvents().then(setEvents);
+              }}
+              onOpenAttendee={(attendee) => {
+                setAttendeeReturn("briefing");
+                setBriefingView(false);
+                setPeopleView(attendee);
+              }}
+              onClose={() => setBriefingView(false)}
+            />
+          )}
+
+          {event && libraryView && !briefingView && peopleView === "closed" && (
             <LibraryScreen
               passages={libraryPassages}
               onChanged={() => void listApprovedContent().then(setLibraryPassages)}
@@ -636,19 +682,24 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && importingRoster && !libraryView && peopleView === "closed" && (
-            <RosterImport
-              event={event}
-              attendees={attendees}
-              onImported={() => void listAttendees(event.id).then(setAttendees)}
-              onClose={() => setImportingRoster(false)}
-            />
-          )}
+          {event &&
+            importingRoster &&
+            !libraryView &&
+            !briefingView &&
+            peopleView === "closed" && (
+              <RosterImport
+                event={event}
+                attendees={attendees}
+                onImported={() => void listAttendees(event.id).then(setAttendees)}
+                onClose={() => setImportingRoster(false)}
+              />
+            )}
 
           {event &&
             !startingNewEvent &&
             !importingRoster &&
             !libraryView &&
+            !briefingView &&
             peopleView === "closed" &&
             view === "capture" && (
               <NoteLog
@@ -663,6 +714,7 @@ export function CaptureScreen() {
             !startingNewEvent &&
             !importingRoster &&
             !libraryView &&
+            !briefingView &&
             peopleView === "closed" &&
             view === "review" &&
             !openDraft && (
@@ -683,6 +735,7 @@ export function CaptureScreen() {
             !startingNewEvent &&
             !importingRoster &&
             !libraryView &&
+            !briefingView &&
             peopleView === "closed" &&
             view === "review" &&
             openDraft && (
@@ -709,6 +762,7 @@ export function CaptureScreen() {
         !startingNewEvent &&
         !importingRoster &&
         !libraryView &&
+        !briefingView &&
         peopleView === "closed" &&
         view === "capture" && (
           <CaptureDock

@@ -8,11 +8,14 @@
  */
 
 export function downloadBytes(
-  bytes: BlobPart,
+  bytes: string | Uint8Array | ArrayBuffer,
   filename: string,
   mediaType: string,
 ): void {
-  const url = URL.createObjectURL(new Blob([bytes], { type: mediaType }));
+  // A typed array from a library may sit over a buffer TypeScript will not call a
+  // BlobPart; copying it into a fresh Uint8Array settles that without changing the bytes.
+  const part: BlobPart = typeof bytes === "string" ? bytes : new Uint8Array(bytes);
+  const url = URL.createObjectURL(new Blob([part], { type: mediaType }));
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
