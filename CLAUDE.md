@@ -130,3 +130,10 @@ Existing (index and conventions in `docs/adr/README.md`):
 - ADR-0004 — encryption seam in the data layer; passphrase-derived encryption deferred
   to the private fork
 - ADR-0005 — device dictation only; no audio capture, storage, or transcription
+- ADR-0006 — structural name detection at the pseudonymization boundary
+- ADR-0007 — role references at the pseudonymization boundary
+- ADR-0008 — audit records survive event deletion
+- ADR-0009 — the briefing is a document the representative writes and downloads; the
+  application lays it out and never sends it
+- ADR-0010 — `pdf-lib` for producing the briefing document
+- ADR-0011 — a pre-event email is a draft under the review gate, model or not
