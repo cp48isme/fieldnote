@@ -134,4 +134,29 @@ test.describe("attendee view", () => {
     await page.getByTestId("attendee-photo-remove").click();
     await expect(page.getByTestId("attendee-photo-none")).toBeVisible();
   });
+
+  test("removes a person after a confirmation that says what goes, and keeps their note", async ({
+    page,
+  }) => {
+    await startEventWithPerson(page);
+    await page.getByTestId("active-event").selectOption("__people__");
+    await page.getByTestId("person-row").click();
+
+    // Declined: nothing happens.
+    page.once("dialog", (dialog) => {
+      expect(dialog.message()).toContain("Their photo and your briefing notes");
+      expect(dialog.message()).toContain("audit records are not changed");
+      void dialog.dismiss();
+    });
+    await page.getByTestId("attendee-delete").click();
+    await expect(page.getByTestId("attendee-view")).toBeVisible();
+
+    // Accepted: back on the list with nobody on it, and the note is still in the log.
+    page.once("dialog", (dialog) => void dialog.accept());
+    await page.getByTestId("attendee-delete").click();
+    await expect(page.getByTestId("people-list")).toBeVisible();
+    await expect(page.getByTestId("people-empty")).toBeVisible();
+    await page.getByTestId("people-close").click();
+    await expect(page.getByTestId("note-body")).toHaveValue(NOTE);
+  });
 });

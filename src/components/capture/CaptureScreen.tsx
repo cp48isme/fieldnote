@@ -41,6 +41,7 @@ import {
   createDraftWithAudit,
   createEvent,
   createNote,
+  deleteAttendee,
   exportDraft,
   getActiveEventId,
   getAuditRecordForDraft,
@@ -663,6 +664,17 @@ export function CaptureScreen() {
                 // The view saves briefing notes itself; the briefing reads them off
                 // this list, so re-read it before showing the briefing again.
                 void listAttendees(event.id).then(setAttendees);
+                if (attendeeReturn === "briefing") {
+                  setPeopleView("closed");
+                  setBriefingView(true);
+                } else {
+                  setPeopleView("list");
+                }
+              }}
+              onDelete={async () => {
+                await deleteAttendee(peopleView.id);
+                setAttendees(await listAttendees(event.id));
+                if (attendeeId === peopleView.id) setAttendeeId(null);
                 if (attendeeReturn === "briefing") {
                   setPeopleView("closed");
                   setBriefingView(true);

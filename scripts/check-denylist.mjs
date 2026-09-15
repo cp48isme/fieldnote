@@ -84,10 +84,17 @@ const TERMS_FILE = ".denylist.local";
 const scanAll = process.argv.includes("--all");
 
 // Patterns describing a shape, never a person. Safe to commit.
+//
+// The email pattern allows one domain: `example.com`, which RFC 2606 reserves for
+// documentation and which no registrar can assign, so an address there can belong to
+// nobody. Fixtures use it so that a contact's email can be rendered and tested
+// (session 12); any other domain, invented or not, is refused as before. `example.org`
+// and `example.net` are reserved too and deliberately not allowed — one door, not three.
 const STRUCTURAL = [
   {
     name: "email-address",
     re: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
+    allow: /@example\.com$/i,
   },
   {
     name: "us-phone-number",
@@ -195,7 +202,13 @@ for (const file of filesToScan()) {
   lines.forEach((line, i) => {
     for (const p of patterns) {
       p.re.lastIndex = 0;
-      if (p.re.test(line)) findings.push({ file, line: i + 1, pattern: p.name });
+      // A pattern with an allowlist fires only on a match the allowlist does not cover;
+      // every match on the line is checked, so one allowed address beside one real one
+      // still fails.
+      const hit = p.allow
+        ? [...line.matchAll(p.re)].some((m) => !p.allow.test(m[0]))
+        : p.re.test(line);
+      if (hit) findings.push({ file, line: i + 1, pattern: p.name });
     }
   });
 }

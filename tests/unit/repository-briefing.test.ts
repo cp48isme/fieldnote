@@ -179,8 +179,8 @@ describe("contacts", () => {
     name: "Priya Anand",
     function: "Site coordinator",
     phone: "01234 567890",
-    // The denylist refuses any address-shaped string in a tracked file, invented or not.
-    email: "",
+    // `example.com` is the one domain the denylist allows (RFC 2606 reserves it).
+    email: "p.anand@example.com",
     notes: "Meets us at the loading bay.",
   };
 

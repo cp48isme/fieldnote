@@ -65,7 +65,12 @@ describe("composeBriefing", () => {
     expect(contacts[0]).toMatchObject({
       kind: "card",
       title: "Priya Anand",
-      lines: ["Site coordinator", "01234 567890", "Meets us at the loading bay."],
+      lines: [
+        "Site coordinator",
+        "01234 567890",
+        "p.anand@example.com",
+        "Meets us at the loading bay.",
+      ],
     });
     expect(doc.sections[3]!.blocks[0]).toEqual({
       kind: "paragraph",

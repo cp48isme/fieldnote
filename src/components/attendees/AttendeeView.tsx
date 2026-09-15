@@ -67,6 +67,8 @@ export interface AttendeeViewProps {
   /** Opens a draft in the review detail; the caller handles the event it belongs to. */
   onOpenDraft: (draft: DraftRecord) => void;
   onBack: () => void;
+  /** Removes the record after the confirmation below; the caller re-reads and leaves. */
+  onDelete: () => Promise<void>;
 }
 
 export function AttendeeView({
@@ -74,7 +76,9 @@ export function AttendeeView({
   onSave,
   onOpenDraft,
   onBack,
+  onDelete,
 }: AttendeeViewProps) {
+  const [deleting, setDeleting] = useState(false);
   const [edit, setEdit] = useState<AttendeeEdit>({
     displayName: attendee.displayName,
     kind: attendee.kind,
@@ -155,6 +159,25 @@ export function AttendeeView({
   const leave = async (then: () => void) => {
     await notesAutosave.flush();
     then();
+  };
+
+  /**
+   * The confirmation says what goes with the record: the photo and the briefing notes
+   * go; the notes captured about them and any drafts stay, attributed to nobody, and the
+   * audit records are untouched (ADR-0008). A native confirm, because a second screen
+   * for a rare action is more to learn than a question.
+   */
+  const remove = async () => {
+    const confirmed = window.confirm(
+      `Remove ${attendee.displayName} from this event?\n\nTheir photo and your briefing notes for them are removed. Notes captured about them and any drafts stay, attributed to nobody; audit records are not changed.`,
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+      await onDelete();
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const dirty =
@@ -386,6 +409,18 @@ export function AttendeeView({
           </span>
         </span>
       </label>
+
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          data-testid="attendee-delete"
+          onClick={() => void remove()}
+          disabled={deleting}
+          className="min-h-11 self-start rounded-lg border border-red-600/40 px-4 text-sm text-red-700 disabled:opacity-40 dark:text-red-400"
+        >
+          {deleting ? "Removing…" : "Remove this person from the event"}
+        </button>
+      </div>
 
       <div className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold">History on this phone</h3>
