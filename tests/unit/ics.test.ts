@@ -61,10 +61,19 @@ describe("buildIcs", () => {
     })!;
     expect(bare).not.toMatch(/LOCATION|GEO|DESCRIPTION/);
     expect(bare).toContain("SUMMARY:Northgate demonstration day\r\n");
+    // A semicolon in a name is escaped in the file — CodeQL caught the first version of
+    // this replacing ";" with itself, which the fixture, having none, could not.
+    const withSemicolon = buildIcs({
+      event: { ...BRIEFING_EVENT, name: "Northgate; bay 3" },
+      stampedAt: STAMP,
+    })!;
+    expect(withSemicolon).toContain("SUMMARY:Northgate\\; bay 3\r\n");
   });
 
   it("escapes the four characters the RFC names, and folds at 75 octets counting the space", () => {
-    expect(escapeText("a;b,c\\d\ne")).toBe("a\;b\\,c\\\\d\\ne");
+    // Every escape doubled here is one backslash in the file: `\;`, `\,`, `\\`, `\n`.
+    expect(escapeText("a;b,c\\d\ne")).toBe("a\\;b\\,c\\\\d\\ne");
+    expect(escapeText("a;b")).toHaveLength(4);
     expect(foldLine("x".repeat(75))).toBe("x".repeat(75));
     expect(foldLine("x".repeat(76))).toBe(`${"x".repeat(75)}\r\n x`);
     expect(foldLine("x".repeat(150))).toBe(

@@ -36,7 +36,7 @@ const FOLD_AT = 75;
 export function escapeText(text: string): string {
   return text
     .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\;")
+    .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
     .replace(/\r?\n/g, "\\n");
 }
