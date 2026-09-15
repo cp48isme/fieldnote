@@ -65,3 +65,22 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: pnpm evals
+
+      # The runner's results file, kept for seven days on every live run, pass or fail.
+      # What it holds: every sample's text as the model wrote it on the synthetic corpus,
+      # pseudonymized — tokens where names would be — with the judgement per sample and
+      # the usage. Nothing in it the repository does not already publish in its fixtures
+      # and its README. Why it is kept: on 2026-09-15 a sample failed the gate on PR #46,
+      # the log carried the assertion and not the sentence, fifteen local reruns of the
+      # case were clean, and the sentence was never seen (fieldnote-d8l). A failed sample
+      # is a number without a sentence unless the file survives the run. `always()` so a
+      # failing run — the one that matters — still uploads; `ignore` so a run the runner
+      # skipped, which writes no file, does not fail on the upload.
+      - name: Keep the results file
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: evals-results-${{ github.run_id }}
+          path: evals-results.json
+          retention-days: 7
+          if-no-files-found: ignore
