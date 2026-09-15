@@ -62,6 +62,7 @@ function attendee(
     eventId: "event-fixture",
     displayName,
     kind: specialty ? "hcp" : "staff",
+    briefingNotes: "",
     role,
     specialty,
     institution: "Northgate Regional",

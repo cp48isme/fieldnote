@@ -21,6 +21,7 @@ import {
   type AuditRecordRecord,
   type DraftBlockReason,
   type DraftRecord,
+  type EventRecord,
 } from "./schema";
 
 export interface Migration {
@@ -177,6 +178,47 @@ export const MIGRATIONS: Migration[] = [
           record.passagesUsed ??= [];
           record.libraryVersion ??= null;
           record.schemaVersion = 5;
+        });
+    },
+  },
+  {
+    // Session 11: the briefing. The event gains its five dossier fields and the attendee
+    // gains the representative's briefing notes, all empty until she writes them. Two
+    // new tables: images, keyed by owner so an owner's images can be found and removed
+    // with it, and contacts, keyed by event. Nothing existing is rewritten beyond the
+    // backfill; no row is created.
+    version: 6,
+    stores: {
+      [TABLES.events]: "id, status, startsAt, updatedAt",
+      [TABLES.attendees]: "id, eventId, updatedAt",
+      [TABLES.notes]: "id, eventId, attendeeId, updatedAt",
+      [TABLES.drafts]: "id, eventId, attendeeId, state, updatedAt",
+      [TABLES.auditRecords]: "id, draftId, eventId, createdAt",
+      [TABLES.voiceProfiles]: "id, updatedAt",
+      [TABLES.approvedContent]: "id, updatedAt",
+      [TABLES.settings]: "id",
+      [TABLES.sessionMarkers]: "id, startedAt, endedAt",
+      [TABLES.images]: "id, ownerId",
+      [TABLES.contacts]: "id, eventId, updatedAt",
+    },
+    upgrade: async (tx) => {
+      await tx
+        .table(TABLES.events)
+        .toCollection()
+        .modify((event: Partial<EventRecord>) => {
+          event.objectives ??= "";
+          event.configuration ??= "";
+          event.itinerary ??= "";
+          event.logistics ??= "";
+          event.contingency ??= "";
+          event.schemaVersion = 6;
+        });
+      await tx
+        .table(TABLES.attendees)
+        .toCollection()
+        .modify((attendee: Partial<AttendeeRecord>) => {
+          attendee.briefingNotes ??= "";
+          attendee.schemaVersion = 6;
         });
     },
   },

@@ -28,6 +28,11 @@ const EVENT: EventRecord = {
   siteLabel: "",
   startsAt: null,
   status: "active",
+  objectives: "",
+  configuration: "",
+  itinerary: "",
+  logistics: "",
+  contingency: "",
 };
 
 let noteCounter = 0;

@@ -23,6 +23,8 @@
  * "Approved content…" (session 9) is the door to the library. It is not per event, but
  * the switcher is the one list the representative already opens, and a library reached
  * from anywhere else would be a fourth control in a header that has room for none.
+ *
+ * "Briefing…" (session 11) is the door to the briefing screen, for the same reason.
  */
 
 import type { EventRecord, Id } from "@/lib/db";
@@ -35,6 +37,7 @@ const NEW_EVENT_VALUE = "__new__";
 const IMPORT_ROSTER_VALUE = "__import__";
 const PEOPLE_VALUE = "__people__";
 const LIBRARY_VALUE = "__library__";
+const BRIEFING_VALUE = "__briefing__";
 
 export interface EventSwitcherProps {
   /** Newest first, as `listEvents` returns them. */
@@ -45,6 +48,7 @@ export interface EventSwitcherProps {
   onImportRoster: () => void;
   onShowPeople: () => void;
   onShowLibrary: () => void;
+  onShowBriefing: () => void;
 }
 
 export function EventSwitcher({
@@ -55,6 +59,7 @@ export function EventSwitcher({
   onImportRoster,
   onShowPeople,
   onShowLibrary,
+  onShowBriefing,
 }: EventSwitcherProps) {
   return (
     <>
@@ -85,6 +90,10 @@ export function EventSwitcher({
             onShowLibrary();
             return;
           }
+          if (value === BRIEFING_VALUE) {
+            onShowBriefing();
+            return;
+          }
           onSwitch(value);
         }}
         className="min-h-11 max-w-[60%] flex-1 truncate rounded-lg border px-2 text-base font-semibold"
@@ -98,6 +107,7 @@ export function EventSwitcher({
         <option value={PEOPLE_VALUE}>People at this event…</option>
         <option value={IMPORT_ROSTER_VALUE}>Import a sign-in sheet…</option>
         <option value={LIBRARY_VALUE}>Approved content…</option>
+        <option value={BRIEFING_VALUE}>Briefing…</option>
       </select>
     </>
   );
