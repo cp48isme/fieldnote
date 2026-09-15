@@ -7,6 +7,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 13 — the calendar file, ruleset 1.4.0, and the eval artifact
+
+- Ruleset 1.4.0: a product noun followed by a verb of state or design is claim-bearing,
+  and the noun list gains the parts the passage detector names. Held-out run 2026-09-15:
+  0 of 70 reached the draft, 4 of 70 produced; the README carries the table.
+- The eval workflow keeps `evals-results.json` as a seven-day artifact on every live
+  run, pass or fail, so a failed sample can be read.
+- Schema v8: `EventRecord.endsAt`. Start and end are entered on the pre-event screen.
+- The calendar file: RFC 5545 by hand, one `VEVENT` with both ends in UTC, the name, the
+  address, `GEO`, and a description of the address and the two map links only; no
+  attendee, no organizer, no free text. Downloaded from the composer, disabled until the
+  event has both ends; the email says a calendar invitation is attached when it does.
+- The denylist allows an identifier at a `.invalid` domain (RFC 2606), for the file's
+  `UID`.
+
 ### Session 12 — the pre-event email, the location, and the site map
 
 - ADR-0011: a pre-event email is a draft under the review gate, model or not; the
