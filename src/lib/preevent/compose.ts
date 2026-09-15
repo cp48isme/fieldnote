@@ -26,8 +26,19 @@
  * follow-ups. If she typed a site contact's name into the logistics it is in the
  * pre-image; the record still holds no content.
  *
- * THE FORWARDABLE BLOCK (ADR-0002, session 14) is not here. `FORWARDABLE_PLACEHOLDER`
- * is where it will go, and nothing more.
+ * THE FORWARDABLE BLOCK (ADR-0002, session 14) is the email's last section when the
+ * event's flag is on, and absent when it is off, which it is until she turns it on for
+ * that event. It is self-contained so the recipient can pass it on as it stands: the
+ * event's name, when, where, her logistics, and the passages she selected — every one a
+ * field the email already carries, with a heading, an opening line, a closing line, and
+ * an end marker, all fixed strings exported below. The ADR's five constraints are each a
+ * test in `tests/unit/preevent-compose.test.ts`, and they hold by construction: the
+ * block has no input of its own, so there is nothing to type into it; it is composed once
+ * and is the same for every recipient, so nothing in it can identify who forwarded it;
+ * its only links are the two map links, so there is nothing to decorate; and it runs
+ * through the ruleset with the rest of the body, so a claim in the logistics is a gap
+ * here as it is above. The attachment lines are left out: a site map or a calendar file
+ * attached to her email does not travel with a block the recipient forwards.
  */
 
 import type { ApprovedContentRecord, AttendeeRecord, EventRecord, Id } from "@/lib/db";
@@ -72,8 +83,18 @@ export interface PreEventOutcome {
   libraryVersion: string | null;
 }
 
-/** Session 14 puts ADR-0002's forwardable block here, behind its flag. Nothing today. */
-export const FORWARDABLE_PLACEHOLDER = "";
+/**
+ * The forwardable block's fixed strings (ADR-0002). Everything in the block that is not
+ * a record field or a map link is one of these four, and the test asserts it. None names
+ * the product, offers anything, or asks for anyone's details.
+ */
+export const FORWARDABLE_HEADING = "For a colleague who may want to come";
+export const FORWARDABLE_OPENING =
+  "Everything from here to the closing line can be passed on as it is.";
+export const FORWARDABLE_CLOSING =
+  "Interested? Ask whoever passed this on to put you in touch.";
+export const FORWARDABLE_END = "(End of the part to pass on.)";
+export const WHEN_LABEL = "When:";
 
 const SIGN_OFF = "Kind regards,";
 export const SITE_MAP_LINE = "Site map attached.";
@@ -103,6 +124,58 @@ export function locationBlock(
   return lines.length > 0 ? [LOCATION_HEADING, ...lines] : [];
 }
 
+const longDate = (timestamp: number) =>
+  new Date(timestamp).toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+const clockTime = (timestamp: number) =>
+  new Date(timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+/**
+ * The event's times as one line for the block, in the composing device's zone — the
+ * block is prose for a person, not a calendar entry, so no UTC and no `Z`. Null with no
+ * start. The end's date is repeated only when it differs from the start's.
+ */
+export function formatWhen(
+  startsAt: number | null,
+  endsAt: number | null,
+): string | null {
+  if (startsAt === null) return null;
+  const start = `${longDate(startsAt)}, ${clockTime(startsAt)}`;
+  if (endsAt === null) return start;
+  return longDate(endsAt) === longDate(startsAt)
+    ? `${start} to ${clockTime(endsAt)}`
+    : `${start} to ${longDate(endsAt)}, ${clockTime(endsAt)}`;
+}
+
+/**
+ * ADR-0002's block, as lines, for an event whose flag is on. A pure function of the
+ * event and the selected passages: no recipient, no attachment lines, no text of its own
+ * beyond the four fixed strings. Empty when the flag is off.
+ */
+export function forwardableBlock(
+  event: EventRecord,
+  selected: readonly ApprovedContentRecord[],
+): string[] {
+  if (!event.forwardableEnabled) return [];
+  const lines: string[] = [
+    FORWARDABLE_HEADING,
+    FORWARDABLE_OPENING,
+    "",
+    event.name.trim(),
+  ];
+  const when = formatWhen(event.startsAt, event.endsAt);
+  if (when) lines.push(`${WHEN_LABEL} ${when}`);
+  lines.push(...locationBlock(event, false, false));
+  if (present(event.logistics)) lines.push("", event.logistics.trim());
+  for (const passage of selected) lines.push("", passage.body);
+  lines.push("", FORWARDABLE_CLOSING, FORWARDABLE_END);
+  return lines;
+}
+
 /** The body below the greeting, before any rule runs. Exported for the tests and the screen's preview. */
 export function composeBody(input: PreEventInput): {
   text: string;
@@ -118,7 +191,8 @@ export function composeBody(input: PreEventInput): {
   );
   if (location.length > 0) sections.push(location.join("\n"));
   for (const passage of selected) sections.push(passage.body);
-  if (FORWARDABLE_PLACEHOLDER) sections.push(FORWARDABLE_PLACEHOLDER);
+  const forwardable = forwardableBlock(input.event, selected);
+  if (forwardable.length > 0) sections.push(forwardable.join("\n"));
   sections.push(SIGN_OFF);
   return { text: sections.join("\n\n"), selected };
 }
