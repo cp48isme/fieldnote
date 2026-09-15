@@ -65,6 +65,7 @@ export {
   updateEventLocation,
   type EventLocation,
   updateEventTimes,
+  updateEventForwardable,
   type EventTimes,
   saveAttendeeBriefingNotes,
   deleteAttendee,

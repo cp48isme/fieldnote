@@ -61,6 +61,7 @@ const EVENT: EventRecord = {
   address: "",
   coordinates: "",
   endsAt: null,
+  forwardableEnabled: false,
 };
 
 export interface SampleResult {

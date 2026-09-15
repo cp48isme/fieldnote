@@ -17,7 +17,10 @@ import {
 import { FakeDatabase } from "./support/fake-database";
 
 type V6Draft = Omit<DraftRecord, "kind">;
-type V6Event = Omit<EventRecord, "address" | "coordinates" | "endsAt">;
+type V6Event = Omit<
+  EventRecord,
+  "address" | "coordinates" | "endsAt" | "forwardableEnabled"
+>;
 
 const draft: V6Draft = {
   id: "draft-1",

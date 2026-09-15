@@ -10,10 +10,11 @@ import { buildPng } from "../../scripts/build-photo-fixture.mjs";
  * validated, a phone-sized site map resized to 1600 PNG and stored, downloaded, and
  * drawn into the briefing; the start and end saved and the calendar file downloaded
  * (session 13); a passage selected from the library; a comparison typed into
- * the logistics; and Compose writing a draft that lands in the review surface as a
- * pre-event email, opens with the gap and the passage, exports to the clipboard, and
- * appears in the audit CSV with an empty model cell. Every request is recorded: the
- * model route is never called.
+ * the logistics; the forwardable block switched on for the event (session 14,
+ * ADR-0002); and Compose writing a draft that lands in the review surface as a
+ * pre-event email, opens with the gap and the passage in the body and again in the
+ * block, exports to the clipboard, and appears in the audit CSV with an empty model
+ * cell. Every request is recorded: the model route is never called.
  *
  * All fixture data is synthetic, per ADR-0001.
  */
@@ -31,6 +32,8 @@ const PASSAGE = {
   sourceRef: "SYN-DOC-0001 v1",
 };
 const GAP = "[approved content required]";
+const BLOCK_HEADING = "For a colleague who may want to come";
+const BLOCK_END = "(End of the part to pass on.)";
 
 /** Every regex metacharacter, backslash included, so a literal can be matched as itself. */
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -141,9 +144,17 @@ test.describe("pre-event email", () => {
     await page.getByTestId("pre-event-logistics-save").click();
     await expect(page.getByTestId("pre-event-logistics-state")).toContainText("Saved");
 
-    // 3. The passage, ticked. 4. The recipient is selected already. 5. Compose.
+    // 3. The passage, ticked. 4. The recipient is selected already.
     await page.getByTestId("pre-event-passage").check();
     await expect(page.getByTestId("pre-event-recipient")).toBeChecked();
+
+    // 5. The forwardable block: off by default, on for this event, saved as toggled.
+    await expect(page.getByTestId("pre-event-forwardable")).not.toBeChecked();
+    await page.getByTestId("pre-event-forwardable").check();
+    await expect(page.getByTestId("pre-event-forwardable-state")).toContainText("Saved");
+    await expect(page.getByTestId("pre-event-forwardable")).toBeChecked();
+
+    // 6. Compose.
     await expect(page.getByTestId("pre-event-compose")).toContainText("Compose 1 draft");
     await page.getByTestId("pre-event-compose").click();
 
@@ -178,6 +189,20 @@ test.describe("pre-event email", () => {
     await expect(editor).toHaveValue(/Calendar invitation attached\./);
     await expect(editor).toHaveValue(/Apple Maps: https:\/\/maps\.apple\.com/);
     await expect(editor).toHaveValue(new RegExp(escapeRegExp(PASSAGE.body)));
+    // The block: heading to end marker, after the body, carrying the passage exact and
+    // the same gap, and no attachment line — an attachment does not travel with it.
+    const block = `${escapeRegExp(BLOCK_HEADING)}[\\s\\S]*${escapeRegExp(BLOCK_END)}`;
+    await expect(editor).toHaveValue(new RegExp(block));
+    await expect(editor).toHaveValue(
+      new RegExp(`${escapeRegExp(PASSAGE.body)}[\\s\\S]*${escapeRegExp(PASSAGE.body)}`),
+    );
+    await expect(editor).toHaveValue(
+      new RegExp(`${escapeRegExp(GAP)}[\\s\\S]*${escapeRegExp(GAP)}`),
+    );
+    await expect(editor).not.toHaveValue(
+      new RegExp(`${escapeRegExp(BLOCK_HEADING)}[\\s\\S]*Site map attached`),
+    );
+    await expect(editor).toHaveValue(/When: Friday, 2 October 2026, 08:00 to 16:00/);
     await expect(page.getByTestId("draft-flags")).not.toContainText(
       "the model was not allowed",
     );

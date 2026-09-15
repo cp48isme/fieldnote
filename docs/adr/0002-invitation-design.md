@@ -3,6 +3,25 @@
 - **Status:** Accepted
 - **Date:** 2026-08-27
 - **Deciders:** cp48isme (owner)
+- **Amended:** 2026-09-15, session 14 — implemented, and the decision is unchanged. The
+  block is the last section of the pre-event email (ADR-0011) when the event's flag is
+  on: the event's name, when, where, the representative's logistics, and the passages she
+  selected, between four fixed strings (`src/lib/preevent/compose.ts`). Where each
+  constraint is enforced, since the record says "in code rather than by policy": the
+  block has no input of its own, so the third constraint holds by construction and the
+  second reduces to the four fixed strings, which a test reads against the ruleset and
+  against a list of the words an offer or a request for details would use; it is
+  composed once and identical for every recipient and every composition, with the two
+  map links as its only URLs, which is the first; it runs through the ruleset with the
+  rest of the body, so a comparison typed into the logistics is a gap in the block as it
+  is above, with the passages exact — the fourth; and the flag is a field on the event
+  (schema v9), false on creation and backfilled false, turned on by
+  `updateEventForwardable` for one event and nothing wider — the fifth. The tests are
+  the "forwardable block" block in `tests/unit/preevent-compose.test.ts`, the "forwardable
+  flag" block in `tests/unit/repository-briefing.test.ts`, and `migration-v9.test.ts`;
+  the end-to-end spec switches it on and reads the block in review. One consequence the
+  record did not name: a site map or calendar file attached to her email does not travel
+  with a block the recipient forwards, so the block omits the two attachment lines.
 
 ## Context
 

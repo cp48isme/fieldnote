@@ -8,11 +8,21 @@ import { describe, expect, it } from "vitest";
 import { libraryVersionOf } from "@/lib/generation/approved";
 import { GUARDRAIL_RULESET_VERSION } from "@/lib/generation/guardrails";
 import { GAP_MARKER } from "@/lib/generation/prompt";
+import { parseCoordinates } from "@/lib/location/coordinates";
+import { appleMapsLink, googleMapsLink } from "@/lib/location/map-links";
+import { applyGuardrails } from "@/lib/generation/guardrails";
 import {
   CALENDAR_LINE,
   composePreEvent,
+  formatWhen,
+  FORWARDABLE_CLOSING,
+  FORWARDABLE_END,
+  FORWARDABLE_HEADING,
+  FORWARDABLE_OPENING,
+  forwardableBlock,
   locationBlock,
   SITE_MAP_LINE,
+  WHEN_LABEL,
   type PreEventInput,
 } from "@/lib/preevent/compose";
 
@@ -139,5 +149,155 @@ describe("composePreEvent", () => {
       APPROVED_FIXTURES[0]!.id,
       APPROVED_FIXTURES[1]!.id,
     ]);
+  });
+});
+
+/**
+ * ADR-0002's five constraints, "all enforced in code rather than by policy". Each is a
+ * test here, and the block's shape is what makes each hold: it has no input of its own,
+ * it is the same for every recipient, its links are the map links and nothing else, and
+ * it goes through the ruleset with the rest of the body.
+ */
+describe("the forwardable block (ADR-0002)", () => {
+  const enabled: PreEventInput = {
+    ...base,
+    event: { ...base.event, forwardableEnabled: true },
+  };
+  /** The block as it stands in the composed email, heading to end marker. */
+  const blockOf = (body: string): string => {
+    const from = body.indexOf(FORWARDABLE_HEADING);
+    const to = body.indexOf(FORWARDABLE_END);
+    expect(from).toBeGreaterThan(-1);
+    expect(to).toBeGreaterThan(from);
+    return body.slice(from, to + FORWARDABLE_END.length);
+  };
+
+  it("ships disabled: an event with the flag off composes exactly the email it did before", async () => {
+    expect(base.event.forwardableEnabled).toBe(false);
+    expect(forwardableBlock(base.event, [])).toEqual([]);
+    const [email] = await composePreEvent(base);
+    expect(email!.body).not.toContain(FORWARDABLE_HEADING);
+    expect(email!.body).not.toContain(FORWARDABLE_END);
+  });
+
+  it("when on, is self-contained: the name, when, where, the logistics, and the passages, then the closing line", async () => {
+    const [email] = await composePreEvent(enabled);
+    const block = blockOf(email!.body);
+    const when = formatWhen(base.event.startsAt, base.event.endsAt);
+    expect(when).toMatch(/2026, \d{2}:\d{2} to \d{2}:\d{2}$/);
+    const point = parseCoordinates(BRIEFING_EVENT.coordinates)!;
+    expect(block.split("\n")).toEqual([
+      FORWARDABLE_HEADING,
+      FORWARDABLE_OPENING,
+      "",
+      BRIEFING_EVENT.name,
+      `${WHEN_LABEL} ${when}`,
+      "Where to find us",
+      BRIEFING_EVENT.address,
+      "Coordinates: 51.5007, -0.1246",
+      `Apple Maps: ${appleMapsLink(point)}`,
+      `Google Maps: ${googleMapsLink(point)}`,
+      "",
+      LOGISTICS,
+      "",
+      APPROVED_FIXTURES[0]!.body,
+      "",
+      APPROVED_FIXTURES[1]!.body,
+      "",
+      FORWARDABLE_CLOSING,
+      FORWARDABLE_END,
+    ]);
+    // The attachment lines stay out: an attachment does not travel with a forwarded block.
+    expect(block).not.toContain(SITE_MAP_LINE);
+    expect(block).not.toContain(CALENDAR_LINE);
+    // It is the email's last section before the sign-off.
+    expect(email!.body.trimEnd().endsWith(`${FORWARDABLE_END}\n\nKind regards,`)).toBe(
+      true,
+    );
+    expect(email!.flagsFired).toEqual([]);
+  });
+
+  it("no tracking, link decoration, unique URL, or referral attribution: the same block for every recipient and every composition, with the two map links as its only URLs", async () => {
+    const first = await composePreEvent(enabled);
+    const again = await composePreEvent(enabled);
+    const blocks = [...first, ...again].map((o) => blockOf(o.body));
+    expect(new Set(blocks).size).toBe(1);
+    const block = blocks[0]!;
+    for (const recipient of enabled.recipients)
+      expect(block).not.toContain(recipient.displayName);
+    expect(block).not.toContain(enabled.recipients[0]!.id);
+    const point = parseCoordinates(BRIEFING_EVENT.coordinates)!;
+    const urls = block.match(/https?:\/\/\S+/g) ?? [];
+    expect(urls.sort()).toEqual([appleMapsLink(point), googleMapsLink(point)].sort());
+  });
+
+  it("no incentive and no collection of anyone's details: the fixed strings are the only text that is not a record field, and they pass the ruleset clean", () => {
+    const bare = forwardableBlock(
+      {
+        ...base.event,
+        forwardableEnabled: true,
+        startsAt: null,
+        endsAt: null,
+        address: "",
+        coordinates: "",
+        logistics: "",
+      },
+      [],
+    );
+    expect(bare).toEqual([
+      FORWARDABLE_HEADING,
+      FORWARDABLE_OPENING,
+      "",
+      BRIEFING_EVENT.name,
+      "",
+      FORWARDABLE_CLOSING,
+      FORWARDABLE_END,
+    ]);
+    const fixed = [
+      FORWARDABLE_HEADING,
+      FORWARDABLE_OPENING,
+      FORWARDABLE_CLOSING,
+      FORWARDABLE_END,
+    ];
+    const { flagsFired, blockedSentences } = applyGuardrails(fixed.join(" "));
+    expect(flagsFired).toEqual([]);
+    expect(blockedSentences).toBe(0);
+    for (const line of fixed) {
+      expect(line).not.toMatch(
+        /\b(?:email|phone|number|details|reply with|send us|let us know who)\b/i,
+      );
+      expect(line).not.toMatch(
+        /\b(?:reward|gift|voucher|thank-you|thank you|free|prize|discount)\b/i,
+      );
+    }
+  });
+
+  it("is claim-bearing like the rest: a comparison she typed is a gap in the block too, and the passages beside it stay exact and are counted once", async () => {
+    const typed = `${LOGISTICS} Our console is faster than anything you have used before.`;
+    const [email] = await composePreEvent({
+      ...enabled,
+      event: { ...enabled.event, logistics: typed },
+    });
+    expect(email!.flagsFired).toEqual(["claim-bearing"]);
+    expect(email!.blockedSentences).toBe(2);
+    const block = blockOf(email!.body);
+    expect(block).toContain(GAP_MARKER);
+    expect(block).not.toContain("faster than anything");
+    expect(block).toContain(APPROVED_FIXTURES[0]!.body);
+    expect(block).toContain(APPROVED_FIXTURES[1]!.body);
+    expect(email!.passagesUsed).toEqual([
+      APPROVED_FIXTURES[0]!.id,
+      APPROVED_FIXTURES[1]!.id,
+    ]);
+  });
+
+  it("writes when with an end on a later day in full, and omits it with no start", () => {
+    const start = Date.UTC(2026, 9, 2, 8, 0);
+    const oneLine = formatWhen(start, start + 8 * 3_600_000)!;
+    expect(oneLine.match(/2026/g)).toHaveLength(1);
+    const twoDays = formatWhen(start, start + 30 * 3_600_000)!;
+    expect(twoDays.match(/2026/g)).toHaveLength(2);
+    expect(formatWhen(start, null)).toMatch(/2026, \d{2}:\d{2}$/);
+    expect(formatWhen(null, start)).toBeNull();
   });
 });

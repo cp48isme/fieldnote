@@ -24,6 +24,7 @@ import {
   saveAttendeeBriefingNotes,
   updateContact,
   updateEventDossier,
+  updateEventForwardable,
   updateEventLocation,
   updateEventTimes,
 } from "@/lib/db";
@@ -234,5 +235,22 @@ describe("contacts", () => {
     await deleteEvent(event.id);
     expect(await listContacts(event.id)).toEqual([]);
     expect(await listContacts(other.id)).toHaveLength(1);
+  });
+});
+
+describe("the forwardable flag (ADR-0002)", () => {
+  it("is off on a new event and is turned on per event, with nothing else on the record changing", async () => {
+    const event = await createEvent({ name: "Northgate" });
+    const other = await createEvent({ name: "Southgate" });
+    expect(event.forwardableEnabled).toBe(false);
+    const on = await updateEventForwardable(event.id, true);
+    expect(on.forwardableEnabled).toBe(true);
+    expect(on.name).toBe("Northgate");
+    expect((await getEvent(event.id))?.forwardableEnabled).toBe(true);
+    // Per event: the other event is untouched.
+    expect((await getEvent(other.id))?.forwardableEnabled).toBe(false);
+    const off = await updateEventForwardable(event.id, false);
+    expect(off.forwardableEnabled).toBe(false);
+    await expect(updateEventForwardable("missing", true)).rejects.toThrow(/not found/);
   });
 });
