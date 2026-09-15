@@ -6,7 +6,7 @@
  * Plan §2 names this — names, specialties, institutions, clinical interests, procurement
  * influence, assembled without the person's knowledge — as the second most serious issue
  * in the project. The view reads like it knows that. Its first line says what it shows
- * is what this device holds and that nothing is fetched; there is no photo, no opener,
+ * is what this device holds and that nothing is fetched; there is no suggested opener
  * and no suggested anything (ADR-0009); and the history is joined across events by name
  * alone, which the view states, because a join it did not state would be a profile the
  * reader could not audit.
@@ -15,12 +15,33 @@
  * not editable: how a record arrived is history, not opinion. A display-name change is
  * an ordinary update — `updateAttendee` says why it touches no existing draft or audit
  * record — and the dock's attribution select shows the new name on the next render.
+ *
+ * Session 11 adds the two things the briefing takes from this record and nothing else
+ * does: a photo, uploaded by the representative and never fetched (plan §3.2), resized
+ * on the device to a thumbnail before it is stored as bytes; and her briefing notes —
+ * the opener and the talking points ADR-0009 withdrew from the model — autosaved like a
+ * note body. Neither is sent anywhere. The dictated notes below them are not in the
+ * briefing; the copy says so.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { AttendeeEdit, AttendeeKind, AttendeeRecord, DraftRecord } from "@/lib/db";
+import {
+  getImage,
+  putImage,
+  removeImage,
+  saveAttendeeBriefingNotes,
+  type AttendeeEdit,
+  type AttendeeKind,
+  type AttendeeRecord,
+  type DraftRecord,
+  type ImageRecord,
+} from "@/lib/db";
 import { loadHistory, type AttendeeHistory } from "@/lib/attendees/history";
+import { canvasSurface } from "@/lib/images/canvas-surface";
+import { dataUrlOf } from "@/lib/images/data-url";
+import { PhotoError, resizePhoto } from "@/lib/images/resize";
+import { useDebouncedAutosave } from "@/lib/useDebouncedAutosave";
 
 import { KIND_LABELS, SOURCE_LABELS } from "./PeopleList";
 
@@ -65,16 +86,76 @@ export function AttendeeView({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<AttendeeHistory | null>(null);
+  /** Null while loading or when there is none; the record when there is. */
+  const [photo, setPhoto] = useState<ImageRecord | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement | null>(null);
+  const [briefingNotes, setBriefingNotes] = useState(attendee.briefingNotes);
+  const notesAutosave = useDebouncedAutosave<string>((value) =>
+    saveAttendeeBriefingNotes(attendee.id, value),
+  );
 
   useEffect(() => {
     let cancelled = false;
     void loadHistory(attendee).then((loaded) => {
       if (!cancelled) setHistory(loaded);
     });
+    void getImage(attendee.id, "attendee-photo").then((stored) => {
+      if (!cancelled) setPhoto(stored ?? null);
+    });
     return () => {
       cancelled = true;
     };
   }, [attendee]);
+
+  // The thumbnail is a data: URL over the stored bytes — the policy allows no blob:
+  // images — recomputed only when the photo changes.
+  const photoUrl = useMemo(
+    () => (photo ? dataUrlOf(photo.bytes, photo.mediaType) : null),
+    [photo],
+  );
+
+  const uploadPhoto = async (file: File) => {
+    setPhotoBusy(true);
+    setPhotoError(null);
+    try {
+      const resized = await resizePhoto(file, canvasSurface());
+      const stored = await putImage({
+        ownerId: attendee.id,
+        purpose: "attendee-photo",
+        ...resized,
+      });
+      setPhoto(stored);
+    } catch (cause) {
+      setPhotoError(
+        cause instanceof PhotoError
+          ? cause.message
+          : cause instanceof Error
+            ? cause.message
+            : String(cause),
+      );
+    } finally {
+      setPhotoBusy(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  const removePhoto = async () => {
+    setPhotoBusy(true);
+    try {
+      await removeImage(attendee.id, "attendee-photo");
+      setPhoto(null);
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  /** Pending briefing text lands before the view goes away. */
+  const leave = async (then: () => void) => {
+    await notesAutosave.flush();
+    then();
+  };
 
   const dirty =
     edit.displayName !== attendee.displayName ||
@@ -115,7 +196,7 @@ export function AttendeeView({
         <button
           type="button"
           data-testid="attendee-back"
-          onClick={onBack}
+          onClick={() => void leave(onBack)}
           className="min-h-11 rounded-lg border px-4 text-sm"
         >
           Back
@@ -209,6 +290,104 @@ export function AttendeeView({
       </form>
 
       <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-semibold">Photo, for the briefing</h3>
+        <p className="text-xs opacity-60">
+          One you choose from this phone; nothing is looked up. Stored here as a small
+          copy, and shown on the briefing document and nowhere else.
+        </p>
+        <div className="flex items-center gap-3">
+          {photoUrl && photo ? (
+            // A stored thumbnail from local bytes, not a remote image: `next/image` has no
+            // place here and an <img> is the honest element.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              data-testid="attendee-photo"
+              data-width={photo.width}
+              data-height={photo.height}
+              src={photoUrl}
+              alt={`Photo of ${attendee.displayName}`}
+              width={photo.width}
+              height={photo.height}
+              className="h-24 w-24 rounded-lg border border-black/10 object-cover dark:border-white/15"
+            />
+          ) : (
+            <span
+              data-testid="attendee-photo-none"
+              className="flex h-24 w-24 items-center justify-center rounded-lg border border-dashed border-black/20 text-xs opacity-60 dark:border-white/25"
+            >
+              No photo
+            </span>
+          )}
+          <div className="flex flex-col gap-2">
+            <label className="min-h-11 cursor-pointer rounded-lg border px-4 py-2 text-sm">
+              {photoBusy ? "Working…" : photo ? "Replace photo" : "Choose a photo"}
+              <input
+                ref={fileInput}
+                data-testid="attendee-photo-input"
+                type="file"
+                accept="image/*"
+                disabled={photoBusy}
+                onChange={(change) => {
+                  const file = change.target.files?.[0];
+                  if (file) void uploadPhoto(file);
+                }}
+                className="sr-only"
+              />
+            </label>
+            {photo && (
+              <button
+                type="button"
+                data-testid="attendee-photo-remove"
+                onClick={() => void removePhoto()}
+                disabled={photoBusy}
+                className="min-h-11 rounded-lg border px-4 text-sm"
+              >
+                Remove photo
+              </button>
+            )}
+          </div>
+        </div>
+        {photoError && (
+          <p
+            data-testid="attendee-photo-error"
+            role="alert"
+            className="text-sm text-red-600"
+          >
+            {photoError}
+          </p>
+        )}
+      </div>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Briefing notes</span>
+        <textarea
+          data-testid="attendee-briefing-notes"
+          value={briefingNotes}
+          onChange={(change) => {
+            setBriefingNotes(change.target.value);
+            notesAutosave.schedule(change.target.value);
+          }}
+          placeholder="Your opener, your talking points — in your words."
+          className="h-28 w-full resize-none rounded-lg border p-3 text-base leading-relaxed"
+        />
+        <span className="flex items-center justify-between text-xs opacity-60">
+          <span>
+            Goes on the briefing document, written by you. Never sent to the model. The
+            notes below are not in the briefing.
+          </span>
+          <span data-testid="briefing-notes-state">
+            {notesAutosave.state === "pending"
+              ? "Saving…"
+              : notesAutosave.state === "saved"
+                ? "Saved"
+                : notesAutosave.state === "error"
+                  ? "Not saved"
+                  : ""}
+          </span>
+        </span>
+      </label>
+
+      <div className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold">History on this phone</h3>
         {history === null ? (
           <p className="text-xs opacity-60">Loading…</p>
@@ -254,7 +433,7 @@ export function AttendeeView({
                       type="button"
                       data-testid="history-draft"
                       data-state={draft.state}
-                      onClick={() => onOpenDraft(draft)}
+                      onClick={() => void leave(() => onOpenDraft(draft))}
                       className="min-h-11 rounded-lg border px-3 text-left text-sm"
                     >
                       Draft · {DRAFT_STATE_LABELS[draft.state]} ·{" "}
