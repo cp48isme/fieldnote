@@ -108,6 +108,7 @@ export async function createEvent(input: NewEventInput): Promise<EventRecord> {
     name: input.name,
     siteLabel: input.siteLabel ?? "",
     startsAt: input.startsAt ?? null,
+    endsAt: null,
     status: "active" as const,
     objectives: "",
     configuration: "",
@@ -182,6 +183,31 @@ export async function updateEventLocation(
     ...decryptRecord(TABLES.events, existing),
     address: location.address.trim(),
     coordinates,
+    updatedAt: now(),
+  };
+  await db.events.put(encryptRecord(TABLES.events, updated));
+  return updated;
+}
+
+/** When the event starts and ends (session 13); either may be null until entered. */
+export type EventTimes = Pick<EventRecord, "startsAt" | "endsAt">;
+
+/** Saves the two timestamps. An end before or at the start is refused. */
+export async function updateEventTimes(id: Id, times: EventTimes): Promise<EventRecord> {
+  if (
+    times.startsAt !== null &&
+    times.endsAt !== null &&
+    times.endsAt <= times.startsAt
+  ) {
+    throw new Error("The event has to end after it starts.");
+  }
+  const db = getDatabase();
+  const existing = await db.events.get(id);
+  if (!existing) throw new Error(`Event ${id} not found`);
+  const updated: EventRecord = {
+    ...decryptRecord(TABLES.events, existing),
+    startsAt: times.startsAt,
+    endsAt: times.endsAt,
     updatedAt: now(),
   };
   await db.events.put(encryptRecord(TABLES.events, updated));

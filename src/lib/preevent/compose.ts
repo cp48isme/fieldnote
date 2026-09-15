@@ -53,6 +53,8 @@ export interface PreEventInput {
   selectedPassageIds: readonly Id[];
   /** Whether a site map is stored for the event: the email then says one is attached. */
   siteMapStored: boolean;
+  /** Whether a calendar file can be produced — the event has both ends — so the email says one is attached. */
+  calendarAttached: boolean;
 }
 
 export interface PreEventOutcome {
@@ -75,6 +77,7 @@ export const FORWARDABLE_PLACEHOLDER = "";
 
 const SIGN_OFF = "Kind regards,";
 export const SITE_MAP_LINE = "Site map attached.";
+export const CALENDAR_LINE = "Calendar invitation attached.";
 export const LOCATION_HEADING = "Where to find us";
 
 function present(text: string): boolean {
@@ -82,7 +85,11 @@ function present(text: string): boolean {
 }
 
 /** The location block: address, coordinates as text, and the two links when they parse. */
-export function locationBlock(event: EventRecord, siteMapStored: boolean): string[] {
+export function locationBlock(
+  event: EventRecord,
+  siteMapStored: boolean,
+  calendarAttached = false,
+): string[] {
   const lines: string[] = [];
   if (present(event.address)) lines.push(event.address.trim());
   const parsed = present(event.coordinates) ? parseCoordinates(event.coordinates) : null;
@@ -92,6 +99,7 @@ export function locationBlock(event: EventRecord, siteMapStored: boolean): strin
     lines.push(`Google Maps: ${googleMapsLink(parsed)}`);
   }
   if (siteMapStored) lines.push(SITE_MAP_LINE);
+  if (calendarAttached) lines.push(CALENDAR_LINE);
   return lines.length > 0 ? [LOCATION_HEADING, ...lines] : [];
 }
 
@@ -103,7 +111,11 @@ export function composeBody(input: PreEventInput): {
   const selected = input.library.filter((p) => input.selectedPassageIds.includes(p.id));
   const sections: string[] = [];
   if (present(input.event.logistics)) sections.push(input.event.logistics.trim());
-  const location = locationBlock(input.event, input.siteMapStored);
+  const location = locationBlock(
+    input.event,
+    input.siteMapStored,
+    input.calendarAttached,
+  );
   if (location.length > 0) sections.push(location.join("\n"));
   for (const passage of selected) sections.push(passage.body);
   if (FORWARDABLE_PLACEHOLDER) sections.push(FORWARDABLE_PLACEHOLDER);

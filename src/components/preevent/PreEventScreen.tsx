@@ -208,6 +208,7 @@ export function PreEventScreen({
           .filter((p) => selectedPassages.has(p.id))
           .map((p) => p.id),
         siteMapStored: siteMap !== null,
+        calendarAttached: event.startsAt !== null && event.endsAt !== null,
       });
       for (const outcome of outcomes) {
         await createDraftWithAudit({

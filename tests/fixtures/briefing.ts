@@ -22,6 +22,7 @@ export const BRIEFING_EVENT: EventRecord = {
   name: "Northgate demonstration day",
   siteLabel: "Northgate Regional, mobile lab in bay 3",
   startsAt: Date.UTC(2026, 9, 2, 8, 0),
+  endsAt: Date.UTC(2026, 9, 2, 16, 0),
   status: "planned",
   objectives:
     "Show the console to the colorectal and upper GI teams; agree a live-case date.",

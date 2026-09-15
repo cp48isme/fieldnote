@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -70,6 +70,8 @@ export interface EventRecord extends BaseRecord {
   name: string;
   siteLabel: string;
   startsAt: number | null;
+  /** When the event ends (session 13, v8). A calendar entry needs both ends; null until entered. */
+  endsAt: number | null;
   status: EventStatus;
   /**
    * The dossier (plan §3.2, session 11): what the briefing says about the event itself,
@@ -105,6 +107,7 @@ export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
     why: "Location of a real site; identifying in combination with the date.",
   },
   startsAt: { encryption: "clear", why: "Timestamp; needed for sorting events." },
+  endsAt: { encryption: "clear", why: "Timestamp, like startsAt; carries no identity." },
   status: { encryption: "clear", why: "Enum state; drives queries, no identity." },
   objectives: {
     encryption: "eligible",
