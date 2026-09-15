@@ -12,6 +12,8 @@ import {
   PHOTO_QUALITY,
   PhotoError,
   resizePhoto,
+  resizeSiteMap,
+  SITE_MAP_SETTINGS,
   type DrawingSurface,
 } from "@/lib/images/resize";
 
@@ -80,6 +82,24 @@ describe("resizePhoto", () => {
     expect(new Uint8Array(photo.bytes)).toEqual(new Uint8Array([1, 128, 2, 0]));
     expect(release).toHaveBeenCalledWith("decoded");
     expect(PHOTO_MAX_EDGE).toBe(512);
+  });
+
+  it("draws a site map at 1600 pixels as PNG, and keeps a small one as it is", async () => {
+    const large = fakeSurface(4032, 3024);
+    const map = await resizeSiteMap(new Blob(["x"]), large.surface);
+    expect(map).toMatchObject({ width: 1600, height: 1200, mediaType: "image/png" });
+    expect(large.draw).toHaveBeenCalledWith(
+      "decoded",
+      { width: 1600, height: 1200 },
+      "image/png",
+      SITE_MAP_SETTINGS.quality,
+    );
+    const small = fakeSurface(800, 600);
+    expect(await resizeSiteMap(new Blob(["x"]), small.surface)).toMatchObject({
+      width: 800,
+      height: 600,
+      mediaType: "image/png",
+    });
   });
 
   it("re-encodes a small photo at its own size", async () => {

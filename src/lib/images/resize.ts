@@ -1,21 +1,42 @@
 /**
- * Photos are resized on the device before storage: longest edge 512 pixels, JPEG.
+ * Images are resized on the device before storage, to a setting chosen for what they are.
  *
- * A phone camera produces a four-megabyte file and a briefing needs a thumbnail; the
- * store should hold the thumbnail. The arithmetic and the sequencing are here, as a pure
- * function over a `DrawingSurface` — decode, draw at a size, encode — so the resize can
- * be unit-tested with a fake surface. The real surface is a canvas
- * (`canvas-surface.ts`), exercised end to end in a browser and nowhere else, because
- * jsdom has no canvas and a dependency bought to fake one is a dependency (ADR-0003's
- * rule, applied to tests).
+ * A photo: longest edge 512 pixels, JPEG — a phone camera produces a four-megabyte file
+ * and a briefing needs a thumbnail. A site map (session 12): longest edge 1600 pixels,
+ * PNG — a map with "north lot behind Building C" written on it is unreadable at 512, and
+ * JPEG smears the text. The arithmetic and the sequencing are here, as a pure function
+ * over a `DrawingSurface` — decode, draw at a size, encode — so the resize can be
+ * unit-tested with a fake surface. The real surface is a canvas (`canvas-surface.ts`),
+ * exercised end to end in a browser and nowhere else, because jsdom has no canvas and a
+ * dependency bought to fake one is a dependency (ADR-0003's rule, applied to tests).
  *
- * Never upscaled: a photo smaller than the limit is re-encoded at its own size.
+ * Never upscaled: an image smaller than the limit is re-encoded at its own size.
  */
 
-export const PHOTO_MAX_EDGE = 512;
-export const PHOTO_MEDIA_TYPE = "image/jpeg";
-/** JPEG quality on a 0–1 scale; a thumbnail of a face, not an archive. */
-export const PHOTO_QUALITY = 0.85;
+export interface ResizeSettings {
+  maxEdge: number;
+  mediaType: string;
+  /** Encoder quality on a 0–1 scale; PNG ignores it. */
+  quality: number;
+}
+
+/** A thumbnail of a face, not an archive. */
+export const PHOTO_SETTINGS: ResizeSettings = {
+  maxEdge: 512,
+  mediaType: "image/jpeg",
+  quality: 0.85,
+};
+
+/** Legible text on a map; PNG keeps its edges. */
+export const SITE_MAP_SETTINGS: ResizeSettings = {
+  maxEdge: 1600,
+  mediaType: "image/png",
+  quality: 1,
+};
+
+export const PHOTO_MAX_EDGE = PHOTO_SETTINGS.maxEdge;
+export const PHOTO_MEDIA_TYPE = PHOTO_SETTINGS.mediaType;
+export const PHOTO_QUALITY = PHOTO_SETTINGS.quality;
 
 export interface Dimensions {
   width: number;
@@ -63,10 +84,10 @@ export class PhotoError extends Error {
 }
 
 /** Decode, fit, draw, encode. Throws `PhotoError` when the file is not an image the surface can decode. */
-export async function resizePhoto<Source>(
+export async function resizeImage<Source>(
   file: Blob,
   surface: DrawingSurface<Source>,
-  maxEdge: number = PHOTO_MAX_EDGE,
+  settings: ResizeSettings,
 ): Promise<ResizedPhoto> {
   let decoded: { source: Source } & Dimensions;
   try {
@@ -78,15 +99,31 @@ export async function resizePhoto<Source>(
     if (decoded.width < 1 || decoded.height < 1) {
       throw new PhotoError("That image has no pixels.");
     }
-    const size = fitWithin(decoded, maxEdge);
+    const size = fitWithin(decoded, settings.maxEdge);
     const bytes = await surface.draw(
       decoded.source,
       size,
-      PHOTO_MEDIA_TYPE,
-      PHOTO_QUALITY,
+      settings.mediaType,
+      settings.quality,
     );
-    return { ...size, bytes, mediaType: PHOTO_MEDIA_TYPE };
+    return { ...size, bytes, mediaType: settings.mediaType };
   } finally {
     surface.release?.(decoded.source);
   }
+}
+
+/** A photo, at the photo settings. */
+export function resizePhoto<Source>(
+  file: Blob,
+  surface: DrawingSurface<Source>,
+): Promise<ResizedPhoto> {
+  return resizeImage(file, surface, PHOTO_SETTINGS);
+}
+
+/** A site map, at the map settings. */
+export function resizeSiteMap<Source>(
+  file: Blob,
+  surface: DrawingSurface<Source>,
+): Promise<ResizedPhoto> {
+  return resizeImage(file, surface, SITE_MAP_SETTINGS);
 }
