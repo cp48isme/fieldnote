@@ -477,7 +477,38 @@ screen and a printer is fiddly, and you'll iterate on it more than you plan to.
 > hold, the representative's own team as a second class of person — land here. Deal
 > positioning has no home in the public build.
 
-**Phase 2 total: ~8.5 hours** (8–9; midpoint, as with Phase 1).
+> **Amended 2026-09-15, session 11, on completion.** What shipped, and what the four
+> hours above did not know about. **ADR-0010** chose `pdf-lib` over `jspdf` and the
+> print path, in ADR-0003's shape, with the advisory material for each; the deciding
+> reason was the smaller thing to trust, and the stated cost is that the library is
+> unmaintained. **The cipher learned a second shape**: bytes beside strings, a field's
+> policy declaring which, a mismatch refused in both directions (ADR-0004 amended).
+> **Schema v6**: five dossier fields on the event, briefing notes on the attendee, an
+> `images` table of bytes with a sibling media type — never a `Blob` — and a `contacts`
+> table for her own team, the site coordinator, the truck operator, which never enters a
+> model call and is fenced off from the generation and privacy layers by a test.
+> **Photos** are resized on the device to 512 pixels on the longest edge, JPEG, through
+> a pure function over a drawing surface; the real surface decodes with
+> `createImageBitmap` because the Content Security Policy allows no `blob:` image, and
+> the thumbnail is a `data:` URL for the same reason. Upload lives on the attendee view
+> beside the briefing notes. **The screen** is reached from the switcher, in the
+> document's order, and Generate is a download through the same helper as the audit-log
+> CSV; no record is written. **The document** is composed as a model and drawn on a page
+> that fits both A4 and Letter, standard fonts with a mark for what they cannot encode,
+> a two-line footer on every page stating the event, the generation time, and expected
+> attendance. The fixture event renders to two pages and about nine kilobytes. A
+> synthetic photo — a flat colour with invented initials — is committed with its
+> generator, which also builds a twelve-megapixel image in memory for the end-to-end
+> spec that pushes it through IndexedDB. **Not in it by decision:** the dictated notes,
+> deal positioning, the site map (session 12), the post-event readout (its own bead).
+> **Not yet true:** a real phone photo has not been through it, and the bitmap API's
+> EXIF handling on the target phone is unobserved. The four hours became a dependency
+> decision, a cipher extension, two entities, a form, and the document; the total below
+> is revised.
+
+**Phase 2 total: ~11 hours** (revised 2026-09-15: session 11 is nearer six than four —
+the dependency ADR, the cipher's second shape, two entities and their migration, and
+the screen were each real work the four-hour line did not include; 8.5 before).
 
 ---
 
@@ -488,6 +519,10 @@ screen and a printer is fiddly, and you'll iterate on it more than you plan to.
 
 Template, location block, universal map links for Apple and Google Maps, site map
 upload.
+
+> **Note, 2026-09-15, session 11.** The site map goes in the `images` table with
+> `purpose: "site-map"`, owned by the event; the value exists and nothing writes it yet.
+> The photo resize and the bytes-shaped cipher are already there for it.
 
 ### Session 13 — Calendar generation
 *~2 hours*
@@ -573,10 +608,10 @@ Hours are midpoints where a session is given as a range.
 |---|---|---|
 | 0 — Foundation | 2 | 1 |
 | 1 — Core | 22 | 7–8 |
-| 2 — Briefing | 8.5 | 3 |
+| 2 — Briefing | 11 | 4 |
 | 3 — Pre-event | 7 | 2–3 |
 | 4 — Hardening | 12 | 4 |
-| **Public total** | **~51.5** | **17–19** |
+| **Public total** | **~54** | **18–20** |
 | 19 — Encryption (private fork) | 3 | 1 |
 
 At three evenings a week: **six to seven weeks.** At two: nine to ten.
