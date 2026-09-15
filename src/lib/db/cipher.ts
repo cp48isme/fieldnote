@@ -12,11 +12,21 @@
  * exercised rather than merely present.
  */
 
-import { POLICIES_BY_TABLE, type TableName } from "./schema";
+import { POLICIES_BY_TABLE, type FieldShape, type TableName } from "./schema";
 
+/**
+ * Two shapes, one seam. Strings since session 2; bytes since session 11, for images,
+ * which are stored as `ArrayBuffer` with a sibling media type and never as a `Blob` — a
+ * real cipher emits bytes, so the stored type and the emitted type are the same, and
+ * nothing depends on a `Blob` surviving IndexedDB on Safari. A field's policy declares
+ * which shape it holds (`FieldPolicy.shape`), and the transform below refuses a value of
+ * the other shape in either direction.
+ */
 export interface FieldCipher {
   encrypt(plaintext: string): string;
   decrypt(ciphertext: string): string;
+  encryptBytes(plaintext: ArrayBuffer): ArrayBuffer;
+  decryptBytes(ciphertext: ArrayBuffer): ArrayBuffer;
 }
 
 /**
@@ -30,6 +40,8 @@ export interface FieldCipher {
 export const identityCipher: FieldCipher = {
   encrypt: (plaintext) => plaintext,
   decrypt: (ciphertext) => ciphertext,
+  encryptBytes: (plaintext) => plaintext,
+  decryptBytes: (ciphertext) => ciphertext,
 };
 
 let activeCipher: FieldCipher = identityCipher;
@@ -48,30 +60,49 @@ export function resetCipher(): void {
 }
 
 /**
- * Only string values are transformed.
+ * Only a value of the field's declared shape is transformed.
  *
- * A real cipher produces a string, so an eligible field holding a number or an array
- * could not round-trip through it without a serialization format this build has no
- * reason to choose yet. Every currently eligible field is a string; if a non-string one
- * is ever classified eligible, this throws rather than silently storing it in the clear.
- * A quiet pass-through here would be a control that reports success while doing nothing.
+ * A string cipher produces a string and a bytes cipher produces bytes, so an eligible
+ * field holding anything else — a number, an array, a string where bytes were declared
+ * or bytes where a string was — could not round-trip through it. If that ever happens,
+ * this throws rather than silently storing the value in the clear, in either direction:
+ * a quiet pass-through here would be a control that reports success while doing nothing.
  */
 function transformValue(
   value: unknown,
   direction: "encrypt" | "decrypt",
+  shape: FieldShape,
   table: TableName,
   field: string,
 ): unknown {
   if (value === null || value === undefined) return value;
+  const cipher = getCipher();
+  if (shape === "bytes") {
+    if (!(value instanceof ArrayBuffer)) {
+      throw new TypeError(
+        `Field ${table}.${field} is encryption-eligible with shape bytes but holds ` +
+          `${describe(value)}. Bytes fields must be an ArrayBuffer (see cipher.ts). ` +
+          `Refusing to store it unencrypted.`,
+      );
+    }
+    return direction === "encrypt"
+      ? cipher.encryptBytes(value)
+      : cipher.decryptBytes(value);
+  }
   if (typeof value !== "string") {
     throw new TypeError(
-      `Field ${table}.${field} is encryption-eligible but holds ${typeof value}. ` +
-        `Eligible fields must be strings, or the cipher needs a serialization format ` +
+      `Field ${table}.${field} is encryption-eligible but holds ${describe(value)}. ` +
+        `Eligible fields must be strings, or declare shape bytes and hold an ArrayBuffer ` +
         `(see cipher.ts). Refusing to store it unencrypted.`,
     );
   }
-  const cipher = getCipher();
   return direction === "encrypt" ? cipher.encrypt(value) : cipher.decrypt(value);
+}
+
+function describe(value: unknown): string {
+  if (value instanceof ArrayBuffer) return "an ArrayBuffer";
+  if (ArrayBuffer.isView(value)) return `a ${value.constructor.name}`;
+  return typeof value;
 }
 
 function applyToRecord<T extends object>(
@@ -87,7 +118,13 @@ function applyToRecord<T extends object>(
   for (const [field, policy] of Object.entries(policies)) {
     if (policy.encryption !== "eligible") continue;
     if (!(field in out)) continue;
-    out[field] = transformValue(out[field], direction, table, field);
+    out[field] = transformValue(
+      out[field],
+      direction,
+      policy.shape ?? "string",
+      table,
+      field,
+    );
   }
   // The mapped copy has the same keys and value types as T; TypeScript cannot see that
   // through the string-keyed loop above, so the assertion states what the loop preserves.

@@ -33,6 +33,19 @@ const reversingCipher: FieldCipher = {
     }
     return [...ciphertext.slice(4)].reverse().join("");
   },
+  // Bytes: a marker byte followed by the input reversed, so the same two properties hold.
+  encryptBytes: (plaintext) => {
+    const bytes = new Uint8Array(plaintext);
+    const out = new Uint8Array(bytes.length + 1);
+    out[0] = 0xff;
+    out.set([...bytes].reverse(), 1);
+    return out.buffer;
+  },
+  decryptBytes: (ciphertext) => {
+    const bytes = new Uint8Array(ciphertext);
+    if (bytes[0] !== 0xff) throw new Error("decryptBytes called on plain bytes");
+    return new Uint8Array([...bytes.slice(1)].reverse()).buffer;
+  },
 };
 
 function sampleNote(): NoteRecord {
@@ -103,6 +116,26 @@ describe("cipher seam", () => {
     // unencrypted would be a control reporting success while doing nothing.
     const malformed = { ...sampleNote(), body: 42 } as unknown as NoteRecord;
     expect(() => encryptRecord(TABLES.notes, malformed)).toThrow(/must be strings/);
+  });
+
+  it("refuses bytes in a string field, on the way in and on the way out", () => {
+    setCipher(reversingCipher);
+    const bytesInBody = {
+      ...sampleNote(),
+      body: new Uint8Array([1, 2, 3]).buffer,
+    } as unknown as NoteRecord;
+    expect(() => encryptRecord(TABLES.notes, bytesInBody)).toThrow(
+      /holds an ArrayBuffer/,
+    );
+    expect(() => decryptRecord(TABLES.notes, bytesInBody)).toThrow(
+      /holds an ArrayBuffer/,
+    );
+    // A typed array is not an ArrayBuffer either, and the message says which it was.
+    const viewInBody = {
+      ...sampleNote(),
+      body: new Uint8Array([1]),
+    } as unknown as NoteRecord;
+    expect(() => encryptRecord(TABLES.notes, viewInBody)).toThrow(/a Uint8Array/);
   });
 
   it("classifies note body as eligible and note ids as clear", () => {

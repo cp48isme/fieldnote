@@ -30,6 +30,7 @@ export {
   type Id,
   type EncryptionClass,
   type FieldPolicy,
+  type FieldShape,
   type FieldPolicies,
   type BaseRecord,
   type EventRecord,

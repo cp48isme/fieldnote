@@ -9,6 +9,17 @@
   second entry: audit records survive event deletion by design (ADR-0008), so the local
   store holds hash-only records for events that no longer exist, and session 16's
   retention policy must say what happens to them. The decision is unchanged.
+- **Amended:** 2026-09-15, session 11 — the seam carries two shapes. `FieldCipher`
+  gains `encryptBytes` and `decryptBytes` over `ArrayBuffer`, and a field's policy
+  declares `shape: "string" | "bytes"`, string by default so no existing classification
+  changed. The reason is the briefing's photographs (ADR-0009, ADR-0010): an image is
+  stored as bytes with a sibling media type, never as a `Blob`, because a real cipher
+  emits bytes and the stored type should be the type it emits. The refusal this record
+  relies on — an eligible field holding a value the cipher cannot round-trip is an error,
+  never a silent pass-through — now holds in both directions, a string in a bytes field
+  and bytes in a string field, and `tests/unit/cipher.test.ts` asserts both. Session 19
+  implements the two bytes methods alongside the two string ones. The decision is
+  unchanged.
 
 ## Context
 

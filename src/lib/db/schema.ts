@@ -24,8 +24,17 @@ export type EncryptionClass =
   /** Stored in the clear. Required for indexing, or carries no identity. */
   | "clear";
 
+/**
+ * What an encryption-eligible field holds, so the cipher knows which of its two
+ * transforms applies and can refuse the other. Session 11 added `bytes` for images; a
+ * policy that omits `shape` is a string field, so nothing written before then changed.
+ */
+export type FieldShape = "string" | "bytes";
+
 export interface FieldPolicy {
   encryption: EncryptionClass;
+  /** Defaults to `string`. Meaningful only for eligible fields; a clear field is stored as is. */
+  shape?: FieldShape;
   why: string;
 }
 
