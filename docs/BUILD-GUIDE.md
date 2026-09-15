@@ -575,6 +575,19 @@ upload.
 Design A per ADR-0002. Behind a flag, defaulted off, approved content only, no
 tracking. The constraints make this smaller than it sounds.
 
+> **Amended 2026-09-15, session 14, on completion.** It was smaller than it sounds.
+> Schema v9 puts the flag on the event, false on creation and backfilled false, turned
+> on per event from a switch on the pre-event screen that saves as it is toggled. The
+> composer ends the email with the block when the flag is on: the event's name, when,
+> where, the logistics, and the selected passages between four fixed strings — every
+> line a field the email already carries, no input of its own, the same for every
+> recipient, the two map links its only URLs, and through the ruleset with the rest.
+> Each of ADR-0002's five constraints is a unit test, and the ADR is amended with where
+> each is enforced. The attachment lines stay out of the block, because an attachment
+> does not travel with it. No Guardian prompt existed for this session; the scope was
+> taken from this entry, ADR-0002, and the handoff, and `docs/prompts/session-14.md`
+> says so. Phase 3 closes.
+
 **Phase 3 total: ~7 hours.**
 
 ---
