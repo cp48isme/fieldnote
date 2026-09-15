@@ -7,6 +7,18 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 14 — the invite feature: the forwardable block behind its flag
+
+- Schema v9: `EventRecord.forwardableEnabled`, false on creation and backfilled false.
+  A switch on the pre-event screen turns it on per event, saved as toggled.
+- The forwardable block (ADR-0002, Design A): when the flag is on, the pre-event email
+  ends with a self-contained part the recipient can pass on — the event's name, when,
+  where, the logistics, and the selected passages between four fixed strings. No input
+  of its own, the same for every recipient, the two map links its only URLs, through the
+  ruleset with the rest of the body, and without the attachment lines.
+- Each of ADR-0002's five constraints is a unit test; ADR-0002 is amended with where
+  each is enforced. Phase 3 closes.
+
 ### Session 13 — the calendar file, ruleset 1.4.0, and the eval artifact
 
 - Ruleset 1.4.0: a product noun followed by a verb of state or design is claim-bearing,
