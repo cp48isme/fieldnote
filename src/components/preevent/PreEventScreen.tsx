@@ -19,8 +19,10 @@
  * into the briefing, and downloaded from here as a file so she can attach it in Mail
  * beside the email; the email says "Site map attached." only while one is stored.
  *
- * THE FORWARDABLE BLOCK (ADR-0002) is session 14's, behind a flag. The composer has a
- * place for it and nothing else does.
+ * THE FORWARDABLE BLOCK (ADR-0002) is a switch on the event, off until she turns it on
+ * for that event, and nothing else: no text of its own to enter, because the composer
+ * builds it from the fields this screen already holds. The switch saves as it is
+ * toggled, so the flag is never "not saved yet" when Compose runs.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -33,6 +35,7 @@ import {
   putImage,
   removeImage,
   updateEventDossier,
+  updateEventForwardable,
   updateEventLocation,
   updateEventTimes,
   type ApprovedContentRecord,
@@ -108,6 +111,9 @@ export function PreEventScreen({
   const [recipients, setRecipients] = useState<Set<Id>>(
     new Set(attendees.map((a) => a.id)),
   );
+  const [forwardable, setForwardable] = useState(event.forwardableEnabled);
+  const [forwardableState, setForwardableState] = useState<SaveState>("idle");
+  const [forwardableError, setForwardableError] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
   const [composeError, setComposeError] = useState<string | null>(null);
 
@@ -117,6 +123,7 @@ export function PreEventScreen({
     setLogistics(event.logistics);
     setStartsAt(toLocalInput(event.startsAt));
     setEndsAt(toLocalInput(event.endsAt));
+    setForwardable(event.forwardableEnabled);
   }, [event]);
 
   useEffect(() => {
@@ -234,6 +241,21 @@ export function PreEventScreen({
       setSiteMap(null);
     } finally {
       setSiteMapBusy(false);
+    }
+  };
+
+  const saveForwardable = async (enabled: boolean) => {
+    setForwardable(enabled);
+    setForwardableState("saving");
+    setForwardableError(null);
+    try {
+      onEventChanged(await updateEventForwardable(event.id, enabled));
+      setForwardableState("saved");
+    } catch (cause) {
+      // The record did not change, so the switch shows what the record holds.
+      setForwardable(event.forwardableEnabled);
+      setForwardableError(cause instanceof Error ? cause.message : String(cause));
+      setForwardableState("error");
     }
   };
 
@@ -655,9 +677,35 @@ export function PreEventScreen({
         )}
       </div>
 
-      {/* 5. Compose */}
+      {/* 5. The forwardable block (ADR-0002) */}
+      <div data-testid="pre-event-forwardable-section" className="flex flex-col gap-2">
+        <h3 className="text-sm font-semibold">5. For a colleague</h3>
+        <label className="flex min-h-11 items-center gap-3 rounded-lg border border-black/10 px-3 text-sm dark:border-white/15">
+          <input
+            type="checkbox"
+            data-testid="pre-event-forwardable"
+            checked={forwardable}
+            disabled={forwardableState === "saving"}
+            onChange={(change) => void saveForwardable(change.target.checked)}
+            className="h-5 w-5"
+          />
+          <span>End the email with a part the recipient can pass on to a colleague</span>
+        </label>
+        <p className="text-xs opacity-60">
+          Off for every event until you turn it on here. The part repeats the event&apos;s
+          name, when, where, your logistics, and the passages you selected, so it stands
+          on its own when forwarded. Nothing is added to it: no link that tracks, nothing
+          offered for forwarding, and no way to collect who it reached. Anyone interested
+          comes to you the ordinary way.
+        </p>
+        <p data-testid="pre-event-forwardable-state" className="text-xs opacity-60">
+          {saveLabel(forwardableState, false, forwardableError)}
+        </p>
+      </div>
+
+      {/* 6. Compose */}
       <div data-testid="pre-event-compose-section" className="flex flex-col gap-2">
-        <h3 className="text-sm font-semibold">5. Compose</h3>
+        <h3 className="text-sm font-semibold">6. Compose</h3>
         <p className="text-xs opacity-60">
           Writes one draft per selected person to the follow-ups list. Open each to review
           it; copy it to your mail client from there. Nothing is sent.
