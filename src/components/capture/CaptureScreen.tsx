@@ -75,6 +75,7 @@ import { AttendeeView } from "../attendees/AttendeeView";
 import { PeopleList } from "../attendees/PeopleList";
 import { BriefingScreen } from "../briefing/BriefingScreen";
 import { LibraryScreen } from "../library/LibraryScreen";
+import { PreEventScreen } from "../preevent/PreEventScreen";
 import { DraftDetail } from "../review/DraftDetail";
 import { FollowUps } from "../review/FollowUps";
 import { RosterImport } from "../roster/RosterImport";
@@ -123,6 +124,8 @@ export function CaptureScreen() {
    */
   const [briefingView, setBriefingView] = useState(false);
   const [attendeeReturn, setAttendeeReturn] = useState<"list" | "briefing">("list");
+  /** The pre-event composer (session 12), replacing the log and the dock like the others. */
+  const [preEventView, setPreEventView] = useState(false);
   /**
    * The recipient's name for a draft opened from the attendee view, which may belong to
    * another event and so to an attendee not in `attendees`.
@@ -541,12 +544,14 @@ export function CaptureScreen() {
                 void autosave.flush();
                 setLibraryView(false);
                 setBriefingView(false);
+                setPreEventView(false);
                 setImportingRoster(true);
               }}
               onShowPeople={() => {
                 void autosave.flush();
                 setLibraryView(false);
                 setBriefingView(false);
+                setPreEventView(false);
                 setAttendeeReturn("list");
                 setPeopleView("list");
               }}
@@ -554,6 +559,7 @@ export function CaptureScreen() {
                 void autosave.flush();
                 setImportingRoster(false);
                 setBriefingView(false);
+                setPreEventView(false);
                 setPeopleView("closed");
                 void listApprovedContent().then(setLibraryPassages);
                 setLibraryView(true);
@@ -562,8 +568,17 @@ export function CaptureScreen() {
                 void autosave.flush();
                 setImportingRoster(false);
                 setLibraryView(false);
+                setPreEventView(false);
                 setPeopleView("closed");
                 setBriefingView(true);
+              }}
+              onShowPreEvent={() => {
+                void autosave.flush();
+                setImportingRoster(false);
+                setLibraryView(false);
+                setBriefingView(false);
+                setPeopleView("closed");
+                setPreEventView(true);
               }}
             />
           ) : (
@@ -658,7 +673,26 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && briefingView && peopleView === "closed" && (
+          {event && preEventView && peopleView === "closed" && (
+            <PreEventScreen
+              event={event}
+              attendees={attendees}
+              onEventChanged={(updated) => {
+                setEvent(updated);
+                void listEvents().then(setEvents);
+              }}
+              onComposed={(count) => {
+                setDraftNotice(
+                  `${count} pre-event email${count === 1 ? "" : "s"} composed. Open each to review it.`,
+                );
+                setPreEventView(false);
+                void refreshDrafts(event.id).then(() => setView("review"));
+              }}
+              onClose={() => setPreEventView(false)}
+            />
+          )}
+
+          {event && briefingView && !preEventView && peopleView === "closed" && (
             <BriefingScreen
               event={event}
               attendees={attendees}
@@ -675,18 +709,23 @@ export function CaptureScreen() {
             />
           )}
 
-          {event && libraryView && !briefingView && peopleView === "closed" && (
-            <LibraryScreen
-              passages={libraryPassages}
-              onChanged={() => void listApprovedContent().then(setLibraryPassages)}
-              onClose={() => setLibraryView(false)}
-            />
-          )}
+          {event &&
+            libraryView &&
+            !briefingView &&
+            !preEventView &&
+            peopleView === "closed" && (
+              <LibraryScreen
+                passages={libraryPassages}
+                onChanged={() => void listApprovedContent().then(setLibraryPassages)}
+                onClose={() => setLibraryView(false)}
+              />
+            )}
 
           {event &&
             importingRoster &&
             !libraryView &&
             !briefingView &&
+            !preEventView &&
             peopleView === "closed" && (
               <RosterImport
                 event={event}
@@ -701,6 +740,7 @@ export function CaptureScreen() {
             !importingRoster &&
             !libraryView &&
             !briefingView &&
+            !preEventView &&
             peopleView === "closed" &&
             view === "capture" && (
               <NoteLog
@@ -716,6 +756,7 @@ export function CaptureScreen() {
             !importingRoster &&
             !libraryView &&
             !briefingView &&
+            !preEventView &&
             peopleView === "closed" &&
             view === "review" &&
             !openDraft && (
@@ -737,6 +778,7 @@ export function CaptureScreen() {
             !importingRoster &&
             !libraryView &&
             !briefingView &&
+            !preEventView &&
             peopleView === "closed" &&
             view === "review" &&
             openDraft && (
@@ -764,6 +806,7 @@ export function CaptureScreen() {
         !importingRoster &&
         !libraryView &&
         !briefingView &&
+        !preEventView &&
         peopleView === "closed" &&
         view === "capture" && (
           <CaptureDock
