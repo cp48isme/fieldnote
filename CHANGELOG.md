@@ -7,6 +7,25 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 12 — the pre-event email, the location, and the site map
+
+- ADR-0011: a pre-event email is a draft under the review gate, model or not; the
+  ruleset judges the whole email, the representative's own text included.
+- Schema v7: `DraftRecord.kind` (`follow-up` | `pre-event`); the event's `address`
+  and `coordinates`, one "lat, lng" string validated on entry; the audit record's
+  `model` and `promptTemplateVersion` nullable, with the CSV writing the empty cell.
+- The composer: one draft per recipient from the record's greeting, her logistics, the
+  location block with Apple Maps and Google Maps links built from the coordinates, "Site
+  map attached." while one is stored, the selected library passages verbatim, and a
+  sign-off; the body through the guardrails with passages exempt. No model, no prompt,
+  no network. Drafts land in the review surface labelled as pre-event emails.
+- The site map: stored with the event at 1600 pixels as PNG, downloaded from the
+  composer as a file to attach in Mail, drawn into the briefing's Event section. The
+  resize takes its settings: 512 JPEG for a photo, 1600 PNG for a map.
+- Folded in: the attendee view removes a person behind a confirmation that says what
+  goes; the denylist allows `example.com` addresses in fixtures (RFC 2606);
+  `CLAUDE.md`'s decision-record list completed through ADR-0011.
+
 ### Session 11 — the briefing
 
 - ADR-0010: `pdf-lib` draws the briefing, chosen over `jspdf` and the browser print
