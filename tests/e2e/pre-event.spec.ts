@@ -31,6 +31,9 @@ const PASSAGE = {
 };
 const GAP = "[approved content required]";
 
+/** Every regex metacharacter, backslash included, so a literal can be matched as itself. */
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 async function startEventWithPerson(page: Page): Promise<void> {
   await page.goto("/");
   await page.getByTestId("event-name").fill(SITE);
@@ -142,12 +145,10 @@ test.describe("pre-event email", () => {
     await expect(editor).toHaveValue(/Dear Dr\. Okonjo-Baptiste,/);
     await expect(editor).toHaveValue(/Please arrive between 08:30 and 09:00/);
     await expect(editor).not.toHaveValue(/faster than anything/);
-    await expect(editor).toHaveValue(new RegExp(GAP.replace(/[[\]]/g, "\\$&")));
+    await expect(editor).toHaveValue(new RegExp(escapeRegExp(GAP)));
     await expect(editor).toHaveValue(/Site map attached\./);
     await expect(editor).toHaveValue(/Apple Maps: https:\/\/maps\.apple\.com/);
-    await expect(editor).toHaveValue(
-      new RegExp(PASSAGE.body.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
-    );
+    await expect(editor).toHaveValue(new RegExp(escapeRegExp(PASSAGE.body)));
     await expect(page.getByTestId("draft-flags")).not.toContainText(
       "the model was not allowed",
     );
