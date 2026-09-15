@@ -19,6 +19,7 @@ import {
   TABLES,
   eligibleFields,
   type FieldCipher,
+  type ImageRecord,
   type NoteRecord,
 } from "@/lib/db";
 
@@ -136,6 +137,52 @@ describe("cipher seam", () => {
       body: new Uint8Array([1]),
     } as unknown as NoteRecord;
     expect(() => encryptRecord(TABLES.notes, viewInBody)).toThrow(/a Uint8Array/);
+  });
+
+  it("round-trips an image's bytes through a real transform, and leaves the rest alone", () => {
+    setCipher(reversingCipher);
+    const image: ImageRecord = {
+      id: "img-1",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 6,
+      ownerId: "att-1",
+      purpose: "attendee-photo",
+      bytes: new Uint8Array([1, 2, 3]).buffer,
+      mediaType: "image/jpeg",
+      width: 3,
+      height: 1,
+    };
+    const encrypted = encryptRecord(TABLES.images, image);
+    // The bytes changed — the hook ran — and the clear fields did not.
+    expect(new Uint8Array(encrypted.bytes)).toEqual(new Uint8Array([0xff, 3, 2, 1]));
+    expect(encrypted.mediaType).toBe("image/jpeg");
+    expect(encrypted.ownerId).toBe("att-1");
+    const restored = decryptRecord(TABLES.images, encrypted);
+    expect(new Uint8Array(restored.bytes)).toEqual(new Uint8Array([1, 2, 3]));
+    expect(restored).toEqual({ ...image, bytes: restored.bytes });
+  });
+
+  it("refuses a string in a bytes field, on the way in and on the way out", () => {
+    setCipher(reversingCipher);
+    const stringInBytes = {
+      id: "img-1",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 6,
+      ownerId: "att-1",
+      purpose: "attendee-photo",
+      bytes: "data:image/jpeg;base64,AAAA",
+      mediaType: "image/jpeg",
+      width: 1,
+      height: 1,
+    } as unknown as ImageRecord;
+    expect(() => encryptRecord(TABLES.images, stringInBytes)).toThrow(
+      /shape bytes but holds string/,
+    );
+    expect(() => decryptRecord(TABLES.images, stringInBytes)).toThrow(
+      /shape bytes but holds string/,
+    );
   });
 
   it("classifies note body as eligible and note ids as clear", () => {

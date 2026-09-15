@@ -78,7 +78,7 @@ function transformValue(
   if (value === null || value === undefined) return value;
   const cipher = getCipher();
   if (shape === "bytes") {
-    if (!(value instanceof ArrayBuffer)) {
+    if (!isArrayBuffer(value)) {
       throw new TypeError(
         `Field ${table}.${field} is encryption-eligible with shape bytes but holds ` +
           `${describe(value)}. Bytes fields must be an ArrayBuffer (see cipher.ts). ` +
@@ -99,8 +99,17 @@ function transformValue(
   return direction === "encrypt" ? cipher.encrypt(value) : cipher.decrypt(value);
 }
 
+/**
+ * By tag, not `instanceof`: a buffer that crossed a realm boundary — out of a worker,
+ * or through a structured clone under a test runner — is still an ArrayBuffer, and
+ * `instanceof` against this realm's constructor would say it is not.
+ */
+function isArrayBuffer(value: unknown): value is ArrayBuffer {
+  return Object.prototype.toString.call(value) === "[object ArrayBuffer]";
+}
+
 function describe(value: unknown): string {
-  if (value instanceof ArrayBuffer) return "an ArrayBuffer";
+  if (isArrayBuffer(value)) return "an ArrayBuffer";
   if (ArrayBuffer.isView(value)) return `a ${value.constructor.name}`;
   return typeof value;
 }

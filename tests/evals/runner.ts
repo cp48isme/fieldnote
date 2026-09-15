@@ -53,6 +53,11 @@ const EVENT: EventRecord = {
   siteLabel: "",
   startsAt: null,
   status: "active",
+  objectives: "",
+  configuration: "",
+  itinerary: "",
+  logistics: "",
+  contingency: "",
 };
 
 export interface SampleResult {

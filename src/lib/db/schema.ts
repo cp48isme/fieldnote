@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -71,6 +71,17 @@ export interface EventRecord extends BaseRecord {
   siteLabel: string;
   startsAt: number | null;
   status: EventStatus;
+  /**
+   * The dossier (plan §3.2, session 11): what the briefing says about the event itself,
+   * entered by the representative and laid out as written (ADR-0009). Five free-text
+   * fields on the event rather than a table, because they are plainly event data. Empty
+   * strings until she fills them; the briefing omits an empty one.
+   */
+  objectives: string;
+  configuration: string;
+  itinerary: string;
+  logistics: string;
+  contingency: string;
 }
 
 export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
@@ -85,6 +96,26 @@ export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
   },
   startsAt: { encryption: "clear", why: "Timestamp; needed for sorting events." },
   status: { encryption: "clear", why: "Enum state; drives queries, no identity." },
+  objectives: {
+    encryption: "eligible",
+    why: "Free text about a real account's event; names what the visit is for.",
+  },
+  configuration: {
+    encryption: "eligible",
+    why: "Free text; the room, the equipment, the site — identifying in combination.",
+  },
+  itinerary: {
+    encryption: "eligible",
+    why: "Free text; times and places at a real site on a real date.",
+  },
+  logistics: {
+    encryption: "eligible",
+    why: "Free text; addresses, parking, access — a location record.",
+  },
+  contingency: {
+    encryption: "eligible",
+    why: "Free text; may name people to call and where to go.",
+  },
 };
 
 // --- Attendee --------------------------------------------------------------
@@ -121,6 +152,13 @@ export interface AttendeeRecord extends BaseRecord {
   specialty: string;
   institution: string;
   source: AttendeeSource;
+  /**
+   * What the representative writes about this person for the briefing (session 11):
+   * her opener, her talking points, in her words — ADR-0009 withdrew the model from
+   * both. Shown in the briefing and nowhere else; never sent to a model. The dictated
+   * notes are a different thing and stay out of the briefing.
+   */
+  briefingNotes: string;
 }
 
 export const ATTENDEE_POLICIES: FieldPolicies<AttendeeRecord> = {
@@ -144,6 +182,99 @@ export const ATTENDEE_POLICIES: FieldPolicies<AttendeeRecord> = {
     encryption: "clear",
     why: "Enum; records how the record arrived, met or listed. No identity in it.",
   },
+  briefingNotes: {
+    encryption: "eligible",
+    why: "Free text about a named person, written for an internal document.",
+  },
+};
+
+// --- Image -----------------------------------------------------------------
+
+/**
+ * What an image is for. `attendee-photo` is the one this build writes (session 11), one
+ * per attendee, replaced on re-upload. `site-map` exists now so session 12's map lands in
+ * this table without another migration; nothing writes it yet.
+ */
+export type ImagePurpose = "attendee-photo" | "site-map";
+
+/**
+ * A stored image: bytes, never a `Blob`. The cipher's second shape (ADR-0004 as amended
+ * 2026-09-15): a real cipher emits bytes, so the stored type is the emitted type, and
+ * nothing depends on a `Blob` surviving IndexedDB on Safari. `ownerId` is the attendee
+ * (or, for a site map, the event); an owner's images go when the owner goes. Photos are
+ * resized on the device before they get here — longest edge 512 pixels, JPEG — because a
+ * phone camera produces four-megabyte files and a briefing needs a thumbnail. Uploaded
+ * by the representative, never fetched (plan §3.2).
+ */
+export interface ImageRecord extends BaseRecord {
+  ownerId: Id;
+  purpose: ImagePurpose;
+  bytes: ArrayBuffer;
+  mediaType: string;
+  width: number;
+  height: number;
+}
+
+export const IMAGE_POLICIES: FieldPolicies<ImageRecord> = {
+  ...BASE_POLICY,
+  ownerId: { encryption: "clear", why: "Foreign key; must be indexable." },
+  purpose: {
+    encryption: "clear",
+    why: "Enum; what the image is for. No identity in it.",
+  },
+  bytes: {
+    encryption: "eligible",
+    shape: "bytes",
+    why: "A photograph of a named person: directly identifying, and the only binary in the store.",
+  },
+  mediaType: {
+    encryption: "clear",
+    why: "A media type is not identity; the layout needs it before decoding anything.",
+  },
+  width: {
+    encryption: "clear",
+    why: "Pixel dimension; no identity. Sizes the layout without decoding.",
+  },
+  height: {
+    encryption: "clear",
+    why: "Pixel dimension; no identity. Sizes the layout without decoding.",
+  },
+};
+
+// --- Contact ---------------------------------------------------------------
+
+/**
+ * A person on the briefing who is not an attendee (session 11, `fieldnote-g7d`'s second
+ * class of person): the representative's own team, the site coordinator, the truck
+ * operator, transportation. Plan §3.2's contact cards and staffing roles.
+ *
+ * A CONTACT NEVER ENTERS A MODEL CALL AND THE PSEUDONYMIZER NEVER SEES ONE. Contacts are
+ * not attendees: no follow-up is drafted to them, no token is issued for them, and the
+ * generation layer has no way to reach this table — `tests/unit/contacts-boundary.test.ts`
+ * fails the build if anything under `src/lib/generation/` names it. They exist for one
+ * document, laid out from what she typed (ADR-0009).
+ */
+export interface ContactRecord extends BaseRecord {
+  eventId: Id;
+  name: string;
+  /** What they do at the event: "site coordinator", "truck operator". */
+  function: string;
+  phone: string;
+  email: string;
+  notes: string;
+}
+
+export const CONTACT_POLICIES: FieldPolicies<ContactRecord> = {
+  ...BASE_POLICY,
+  eventId: { encryption: "clear", why: "Foreign key; must be indexable." },
+  name: { encryption: "eligible", why: "Directly identifying." },
+  function: {
+    encryption: "eligible",
+    why: "A function at a named site narrows to one person; and it is free text she wrote.",
+  },
+  phone: { encryption: "eligible", why: "Directly identifying contact detail." },
+  email: { encryption: "eligible", why: "Directly identifying contact detail." },
+  notes: { encryption: "eligible", why: "Free text about a real person." },
 };
 
 // --- Note ------------------------------------------------------------------
@@ -441,6 +572,8 @@ export const TABLES = {
   approvedContent: "approvedContent",
   settings: "settings",
   sessionMarkers: "sessionMarkers",
+  images: "images",
+  contacts: "contacts",
 } as const;
 
 export type TableName = (typeof TABLES)[keyof typeof TABLES];
@@ -463,6 +596,8 @@ export const POLICIES_BY_TABLE: Record<TableName, Record<string, FieldPolicy>> =
   [TABLES.approvedContent]: APPROVED_CONTENT_POLICIES,
   [TABLES.settings]: SETTINGS_POLICIES,
   [TABLES.sessionMarkers]: SESSION_MARKER_POLICIES,
+  [TABLES.images]: IMAGE_POLICIES,
+  [TABLES.contacts]: CONTACT_POLICIES,
 };
 
 /** Field names that are encryption-eligible for a given table. */

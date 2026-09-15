@@ -52,10 +52,13 @@ import {
   type AttendeeSource,
   type ApprovedContentRecord,
   type AuditRecordRecord,
+  type ContactRecord,
   type DraftBlockReason,
   type DraftRecord,
   type EventRecord,
   type Id,
+  type ImagePurpose,
+  type ImageRecord,
   type NoteRecord,
   type NoteSource,
   type SessionMarkerRecord,
@@ -103,6 +106,11 @@ export async function createEvent(input: NewEventInput): Promise<EventRecord> {
     siteLabel: input.siteLabel ?? "",
     startsAt: input.startsAt ?? null,
     status: "active" as const,
+    objectives: "",
+    configuration: "",
+    itinerary: "",
+    logistics: "",
+    contingency: "",
   });
   await getDatabase().events.put(encryptRecord(TABLES.events, record));
   return record;
@@ -118,18 +126,54 @@ export async function listEvents(): Promise<EventRecord[]> {
   return decryptAll(TABLES.events, rows);
 }
 
+/** The five dossier fields the briefing screen edits (session 11). */
+export type EventDossier = Pick<
+  EventRecord,
+  "objectives" | "configuration" | "itinerary" | "logistics" | "contingency"
+>;
+
+export async function updateEventDossier(
+  id: Id,
+  dossier: EventDossier,
+): Promise<EventRecord> {
+  const db = getDatabase();
+  const existing = await db.events.get(id);
+  if (!existing) throw new Error(`Event ${id} not found`);
+  const updated: EventRecord = {
+    ...decryptRecord(TABLES.events, existing),
+    objectives: dossier.objectives,
+    configuration: dossier.configuration,
+    itinerary: dossier.itinerary,
+    logistics: dossier.logistics,
+    contingency: dossier.contingency,
+    updatedAt: now(),
+  };
+  await db.events.put(encryptRecord(TABLES.events, updated));
+  return updated;
+}
+
 /**
- * Cascades to attendees, notes, and drafts. Audit records are retained on purpose —
- * see the header of this file.
+ * Cascades to attendees, notes, drafts, contacts, and the attendees' images. Audit
+ * records are retained on purpose — see the header of this file.
  */
 export async function deleteEvent(id: Id): Promise<void> {
   const db = getDatabase();
-  await db.transaction("rw", db.events, db.attendees, db.notes, db.drafts, async () => {
-    await db.attendees.where("eventId").equals(id).delete();
-    await db.notes.where("eventId").equals(id).delete();
-    await db.drafts.where("eventId").equals(id).delete();
-    await db.events.delete(id);
-  });
+  await db.transaction(
+    "rw",
+    [db.events, db.attendees, db.notes, db.drafts, db.contacts, db.images],
+    async () => {
+      const attendees = await db.attendees.where("eventId").equals(id).toArray();
+      for (const attendee of attendees) {
+        await db.images.where("ownerId").equals(attendee.id).delete();
+      }
+      await db.images.where("ownerId").equals(id).delete();
+      await db.attendees.where("eventId").equals(id).delete();
+      await db.notes.where("eventId").equals(id).delete();
+      await db.drafts.where("eventId").equals(id).delete();
+      await db.contacts.where("eventId").equals(id).delete();
+      await db.events.delete(id);
+    },
+  );
 }
 
 // --- Attendees -------------------------------------------------------------
@@ -158,6 +202,7 @@ function attendeeFrom(input: NewAttendeeInput): AttendeeRecord {
     specialty: input.specialty ?? "",
     institution: input.institution ?? "",
     source: input.source ?? ("captured" as const),
+    briefingNotes: "",
   });
 }
 
@@ -305,6 +350,160 @@ export async function updateAttendee(
   };
   await db.attendees.put(encryptRecord(TABLES.attendees, updated));
   return updated;
+}
+
+/**
+ * The representative's briefing text for one person, saved whole like a note body: this
+ * is what an autosaving textarea calls. Never read by anything that talks to a model.
+ */
+export async function saveAttendeeBriefingNotes(
+  id: Id,
+  briefingNotes: string,
+): Promise<AttendeeRecord> {
+  const db = getDatabase();
+  const existing = await db.attendees.get(id);
+  if (!existing) throw new Error(`Attendee ${id} not found`);
+  const updated: AttendeeRecord = {
+    ...decryptRecord(TABLES.attendees, existing),
+    briefingNotes,
+    updatedAt: now(),
+  };
+  await db.attendees.put(encryptRecord(TABLES.attendees, updated));
+  return updated;
+}
+
+/** Removes an attendee and their images. Notes and drafts keep their `attendeeId`. */
+export async function deleteAttendee(id: Id): Promise<void> {
+  const db = getDatabase();
+  await db.transaction("rw", db.attendees, db.images, async () => {
+    await db.images.where("ownerId").equals(id).delete();
+    await db.attendees.delete(id);
+  });
+}
+
+// --- Images ----------------------------------------------------------------
+//
+// One image per owner and purpose. `putImage` replaces: a re-upload is the new photo,
+// and the old bytes do not linger under a second id. Bytes go through the cipher's
+// bytes shape (ADR-0004 as amended 2026-09-15); a `Blob` here would be refused.
+
+export interface NewImageInput {
+  ownerId: Id;
+  purpose: ImagePurpose;
+  bytes: ArrayBuffer;
+  mediaType: string;
+  width: number;
+  height: number;
+}
+
+export async function putImage(input: NewImageInput): Promise<ImageRecord> {
+  const record: ImageRecord = stamp({
+    ownerId: input.ownerId,
+    purpose: input.purpose,
+    bytes: input.bytes,
+    mediaType: input.mediaType,
+    width: input.width,
+    height: input.height,
+  });
+  const db = getDatabase();
+  await db.transaction("rw", db.images, async () => {
+    const existing = await db.images.where("ownerId").equals(input.ownerId).toArray();
+    for (const row of existing) {
+      if (row.purpose === input.purpose) await db.images.delete(row.id);
+    }
+    await db.images.put(encryptRecord(TABLES.images, record));
+  });
+  return record;
+}
+
+export async function getImage(
+  ownerId: Id,
+  purpose: ImagePurpose,
+): Promise<ImageRecord | undefined> {
+  const rows = await getDatabase().images.where("ownerId").equals(ownerId).toArray();
+  const row = rows.find((candidate) => candidate.purpose === purpose);
+  return row ? decryptRecord(TABLES.images, row) : undefined;
+}
+
+/** The images of one purpose for a set of owners, keyed by owner. Missing owners are absent. */
+export async function listImages(
+  ownerIds: readonly Id[],
+  purpose: ImagePurpose,
+): Promise<Map<Id, ImageRecord>> {
+  const out = new Map<Id, ImageRecord>();
+  for (const ownerId of ownerIds) {
+    const image = await getImage(ownerId, purpose);
+    if (image) out.set(ownerId, image);
+  }
+  return out;
+}
+
+export async function removeImage(ownerId: Id, purpose: ImagePurpose): Promise<void> {
+  const db = getDatabase();
+  const rows = await db.images.where("ownerId").equals(ownerId).toArray();
+  for (const row of rows) {
+    if (row.purpose === purpose) await db.images.delete(row.id);
+  }
+}
+
+// --- Contacts --------------------------------------------------------------
+//
+// The briefing's second class of person (session 11). Plain storage; nothing here or
+// anywhere reachable from `src/lib/generation/` reads it — see the schema comment.
+
+export interface ContactInput {
+  name: string;
+  function: string;
+  phone: string;
+  email: string;
+  notes: string;
+}
+
+export async function createContact(
+  eventId: Id,
+  input: ContactInput,
+): Promise<ContactRecord> {
+  const name = input.name.trim();
+  if (name.length === 0) throw new Error("A contact needs a name");
+  const record: ContactRecord = stamp({
+    eventId,
+    name,
+    function: input.function.trim(),
+    phone: input.phone.trim(),
+    email: input.email.trim(),
+    notes: input.notes.trim(),
+  });
+  await getDatabase().contacts.put(encryptRecord(TABLES.contacts, record));
+  return record;
+}
+
+/** In the order she entered them: the order the briefing lists them. */
+export async function listContacts(eventId: Id): Promise<ContactRecord[]> {
+  const rows = await getDatabase().contacts.where("eventId").equals(eventId).toArray();
+  return decryptAll(TABLES.contacts, rows).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function updateContact(id: Id, input: ContactInput): Promise<ContactRecord> {
+  const db = getDatabase();
+  const existing = await db.contacts.get(id);
+  if (!existing) throw new Error(`Contact ${id} not found`);
+  const name = input.name.trim();
+  if (name.length === 0) throw new Error("A contact needs a name");
+  const updated: ContactRecord = {
+    ...decryptRecord(TABLES.contacts, existing),
+    name,
+    function: input.function.trim(),
+    phone: input.phone.trim(),
+    email: input.email.trim(),
+    notes: input.notes.trim(),
+    updatedAt: now(),
+  };
+  await db.contacts.put(encryptRecord(TABLES.contacts, updated));
+  return updated;
+}
+
+export async function removeContact(id: Id): Promise<void> {
+  await getDatabase().contacts.delete(id);
 }
 
 // --- Notes -----------------------------------------------------------------

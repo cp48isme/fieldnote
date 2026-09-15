@@ -15,7 +15,7 @@ import { MIGRATIONS, TABLES, type AttendeeRecord } from "@/lib/db";
 
 import { FakeDatabase } from "./support/fake-database";
 
-type V3Attendee = Omit<AttendeeRecord, "kind">;
+type V3Attendee = Omit<AttendeeRecord, "kind" | "briefingNotes">;
 
 function v3(id: string, specialty: string): V3Attendee {
   return {

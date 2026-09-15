@@ -15,7 +15,9 @@ import type {
   ApprovedContentRecord,
   AttendeeRecord,
   AuditRecordRecord,
+  ContactRecord,
   DraftRecord,
+  ImageRecord,
   EventRecord,
   NoteRecord,
   SessionMarkerRecord,
@@ -33,6 +35,8 @@ export class FieldnoteDatabase extends Dexie {
   approvedContent!: Table<ApprovedContentRecord, string>;
   settings!: Table<SettingsRecord, string>;
   sessionMarkers!: Table<SessionMarkerRecord, string>;
+  images!: Table<ImageRecord, string>;
+  contacts!: Table<ContactRecord, string>;
 
   constructor(name = "fieldnote") {
     super(name);

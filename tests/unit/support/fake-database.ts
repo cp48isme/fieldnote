@@ -117,14 +117,19 @@ export class FakeDatabase {
   readonly approvedContent = new FakeTable<Row>();
   readonly settings = new FakeTable<Row>();
   readonly sessionMarkers = new FakeTable<Row>();
+  readonly images = new FakeTable<Row>();
+  readonly contacts = new FakeTable<Row>();
 
-  /** Dexie's signature: mode, the tables in scope, then the scope function last. */
+  /**
+   * Dexie's signature: mode, the tables in scope — spread, or as one array when there
+   * are more than five — then the scope function last.
+   */
   async transaction<R>(
     _mode: string,
-    ...rest: [...FakeTable<Row>[], () => Promise<R>]
+    ...rest: [...(FakeTable<Row> | FakeTable<Row>[])[], () => Promise<R>]
   ): Promise<R> {
     const scope = rest[rest.length - 1] as () => Promise<R>;
-    const tables = rest.slice(0, -1) as FakeTable<Row>[];
+    const tables = (rest.slice(0, -1) as (FakeTable<Row> | FakeTable<Row>[])[]).flat();
     const snapshots = tables.map((table) => table.snapshot());
     try {
       return await scope();
