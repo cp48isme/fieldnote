@@ -117,6 +117,7 @@ export async function createEvent(input: NewEventInput): Promise<EventRecord> {
     contingency: "",
     address: "",
     coordinates: "",
+    forwardableEnabled: false,
   });
   await getDatabase().events.put(encryptRecord(TABLES.events, record));
   return record;
@@ -208,6 +209,27 @@ export async function updateEventTimes(id: Id, times: EventTimes): Promise<Event
     ...decryptRecord(TABLES.events, existing),
     startsAt: times.startsAt,
     endsAt: times.endsAt,
+    updatedAt: now(),
+  };
+  await db.events.put(encryptRecord(TABLES.events, updated));
+  return updated;
+}
+
+/**
+ * Turns the forwardable block on or off for one event (ADR-0002, session 14). Per event
+ * and nothing wider: there is no application-level switch, so enabling it is always an
+ * action on the event she is composing for.
+ */
+export async function updateEventForwardable(
+  id: Id,
+  enabled: boolean,
+): Promise<EventRecord> {
+  const db = getDatabase();
+  const existing = await db.events.get(id);
+  if (!existing) throw new Error(`Event ${id} not found`);
+  const updated: EventRecord = {
+    ...decryptRecord(TABLES.events, existing),
+    forwardableEnabled: enabled,
     updatedAt: now(),
   };
   await db.events.put(encryptRecord(TABLES.events, updated));

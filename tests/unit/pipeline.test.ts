@@ -36,6 +36,7 @@ const EVENT: EventRecord = {
   address: "",
   coordinates: "",
   endsAt: null,
+  forwardableEnabled: false,
 };
 
 let noteCounter = 0;

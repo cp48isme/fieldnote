@@ -21,6 +21,7 @@ type V5Event = Omit<
   | "address"
   | "coordinates"
   | "endsAt"
+  | "forwardableEnabled"
 >;
 type V5Attendee = Omit<AttendeeRecord, "briefingNotes">;
 

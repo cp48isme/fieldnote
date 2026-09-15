@@ -16,7 +16,7 @@
 export type Id = string;
 
 /** Bumped by a migration in `migrations.ts`. Stamped onto every record on write. */
-export const CURRENT_SCHEMA_VERSION = 8;
+export const CURRENT_SCHEMA_VERSION = 9;
 
 export type EncryptionClass =
   /** Encrypted at rest once session 19 replaces the identity cipher. */
@@ -94,6 +94,14 @@ export interface EventRecord extends BaseRecord {
    */
   address: string;
   coordinates: string;
+  /**
+   * Whether the pre-event email carries the forwardable block (ADR-0002, session 14,
+   * v9). Off for every event until the representative turns it on for that event: the
+   * feature ships disabled and enabling it is a per-event action, the ADR's fifth
+   * constraint. A boolean on the event and nothing else — the block is composed from
+   * fields the event already holds, so there is no text to store for it.
+   */
+  forwardableEnabled: boolean;
 }
 
 export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
@@ -136,6 +144,10 @@ export const EVENT_POLICIES: FieldPolicies<EventRecord> = {
   coordinates: {
     encryption: "eligible",
     why: "A location to a few metres, kept as one string so the seam's shapes stay two.",
+  },
+  forwardableEnabled: {
+    encryption: "clear",
+    why: "A flag; no identity. Whether an event's email carries the block is not about anyone.",
   },
 };
 

@@ -287,6 +287,34 @@ export const MIGRATIONS: Migration[] = [
         });
     },
   },
+  {
+    // Session 14 (ADR-0002): the event gains the forwardable-block flag, false for every
+    // existing event — the feature ships disabled, and no event turned it on before it
+    // existed. No index changes.
+    version: 9,
+    stores: {
+      [TABLES.events]: "id, status, startsAt, updatedAt",
+      [TABLES.attendees]: "id, eventId, updatedAt",
+      [TABLES.notes]: "id, eventId, attendeeId, updatedAt",
+      [TABLES.drafts]: "id, eventId, attendeeId, state, updatedAt",
+      [TABLES.auditRecords]: "id, draftId, eventId, createdAt",
+      [TABLES.voiceProfiles]: "id, updatedAt",
+      [TABLES.approvedContent]: "id, updatedAt",
+      [TABLES.settings]: "id",
+      [TABLES.sessionMarkers]: "id, startedAt, endedAt",
+      [TABLES.images]: "id, ownerId",
+      [TABLES.contacts]: "id, eventId, updatedAt",
+    },
+    upgrade: async (tx) => {
+      await tx
+        .table(TABLES.events)
+        .toCollection()
+        .modify((event: Partial<EventRecord>) => {
+          event.forwardableEnabled ??= false;
+          event.schemaVersion = 9;
+        });
+    },
+  },
 ];
 
 /**
