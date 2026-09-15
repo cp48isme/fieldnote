@@ -1,8 +1,8 @@
 # Handoff
 
-Written 2026-09-14, at the head of `feat/session-9-approved-content`, the session 9 PR,
-for the state `main` will be in when it merges. `main` is at `edb292a`; the branch adds
-thirteen commits including this one.
+Written 2026-09-15, at the head of `feat/session-11-briefing`, the session 11 PR, for
+the state `main` will be in when it merges. `main` is at `b0a1c4b`; the branch adds
+eight commits including this one.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -19,37 +19,41 @@ the template with the previous handoff closed.
 
 A local-first PWA for a field representative running demonstration events for regulated
 products. It captures attendee interactions in the field and drafts personalised
-follow-up correspondence for human review. Full detail in `docs/PROJECT-PLAN.md`;
-`README.md` is the public front door; this section is orientation only.
+follow-up correspondence for human review; since session 11 it also lays out the
+internal briefing she sends her own team before an event, from what she enters, and
+downloads it. Full detail in `docs/PROJECT-PLAN.md`; `README.md` is the public front
+door; this section is orientation only.
 
 Two things shape everything else.
 
 **Public build, private fork.** This repository is the de-branded public build:
 synthetic data, no manufacturer, no product, no real people anywhere including commit
-history. A private fork carries real configuration — and, as of this session, the real
-approved content, loaded one passage at a time into a library the public build ships
-empty. ADR-0001 is the record.
+history — and no photograph of anyone: the one image in the tree is a flat colour with
+invented initials, built by a script. A private fork carries real configuration and the
+real approved content, and is never published. ADR-0001 is the record.
 
 **Governance is load-bearing, not decorative.** The compliance architecture is
 production code held to the same standard as any feature. A control is expected to be
 *enforced*, not asserted: the denylist runs in a pre-commit hook and in CI; the
 data-access boundary, the single-egress claim, the one-model-call rule, the draft state
-machine, and the no-draft-without-its-record invariant are failing tests; the security
+machine, the no-draft-without-its-record invariant, and — since this session — the rule
+that a contact never reaches the generation layer are failing tests; the security
 headers are asserted against a live response; the adversarial suite runs against the
-live model and fails the build if a violation reaches a draft; a roster import is shown
-to make no network request; claim-bearing text is selected from the library or blocked,
-never authored; and where a control cannot be enforced the documentation says so
-plainly. `CLAUDE.md` carries the non-negotiable constraints.
+live model and fails the build if a violation reaches a draft; a roster import and a
+briefing download are each shown to make no network request; claim-bearing text is
+selected from the library or blocked, never authored; and where a control cannot be
+enforced the documentation says so plainly. `CLAUDE.md` carries the non-negotiable
+constraints.
 
 ---
 
 ## Where we've been
 
-`main` is at `edb292a` with 181 commits and 37 merged pull requests; this PR adds
-thirteen commits. `CHANGELOG.md` is the record of what each session shipped, from
-session 2 onward, and is not repeated here. What follows is the map from session to pull
-request, with the closed-not-merged ones named because a closed PR is easy to mistake
-for one that never existed.
+`main` is at `b0a1c4b` with 195 commits and 38 merged pull requests; this PR adds eight
+commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
+onward, and is not repeated here. What follows is the map from session to pull request,
+with the closed-not-merged ones named because a closed PR is easy to mistake for one that
+never existed.
 
 - **Phase 0, session 1** — two direct commits (`989d459`, `d509dca`), then **#6**, **#7**,
   **#8**. Dependabot **#1**, **#2**, **#4** merged. **#3** and **#5** closed, not merged:
@@ -71,15 +75,15 @@ for one that never existed.
   1.2.0 from the first held-out run.
 - **Session 8, roster import** — **#41**; ADR-0003 amended.
 - **Session 10, ADR-0009, the attendee view, and the clinician field** — **#42**, merged
-  after **#43**, which recorded plan §7 item 4 as received and unblocked session 9.
-- **Session 9, the approved content library** — this PR, thirteen commits in the order
-  the prompt set with one move: schema v5 and the library's storage; ruleset 1.3.0
-  (moved forward, because the exemption for approved spans lives there); the dock's
-  clinician rule (`fieldnote-frx`); the matcher and the refusing library; prompt
-  template 1.2.0; passages in the request, route, and pipeline; the fixtures and the two
-  eval classes; the library screen and the detail view's line; two fixes to the eval
-  measurement found by the held-out run; the documentation; this handoff with the
-  changelog.
+  after **#43**, which recorded plan §7 item 4 as received.
+- **Session 9, the approved content library** — **#44**; prompt template 1.2.0, ruleset
+  1.3.0, schema v5, ADR-0008 amended.
+- **Session 11, the briefing** — this PR, eight commits in the order the prompt set:
+  ADR-0010 and the dependency it chose; the cipher's second shape with ADR-0004's note;
+  schema v6 with the images and contacts tables and the boundary test; the photo path
+  on the attendee view with the synthetic fixture and its generator; the document
+  composed and drawn; the briefing screen with Generate; the guide, the prompt file, and
+  the ADR index; this handoff with the changelog.
 
 Verified with `git log`, `git rev-list --count main`, and `gh pr list`.
 
@@ -87,8 +91,8 @@ Verified with `git log`, `git rev-list --count main`, and `gh pr list`.
 
 ## Where we are
 
-`main` is at `edb292a`, CI green. No pull requests are open besides this one. Zero open
-Dependabot alerts.
+`main` is at `b0a1c4b`, CI green. No pull requests are open besides this one. Zero open
+Dependabot alerts; `pnpm audit` clean after the one dependency this session added.
 
 **Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
 suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
@@ -97,85 +101,88 @@ reviews: **0**, deliberate for a single-maintainer repository. Verified against 
 branch-protection API this session.
 
 **What the green checks actually mean.** `Verify` runs the denylist, lint, typecheck,
-unit tests (250), build, and the end-to-end suite (34). `Adversarial guardrail suite`
-runs live on this PR because the prompt, the ruleset, and the corpus all changed, and on
-a PR that touches none of the watched paths it skips the model and says so. The caveats,
-unchanged from session 10 except where marked:
+unit tests (283), build, and the end-to-end suite (35). `Adversarial guardrail suite`
+runs live on this PR — not because anything that reaches the model changed, but because
+schema v6 added fields to two watched fixtures, the eval runner's event and the roster;
+it costs about sixteen cents and proves nothing new. On a PR that touches none of the
+watched paths it skips the model and says so. The caveats, unchanged from session 9
+except where marked:
 
 - **The eval figures are one held-out run at five samples per case**, in `README.md`,
-  dated — and, new this session, **the two passage-class rows are not held out**: their
-  detector was fixed twice in the session that measured them, on the crash and the
-  false alarms the README describes. The next run is the held-out one for those rows.
-  The twelve original detectors are frozen. Prompt injection has no rule behind it; the
-  ruleset over-blocks relational sentences (`fieldnote-ay2`), one cause fewer since
-  1.3.0.
+  dated; the two passage-class rows are calibration figures, and the next run is the
+  held-out one for them. The twelve original detectors are frozen. Prompt injection has
+  no rule behind it; the ruleset over-blocks relational sentences (`fieldnote-ay2`).
+- **The briefing has never carried a real photograph**, new. Every image that has been
+  resized, stored, drawn, or shown is the script-built fixture or a flat colour the
+  end-to-end spec builds in memory. The resize decodes with `createImageBitmap`, whose
+  EXIF orientation handling on the target phone is unobserved; a phone photo taken
+  upright may or may not come out upright. The canvas surface's header says so.
+- **The PDF library is unmaintained**, new, by decision (ADR-0010): last published May
+  2022, no advisory on record, no patch path if one is ever filed. The standard fonts
+  cover Western European Latin; a name outside it is drawn as "?".
 - **The matcher is exact and the exemption is only as safe as loading is strict.** An
-  approved span passes every rule, the indication rule included, so the library refuses
-  a passage at load on the pricing, hospitality, patient, and invented-name rules and
-  the structural guard. A passage that passes those and is nonetheless wrong for a
-  follow-up is the private fork's review problem, not something the code can see.
-- **The library has been run with synthetic passages only.** The real material exists
-  and has been read; none of it is in the repository, and no draft has been generated
-  against it. Whether real approved copy — with its third-party marks and its regulatory
-  footer — matches, loads, and reads well in a follow-up is unverified.
-- **The token class is a field a human sets or corrects.** The dock now writes `hcp` for
-  a typed Dr or Prof and `staff` otherwise; the view corrects either.
-- **The attendee view's history is joined by canonical name**, exactly the join the
-  pseudonymizer uses: a rename at one event detaches that record from the person's
-  history at others (`fieldnote-m28`). The view says so. Nothing is fetched.
+  approved span passes every rule, so the library refuses a passage at load on four
+  rules and the structural guard. Real approved copy has still never been loaded.
+- **The token class is a field a human sets or corrects.** The dock writes `hcp` for a
+  typed Dr or Prof and `staff` otherwise; the view corrects either.
+- **The attendee view's history is joined by canonical name**: a rename at one event
+  detaches that record from the person's history at others (`fieldnote-m28`).
 - **The roster import's "never touches the network" is one recorded run** on the
-  fixtures. **The matcher's bases were chosen, not measured.**
+  fixtures, and so is the briefing's. **The matcher's bases were chosen, not measured.**
 - **The single-egress check is a grep**; **SRI is partial** (`fieldnote-9gp`); **CI
   enforces structural denylist patterns only**; **the end-to-end suite runs in one
   browser**; **the service worker's update path is untested** (`fieldnote-unp`).
 
-**Plan §4.2 is now implemented as written.** Claim-bearing text is selected from the
-library and copied exactly, or blocked with the gap marker; nothing in between. The
-matcher (`src/lib/generation/approved.ts`) holds approved spans out of every rule with a
-U+0001 placeholder — distinct from the pseudonymizer's U+0000 ones, which never leave
-`pseudonymize()` — and restores the library's own body after. Normalisation is
-whitespace, curly quotes, and the dash family; case and everything else are preserved on
-purpose, and the module header says why.
+**The briefing exists, and the model writes none of it.** `src/lib/briefing/` composes
+a document model from the event, its contacts, and its attendees with their photos, and
+draws it with `pdf-lib` on a page that fits both A4 and Letter, a two-line footer on
+every page stating the event, the generation time, and that the attendee list is
+expected attendance as of that date. `BriefingInput` has no place for the dictated
+notes, asserted by type. The screen is reached from the switcher; Generate is a
+download through the same helper as the audit-log CSV; no record is written, because
+nothing was generated (ADR-0009). Session 12's site map has its `purpose` value in the
+images table and nothing writes it.
 
-**Schema is at v5.** The audit record carries `passagesUsed` and `libraryVersion`,
-backfilled by migration v5 with a test; ADR-0008 carries the dated note. The library's
-`ApprovedContentRecord` existed since session 2 and gains storage functions now; its
-encryption classification is `clear` and `fieldnote-ao9` revisits that at session 19.
+**Schema is at v6.** Five eligible dossier strings on the event; `briefingNotes` on the
+attendee; `images` — bytes with a media type, one per owner and purpose, replaced on
+re-upload, gone with the owner and with the event through its attendees; `contacts` —
+per event, all eligible but the keys, never read by anything under `src/lib/generation/`
+or `src/lib/privacy/`, which `tests/unit/contacts-boundary.test.ts` enforces. Migration
+v6 backfills the strings and creates no rows; `tests/unit/migration-v6.test.ts` runs it
+over v5 rows. The cipher seam carries two shapes (ADR-0004 as amended 2026-09-15): a
+field's policy declares string or bytes, and a mismatch is refused in both directions.
 
-**Versions.** Prompt template 1.2.0; guardrail ruleset 1.3.0; both recorded on every
-audit record.
+**Versions.** Prompt template 1.2.0; guardrail ruleset 1.3.0; both unchanged this
+session and recorded on every audit record.
 
-**Documentation set.** `README.md` (eval section rewritten for this run),
-`docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md` (session 9 amended on completion),
-`docs/TESTING-ON-DEVICE.md`, nine ADRs with an index, `docs/prompts/` through session
-10 with session 9 added, this handoff and its template, `CHANGELOG.md` through session
-9, `SECURITY.md`. Plan §4.6's `docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`,
+**Documentation set.** `README.md`, `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md`
+(session 11 amended on completion, Phase 2 total revised to about eleven hours, session
+12 noted), `docs/TESTING-ON-DEVICE.md`, ten ADRs with an index, `docs/prompts/` through
+session 11, this handoff and its template, `CHANGELOG.md` through session 11,
+`SECURITY.md`. Plan §4.6's `docs/ARCHITECTURE.md`, `docs/AI-SYSTEM-CARD.md`,
 `docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, and `docs/COMPLIANCE-MAP.md` do not
-exist yet (checked with `ls docs`).
+exist yet (checked with `ls docs`). `CLAUDE.md`'s list of decision records stops at
+ADR-0005 and has since ADR-0006 landed; it points at the index, which is complete, but
+the list itself is stale — a finding for the owner, since that file is not edited by a
+session on its own account.
 
 ---
 
 ## What's next
 
-### Session 11 — Briefing PDF
+### Session 12 — Email composer and logistics
 
-Specified by ADR-0009 and the guide's dated note under session 10: the form the
-representative fills — event details, logistics, contacts, per-attendee text she types
-or dictates — photo upload and its storage as a binary entity with the cipher extended
-for it, the document laid out and offered as a download, no model. Read the guide's
-session 11 entry with its amendment and ADR-0009 in full, then `fieldnote-g7d`'s
-remaining gaps: event metadata the record does not hold, the representative's own team
-as a second class of person, and the document stating expected attendance as of the
-generation date. Budgeted at ~4 hours and expected to run long. It needs no dependency
-decision the repository has not made, except how a PDF is produced on the device, which
-the guide does not say and which the scope guard in `CLAUDE.md` — no new dependency
-without saying so — makes a decision to state up front. `fieldnote-m28` is a limit the
-briefing inherits: history is joined by name.
+Phase 3 begins. Read the guide's session 12 entry and its new note: the site map goes
+in the `images` table under `purpose: "site-map"`, owned by the event, and the resize
+and the bytes-shaped cipher are already there for it. ADR-0002 governs the invitation
+design that sessions 12 to 14 build toward, and the non-negotiable that the system never
+sends anything applies to a composer as much as to a follow-up: it composes, the
+representative sends. Budgeted at ~3 hours.
 
-Before it, or beside it: a run of the library against the real material in the private
-fork is the one thing this session could not do, and it is the check that decides
-whether the matcher's normalisation is right for copy that was typeset rather than
-typed.
+Before it, or beside it, two things the repository cannot do for itself: a real phone
+photo through the attendee view on the device, to see whether it comes out upright; and
+the real approved content loaded in the private fork, still the first check owed since
+session 9.
 
 Either way: check the prompt's premises against the repository, and against any
 dependency's own `package.json`, before building on them.
@@ -185,31 +192,32 @@ dependency's own `package.json`, before building on them.
 Three places, deliberately. Do not duplicate between them.
 
 **Beads — build state, local.** Verified this session: `.beads/config.yaml` has
-`git-push: false` and the remote carries no `refs/dolt/*`. 53 issues: 27 open, 23
-closed, 3 deferred, 16 ready, 11 blocked (`bd stats`). Run `bd ready` and `bd blocked`.
+`git-push: false` and the remote carries no `refs/dolt/*`. 54 issues: 28 open, 23
+closed, 3 deferred, 17 ready, 11 blocked (`bd stats`). Run `bd ready` and `bd blocked`.
 
 Named here because they qualify claims made above; the backlog itself is not listed.
-`fieldnote-g7d` — the briefing package, session 11's source. `fieldnote-ay2` —
-over-blocking has instances and one cause fewer, no rate; its note carries this session's
-run. `fieldnote-ao9` — the library body's encryption class, at session 19.
-`fieldnote-quj` — the two rulesets differ, and the route now protects approved spans
-before the private-term rule for that reason. `fieldnote-m28` — history joined by name.
+`fieldnote-g7d` — the briefing package: what session 11 closed is in its notes; it
+stays open for the site map and for the readout decision. `fieldnote-af9`, new — the
+post-event readout and staff thank-yous, a second generation path with an internal
+audience, split out of g7d and not decided. `fieldnote-ay2` — over-blocking has instances
+and one cause fewer, no rate. `fieldnote-ao9` — the library body's encryption class, at
+session 19; the images table's `bytes` field is classified eligible already.
+`fieldnote-quj` — the two rulesets differ. `fieldnote-m28` — history joined by name.
 `fieldnote-6qr` — a workbook with several sheets reads the first only. `fieldnote-5iv` —
 the edit-distance dashboard. `fieldnote-9gp` — SRI. `fieldnote-dx0` — mangled clinical
 terms. `fieldnote-ech` — the denylist matches listed spellings only. `fieldnote-bdw` —
-Safari storage durability. `fieldnote-unp` — the service worker update path.
-`fieldnote-v2s` — the private fork has no session. Closed this session: `fieldnote-frx`.
+Safari storage durability, which now covers photos as well as text. `fieldnote-unp` —
+the service worker update path. `fieldnote-v2s` — the private fork has no session.
 
 **GitHub issues — public record.** One open: **#11**, the ESLint flat-config migration.
 
-**Session prompts — what was asked.** `docs/prompts/`, one file per session through 10.
+**Session prompts — what was asked.** `docs/prompts/`, one file per session through 11.
 
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`; immutable once accepted,
-superseded or amended with a dated note. ADR-0008 amended this session. Still owed or
-worth considering: ADR-0004 when `fieldnote-bdw` resolves; ADR-0006's five-name evidence
-statement; the plan §2 conversation; and a decision on the post-event readout and staff
-thank-yous, a second generation path with an internal audience that ADR-0009 does not
-cover.
+superseded or amended with a dated note. ADR-0010 landed this session and ADR-0004 was
+amended. Still owed or worth considering: ADR-0004 again when `fieldnote-bdw` resolves;
+ADR-0006's five-name evidence statement; the plan §2 conversation; and the decision
+`fieldnote-af9` now holds, which probably wants an ADR before anything is built.
 
 ---
 
@@ -220,29 +228,37 @@ cover.
 - **Verify the guide's and the prompt's premises before building on them, and stop when
   one is wrong.** Print a dependency's `package.json` exports when a prompt leans on
   them.
+- **A dependency gets an ADR before it is installed**, in ADR-0003's shape, with the
+  advisory material gathered on the day; a candidate with an open advisory is not
+  installed. That is the project's rule; "no new dependency" was one session's prompt
+  and was wrongly attributed to `CLAUDE.md` in the previous handoff.
 - **A control that is not tested is not a control, and one that reads as tested is
   worse.** Where something genuinely cannot be covered, say so in the file itself.
 - **Verify by running, not by reasoning.** Every counterfactual named in a test header
-  was run.
+  was run. Rasterise a rendered page and look at it; the footer that read "as of 15" was
+  found that way and not by a test.
 - **`pnpm evals` costs real spend.** Run it deliberately, count the runs, and report the
-  total. When the gate fails, read the samples before deciding whether the measurement
-  or the guardrail is wrong; this session's two reruns were both the measurement.
+  total. A schema change that touches a watched fixture makes the gate run live on the
+  PR; say so.
+- **The Content Security Policy is a control, not a setting.** When it refuses something
+  — a `blob:` image, say — find the path that needs no widening before touching the
+  header the suite asserts.
 - **Check what is listening before trusting a red or green e2e run.** `lsof -iTCP:3000`.
-- **The denylist can fire on ordinary vocabulary.** Remove the word rather than bypass
-  the hook, and do not name it in the commit.
+- **The denylist can fire on ordinary vocabulary and on any address-shaped string.**
+  Remove the word rather than bypass the hook, and do not name it in the commit.
 - **Check existence and ignore status separately.** `git check-ignore` is a pattern query.
 - **The constraints in `CLAUDE.md` are not optional.**
 - **A finding about the private material is not written into any location the
-  repository controls.** The material's shape may decide a session; the material itself
-  reaches no fixture, test string, bead, or commit message.
+  repository controls.**
 - **Never `--no-verify`.** Check `git config core.hooksPath` still reads `.husky/_` after
   any tool that installs hooks, including every `bd` command.
 - **`bd update --notes` replaces the field.** Read the existing notes first and write
-  them back with the addition; this session wiped one and restored it from a printout.
+  them back with the addition.
 - **`gh pr create`, never `--fill`.**
-- **Stage explicit paths.** `git rm` stages too. Prettier reformats committed files, so
-  anchor an edit on what is in the file. A file write carrying a literal control
-  character or byte-order mark is refused by the harness; write escapes.
+- **Stage explicit paths.** Prettier reformats committed files, so anchor an edit on what
+  is in the file. A file write carrying a literal control character or byte-order mark
+  is refused by the harness; write escapes. A script the end-to-end suite imports is
+  transpiled as CommonJS and must not use `import.meta`.
 - **One session, one PR.** Findings that are not blocking get beads.
 - **Separate commits per logical change.** An ADR and its consequences come before any
   code that depends on them. Merge commit, not squash.
@@ -253,36 +269,32 @@ cover.
 
 Stated rather than smoothed over.
 
-- **The library has never held real approved copy.** Every passage that has been loaded,
-  matched, or refused is invented. The matcher's normalisation was chosen against typed
-  text; typeset copy may carry characters it does not fold.
+- **No real photograph has been through the photo path**, and no phone has run this
+  build. EXIF orientation through `createImageBitmap` on iOS is unobserved.
+- **The PDF has been looked at as a rasterised page on one machine**, two pages of the
+  fixture event, and never printed on either paper size it is laid out for.
+- **The library has never held real approved copy.** Still the first check owed.
 - **The two passage-class eval rows were measured with a detector fixed in the same
-  session**, twice. They are the calibration figures for those classes; the next run is
-  the held-out one.
-- **The library screen has been run in one browser on the fixtures** and never on
-  hardware or in use.
-- **A passage that passes the load rules can still be wrong for a follow-up.** The load
-  rules are the four named plus the structural guard; the regulatory footer of a real
-  brochure passes them by design and whether it belongs in an email is a compliance
-  question the code does not answer.
+  session**; the next run is the held-out one.
 - **The migration test runs the upgrade function over fake rows**, not Dexie's own
-  upgrade transaction against IndexedDB.
-- **The eval figures are one held-out run, one day**, and the hospitality class produced
-  on 3 of 5 samples where the earlier run had none; five samples of a nondeterministic
-  model is what that variance looks like, and nothing here measures it.
+  upgrade transaction against IndexedDB. A populated v5 store has not been upgraded.
+- **`deleteAttendee` exists in the repository with its cascade and a test, and nothing
+  in the interface calls it.** Removing a person is not a feature yet.
+- **The eval figures are one held-out run, one day.**
 - **The containment amendment of 2026-09-09 is not reproduced here.** Its full text is in
   the handoff at commit `2dbdcb1`; its conclusions stand.
 - **The hardware run is one phone, one day, iOS 26.6.1.** Nothing built in sessions 5 to
-  10 has been run on hardware.
+  11 has been run on hardware.
 - **The layout validation is one observed session**; the review surface, the import
-  screen, the attendee view, and the library have not been observed in use.
+  screen, the attendee view, the library, and the briefing have not been observed in use.
 - **Storage durability across Safari's eviction window is untested.** `fieldnote-bdw`.
 - **Nothing is deployed.** `fieldnote-6x5`, `fieldnote-ijg`.
 - **The private fork has no session and this handoff has no visibility into it.**
 - **Audit records grow without bound** by design (ADR-0008); session 16 owes retention.
 - **A name with neither a title nor a roster entry is still missed.** ADR-0006, ADR-0007.
 - **Session-to-PR attribution before session 2 is partly inferred.**
-- **Hours in the build guide are estimates, not measurements.**
+- **Hours in the build guide are estimates, not measurements**, and Phase 2's total was
+  revised upward this session on the same basis.
 
 ---
 
