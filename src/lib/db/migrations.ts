@@ -260,6 +260,33 @@ export const MIGRATIONS: Migration[] = [
         });
     },
   },
+  {
+    // Session 13: the event gains an end time, null until entered, so a calendar entry
+    // can carry both ends. No index changes.
+    version: 8,
+    stores: {
+      [TABLES.events]: "id, status, startsAt, updatedAt",
+      [TABLES.attendees]: "id, eventId, updatedAt",
+      [TABLES.notes]: "id, eventId, attendeeId, updatedAt",
+      [TABLES.drafts]: "id, eventId, attendeeId, state, updatedAt",
+      [TABLES.auditRecords]: "id, draftId, eventId, createdAt",
+      [TABLES.voiceProfiles]: "id, updatedAt",
+      [TABLES.approvedContent]: "id, updatedAt",
+      [TABLES.settings]: "id",
+      [TABLES.sessionMarkers]: "id, startedAt, endedAt",
+      [TABLES.images]: "id, ownerId",
+      [TABLES.contacts]: "id, eventId, updatedAt",
+    },
+    upgrade: async (tx) => {
+      await tx
+        .table(TABLES.events)
+        .toCollection()
+        .modify((event: Partial<EventRecord>) => {
+          event.endsAt ??= null;
+          event.schemaVersion = 8;
+        });
+    },
+  },
 ];
 
 /**

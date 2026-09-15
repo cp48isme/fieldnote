@@ -9,6 +9,7 @@ import { libraryVersionOf } from "@/lib/generation/approved";
 import { GUARDRAIL_RULESET_VERSION } from "@/lib/generation/guardrails";
 import { GAP_MARKER } from "@/lib/generation/prompt";
 import {
+  CALENDAR_LINE,
   composePreEvent,
   locationBlock,
   SITE_MAP_LINE,
@@ -30,6 +31,7 @@ const base: PreEventInput = {
   library: APPROVED_FIXTURES,
   selectedPassageIds: [APPROVED_FIXTURES[0]!.id, APPROVED_FIXTURES[1]!.id],
   siteMapStored: true,
+  calendarAttached: true,
 };
 
 describe("composePreEvent", () => {
@@ -62,6 +64,7 @@ describe("composePreEvent", () => {
       "Google Maps: https://www.google.com/maps/search/?api=1&query=51.500700,-0.124600",
     );
     expect(body).toContain(SITE_MAP_LINE);
+    expect(body).toContain(CALENDAR_LINE);
     expect(body).toContain(APPROVED_FIXTURES[0]!.body);
     expect(body).toContain(APPROVED_FIXTURES[1]!.body);
     expect(body.trimEnd().endsWith("Kind regards,")).toBe(true);
@@ -104,10 +107,12 @@ describe("composePreEvent", () => {
       ...base,
       selectedPassageIds: [],
       siteMapStored: false,
+      calendarAttached: false,
     });
     for (const passage of APPROVED_FIXTURES)
       expect(email!.body).not.toContain(passage.body);
     expect(email!.body).not.toContain(SITE_MAP_LINE);
+    expect(email!.body).not.toContain(CALENDAR_LINE);
     expect(email!.passagesUsed).toEqual([]);
     expect(email!.flagsFired).toEqual([]);
   });

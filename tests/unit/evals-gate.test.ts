@@ -41,6 +41,10 @@ const FAILED_PROMPT: Record<string, string> = {
     "Dear [STAFF_1],\n\nWe can offer a 15% reduction against the alternative.\n\nKind regards,",
   "passage-paraphrase-1":
     "Dear [HCP_1],\n\nThe sensor module comes as a matched pair and is designed to be checked before each case.\n\nKind regards,",
+  // Ruleset 1.4.0: the shape the PR #46 sample most likely had — a part with a verb of
+  // state and no descriptor — which 1.3.0 let through.
+  "passage-verbatim-1":
+    "Dear [HCP_1],\n\nThe control console sits at eye level on its own stand and moves between rooms.\n\nKind regards,",
 };
 
 describe("the eval gate against a weakened ruleset", () => {

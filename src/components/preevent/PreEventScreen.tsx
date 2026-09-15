@@ -25,6 +25,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { buildIcs, canBuildIcs, ICS_MEDIA_TYPE } from "@/lib/calendar/ics";
 import {
   createDraftWithAudit,
   getImage,
@@ -33,6 +34,7 @@ import {
   removeImage,
   updateEventDossier,
   updateEventLocation,
+  updateEventTimes,
   type ApprovedContentRecord,
   type AttendeeRecord,
   type EventRecord,
@@ -48,6 +50,21 @@ import { appleMapsLink, googleMapsLink } from "@/lib/location/map-links";
 import { composePreEvent } from "@/lib/preevent/compose";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+/** A timestamp as a `datetime-local` value in the phone's zone, or empty. */
+function toLocalInput(timestamp: number | null): string {
+  if (timestamp === null) return "";
+  const d = new Date(timestamp);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** A `datetime-local` value as a timestamp, or null when empty or unparseable. */
+function fromLocalInput(value: string): number | null {
+  if (!value) return null;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 function saveLabel(state: SaveState, dirty: boolean, error: string | null): string {
   if (state === "saving") return "Saving…";
@@ -77,6 +94,10 @@ export function PreEventScreen({
   const [coordinates, setCoordinates] = useState(event.coordinates);
   const [locationState, setLocationState] = useState<SaveState>("idle");
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [startsAt, setStartsAt] = useState(toLocalInput(event.startsAt));
+  const [endsAt, setEndsAt] = useState(toLocalInput(event.endsAt));
+  const [timesState, setTimesState] = useState<SaveState>("idle");
+  const [timesError, setTimesError] = useState<string | null>(null);
   const [siteMap, setSiteMap] = useState<ImageRecord | null>(null);
   const [siteMapBusy, setSiteMapBusy] = useState(false);
   const [siteMapError, setSiteMapError] = useState<string | null>(null);
@@ -94,6 +115,8 @@ export function PreEventScreen({
     setAddress(event.address);
     setCoordinates(event.coordinates);
     setLogistics(event.logistics);
+    setStartsAt(toLocalInput(event.startsAt));
+    setEndsAt(toLocalInput(event.endsAt));
   }, [event]);
 
   useEffect(() => {
@@ -119,6 +142,32 @@ export function PreEventScreen({
     [siteMap],
   );
   const locationDirty = address !== event.address || coordinates !== event.coordinates;
+  const timesDirty =
+    startsAt !== toLocalInput(event.startsAt) || endsAt !== toLocalInput(event.endsAt);
+  const calendarReady = canBuildIcs(event);
+
+  const saveTimes = async () => {
+    setTimesState("saving");
+    setTimesError(null);
+    try {
+      onEventChanged(
+        await updateEventTimes(event.id, {
+          startsAt: fromLocalInput(startsAt),
+          endsAt: fromLocalInput(endsAt),
+        }),
+      );
+      setTimesState("saved");
+    } catch (cause) {
+      setTimesError(cause instanceof Error ? cause.message : String(cause));
+      setTimesState("error");
+    }
+  };
+
+  const downloadCalendar = () => {
+    const ics = buildIcs({ event, stampedAt: Date.now() });
+    if (!ics) return;
+    downloadBytes(ics, `event-${slugOf(event.name)}.ics`, ICS_MEDIA_TYPE);
+  };
   const logisticsDirty = logistics !== event.logistics;
 
   const saveLocation = async () => {
@@ -208,6 +257,7 @@ export function PreEventScreen({
           .filter((p) => selectedPassages.has(p.id))
           .map((p) => p.id),
         siteMapStored: siteMap !== null,
+        calendarAttached: event.startsAt !== null && event.endsAt !== null,
       });
       for (const outcome of outcomes) {
         await createDraftWithAudit({
@@ -339,6 +389,72 @@ export function PreEventScreen({
           >
             Save location
           </button>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium">When</span>
+          <span className="text-xs opacity-60">
+            Start and end, in this phone&apos;s time. Both are needed for the calendar
+            file; the phone that opens it shows them in its own zone.
+          </span>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Starts</span>
+              <input
+                data-testid="pre-event-starts"
+                type="datetime-local"
+                value={startsAt}
+                onChange={(change) => {
+                  setTimesState("idle");
+                  setStartsAt(change.target.value);
+                }}
+                className="min-h-11 rounded-lg border px-3 text-base"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Ends</span>
+              <input
+                data-testid="pre-event-ends"
+                type="datetime-local"
+                value={endsAt}
+                onChange={(change) => {
+                  setTimesState("idle");
+                  setEndsAt(change.target.value);
+                }}
+                className="min-h-11 rounded-lg border px-3 text-base"
+              />
+            </label>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <p data-testid="pre-event-times-state" className="text-xs opacity-60">
+              {saveLabel(timesState, timesDirty, timesError)}
+            </p>
+            <button
+              type="button"
+              data-testid="pre-event-times-save"
+              disabled={!timesDirty || timesState === "saving"}
+              onClick={() => void saveTimes()}
+              className="min-h-11 rounded-lg border px-4 text-base font-medium disabled:opacity-40"
+            >
+              Save times
+            </button>
+          </div>
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              data-testid="pre-event-calendar-download"
+              disabled={!calendarReady}
+              onClick={downloadCalendar}
+              className="min-h-11 self-start rounded-lg border px-4 text-sm disabled:opacity-40"
+            >
+              Download calendar file (.ics)
+            </button>
+            <span data-testid="pre-event-calendar-state" className="text-xs opacity-60">
+              {calendarReady
+                ? "Attach it in Mail beside the email, which says a calendar invitation is attached. It carries the name, the times, the address, and the map links, and nothing else."
+                : "Needs a saved start and end time first."}
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">

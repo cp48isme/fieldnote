@@ -25,6 +25,7 @@ import {
   updateContact,
   updateEventDossier,
   updateEventLocation,
+  updateEventTimes,
 } from "@/lib/db";
 import { setDatabase } from "@/lib/db/database";
 
@@ -86,6 +87,23 @@ describe("the location", () => {
     const cleared = await updateEventLocation(event.id, { address: "", coordinates: "" });
     expect(cleared.coordinates).toBe("");
     expect((await getEvent(event.id))?.coordinates).toBe("");
+  });
+});
+
+describe("the times", () => {
+  it("saves a start and an end, and refuses an end that is not after the start", async () => {
+    const event = await createEvent({ name: "Northgate" });
+    expect(event.endsAt).toBeNull();
+    const saved = await updateEventTimes(event.id, { startsAt: 1_000, endsAt: 5_000 });
+    expect(saved.startsAt).toBe(1_000);
+    expect(saved.endsAt).toBe(5_000);
+    await expect(
+      updateEventTimes(event.id, { startsAt: 5_000, endsAt: 5_000 }),
+    ).rejects.toThrow(/end after it starts/);
+    // Either end may be cleared on its own.
+    expect(
+      (await updateEventTimes(event.id, { startsAt: 1_000, endsAt: null })).endsAt,
+    ).toBeNull();
   });
 });
 

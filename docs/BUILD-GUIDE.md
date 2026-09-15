@@ -553,6 +553,22 @@ upload.
 
 `.ics` output. Straightforward, high value, and nobody does it.
 
+> **Amended 2026-09-15, session 13, on completion.** Three parts, two of them carried in
+> from session 12's review. **Ruleset 1.4.0**: a product noun followed by a verb of state
+> or design is claim-bearing, and the noun list gains the parts the passage detector
+> names, so the two instruments agree; found by the eval gate on PR #46, where a sample
+> no rule caught was never seen. Held-out run the same day, 0 of 70 reached, and the
+> README carries the table. **The eval artifact**: `evals.yml` keeps the results file for
+> seven days on every live run, pass or fail. **The calendar file**: schema v8 gives the
+> event an end time, entered with the start on the pre-event screen; the `.ics` is RFC
+> 5545 by hand — one `VEVENT`, `UID` at the reserved `.invalid` suffix, both ends in UTC,
+> summary, location, `GEO`, and a description holding the address and the two map links
+> and nothing else, because logistics prose leaving the device without the ruleset is
+> the thing ADR-0011 exists to stop; no `ATTENDEE`, no `ORGANIZER`. Downloaded from the
+> composer beside the site map, disabled until the event has both ends; the email says a
+> calendar invitation is attached when it does. Line-by-line unit test on the fixture, no
+> parser. The denylist allows an identifier at a `.invalid` domain, with the reason.
+
 ### Session 14 — Invite feature
 *~2 hours*
 

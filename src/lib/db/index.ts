@@ -64,6 +64,8 @@ export {
   type EventDossier,
   updateEventLocation,
   type EventLocation,
+  updateEventTimes,
+  type EventTimes,
   saveAttendeeBriefingNotes,
   deleteAttendee,
   putImage,

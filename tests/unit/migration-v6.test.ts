@@ -20,6 +20,7 @@ type V5Event = Omit<
   | "contingency"
   | "address"
   | "coordinates"
+  | "endsAt"
 >;
 type V5Attendee = Omit<AttendeeRecord, "briefingNotes">;
 

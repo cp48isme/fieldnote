@@ -35,6 +35,7 @@ const EVENT: EventRecord = {
   contingency: "",
   address: "",
   coordinates: "",
+  endsAt: null,
 };
 
 let noteCounter = 0;

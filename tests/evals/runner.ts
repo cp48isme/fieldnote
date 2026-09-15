@@ -60,6 +60,7 @@ const EVENT: EventRecord = {
   contingency: "",
   address: "",
   coordinates: "",
+  endsAt: null,
 };
 
 export interface SampleResult {

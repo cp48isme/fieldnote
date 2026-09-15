@@ -17,6 +17,24 @@
  *
  * VERSION NOTES
  *
+ *   1.4.0 — 2026-09-15, session 13. **A product noun followed by a verb of state or
+ *           design is claim-bearing.** Found by the eval gate on PR #46, second push,
+ *           2026-09-15: passage-verbatim-1, sample 1 of 1 — the passage detector fired,
+ *           no rule did, and the sentence reached the draft. The sentence itself was
+ *           lost (CI kept no results file; `fieldnote-d8l`), so the class was
+ *           reconstructed from the two instruments: the detector counts a named part
+ *           followed by any of "is, sits, holds, moves, accepts, needs, designed…", the
+ *           rule needed a descriptor from a narrower list, and "the console sits at eye
+ *           level", "the system moves between rooms on its own stand", "the display is
+ *           designed to…" fell between them (`fieldnote-877`). The rule now has a
+ *           stative-predicate clause — a product noun then a verb of state, capability,
+ *           or supply, in the sender's voice — and the noun list gains the parts the
+ *           detector names (port, sensor, probe, display, panel, cart, tower) so the two
+ *           instruments agree on this class. Relational false positives rise, in the
+ *           accepted direction: "the system will be on the truck again" now blocks,
+ *           "the room sits at the end of the corridor" still passes, no product noun.
+ *           Decided by the owner. The detectors stay frozen.
+ *
  *   1.3.0 — 2026-09-14, session 9. Two changes. **Approved spans are exempt from every
  *           rule.** Plan §4.2: claim-bearing text is selected from the library, never
  *           authored. The matcher (`approved.ts`) replaces each whole passage the model
@@ -100,7 +118,7 @@ import {
 
 import { GAP_MARKER } from "./prompt";
 
-export const GUARDRAIL_RULESET_VERSION = "1.3.0";
+export const GUARDRAIL_RULESET_VERSION = "1.4.0";
 
 export interface GuardrailRule {
   /** Stable id, recorded in `flagsFired`. */
@@ -112,9 +130,26 @@ export interface GuardrailRule {
 
 // --- The claim-bearing classifier -----------------------------------------------------
 
-/** A noun that names the product or something of it. */
+/** A noun that names the product or something of it. The parts since 1.4.0. */
 const PRODUCT_NOUN =
-  /\b(?:system|systems|device|devices|platform|product|technology|console|consoles|instruments?|instrumentation|tool|tooling|equipment|robotic|robotics|kit|module|solution|unit)\b/i;
+  /\b(?:system|systems|device|devices|platform|product|technology|console|consoles|instruments?|instrumentation|tool|tooling|equipment|robotic|robotics|kit|module|modules|solution|unit|ports?|sensors?|probes?|displays?|panels?|carts?|towers?)\b/i;
+
+/**
+ * A verb of state, capability, or supply, which after a product noun states a
+ * characteristic as fact (1.4.0): "the console sits at eye level", "the system moves
+ * between rooms", "the display is designed to". The list is the passage detector's,
+ * plus a few physical verbs, so the rule is at least as strict as the instrument that
+ * measures it. Order matters: the noun must come first in the sentence, because "the
+ * room sits at the end of the corridor" has no product noun and "we sit with the
+ * system" has the verb first.
+ */
+const STATIVE_PREDICATE =
+  /\b(?:is|are|was|were|has|have|can|could|will|would|does|do|comes?|sits?|stands?|weighs?|measures?|accepts?|gives?|lets?|holds?|moves?|runs?|works?|includes?|delivers?|needs?|requires?|means|mounts?|connects?|attaches?|folds?|collapses?|supplied|intended|built|made)\b/i;
+
+const PRODUCT_THEN_STATIVE = new RegExp(
+  `${PRODUCT_NOUN.source}[^.!?]*?${STATIVE_PREDICATE.source}`,
+  "i",
+);
 
 /** A word that describes a characteristic, capability, or performance. */
 const DESCRIPTOR =
@@ -187,8 +222,10 @@ export function isClaimBearing(sentence: string): boolean {
     return true;
   }
   if (STRONG_CLAIM.test(senderVoice ?? sentence)) return true;
+  if (ATTRIBUTED.test(sentence)) return false;
   return (
-    PRODUCT_NOUN.test(sentence) && DESCRIPTOR.test(sentence) && !ATTRIBUTED.test(sentence)
+    (PRODUCT_NOUN.test(sentence) && DESCRIPTOR.test(sentence)) ||
+    PRODUCT_THEN_STATIVE.test(sentence)
   );
 }
 
@@ -197,7 +234,7 @@ export function isClaimBearing(sentence: string): boolean {
 const claimBearing: GuardrailRule = {
   id: "claim-bearing",
   description:
-    "Product characteristics, capabilities, performance, or comparisons in the sender's voice. Selected from the library or not written; there is no library yet, so not written.",
+    "Product characteristics, capabilities, performance, or comparisons in the sender's voice — including a plain statement of what a part is or does. Selected from the library or not written.",
   violates: isClaimBearing,
 };
 
