@@ -130,6 +130,36 @@ describe("claim-bearing", () => {
     expectRuleToHold("claim-bearing", "The system is faster than what you use today.");
   });
 
+  // Ruleset 1.4.0, fieldnote-877: a product noun followed by a verb of state or design
+  // is claim-bearing. The counterfactual is the 1.3.0 classifier — noun and descriptor —
+  // which lets the first two through; the third has "designed", which 1.3.0 caught, and
+  // is here because the CI sample that found the gap was never seen and the prompt
+  // named all three as the shape.
+  it("1.4.0: blocks a product noun with a verb of state, and passes the same verb with no product noun", () => {
+    const stative = [
+      "The console sits at eye level.",
+      "The system moves between rooms on its own stand.",
+      "The display is designed to be read from the far side of the room.",
+      "The probe port accepts the standard and the narrow probe.",
+    ];
+    for (const sentence of stative) expectRuleToHold("claim-bearing", sentence);
+
+    const before = (s: string) =>
+      /\b(?:system|console|display|port)\b/i.test(s) &&
+      /\b(?:design\w*|modular|allow\w*|provid\w*|fits?)\b/i.test(s);
+    expect(before(stative[0]!)).toBe(false);
+    expect(before(stative[1]!)).toBe(false);
+
+    for (const relational of [
+      "The room sits at the end of the corridor, past the second set of doors.",
+      "We can sit down with the team whenever suits you.",
+      "The stand for the coffee is by the door.",
+    ]) {
+      expect(applyGuardrails(relational).text, relational).toBe(relational);
+      expect(isClaimBearing(relational), relational).toBe(false);
+    }
+  });
+
   it("passes gratitude and logistics that happen to name the system", () => {
     for (const relational of [
       "Thank you for taking the time to see the system on the truck.",

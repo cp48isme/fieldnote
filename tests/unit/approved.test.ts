@@ -101,7 +101,7 @@ describe("protectApproved and restoreApproved", () => {
     expect(restoreApproved(guarded.text, held.table)).toBe(
       `${SENSOR.body} ${GAP_MARKER}`,
     );
-    expect(GUARDRAIL_RULESET_VERSION).toBe("1.3.0");
+    expect(GUARDRAIL_RULESET_VERSION).toBe("1.4.0");
   });
 });
 
