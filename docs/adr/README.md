@@ -20,6 +20,7 @@ the artifact.
 | [0007](0007-role-references.md) | Role references at the pseudonymization boundary | Accepted | 2026-09-09 |
 | [0008](0008-audit-records-survive-event-deletion.md) | Audit records survive event deletion | Accepted, amended 2026-09-11 and 2026-09-14 | 2026-09-11 |
 | [0009](0009-briefing-is-downloaded-never-sent.md) | The briefing is a document the representative writes and downloads; the application lays it out and never sends it | Accepted | 2026-09-14 |
+| [0010](0010-pdf-generation-library.md) | `pdf-lib` for producing the briefing document | Accepted | 2026-09-15 |
 
 ## What each one settles
 
@@ -66,6 +67,11 @@ application lays the document out from what the representative enters and offers
 a download; it never sends it, the model writes none of it, and deal positioning has no
 home in the public build. It withdraws plan §3.2's suggested openers and selected talking
 points rather than deferring them.
+
+**0010** chooses the library that draws the briefing, in 0003's shape: three candidates,
+the registry and advisory material for each, and the deciding reason — the smaller thing
+to trust, a library of primitives with no script, form, or HTML capability — set against
+the cost it carries, which is that it is unmaintained and the record says so.
 
 ## Numbering
 
