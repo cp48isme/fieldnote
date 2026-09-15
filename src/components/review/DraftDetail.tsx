@@ -21,6 +21,11 @@
  * The export button's enabled state is read from the transition table via `canExport`,
  * not decided here. For a blocked draft there is no editor and no button, because
  * there is no body — only the reason it was withheld.
+ *
+ * A pre-event email (ADR-0011) is the same draft under the same gate with no model
+ * behind it, and the copy here says so where it would otherwise name one: a gap in a
+ * pre-event email is a sentence the ruleset judged claim-bearing, hers or a passage
+ * reworded, not something "the model was not allowed" to write.
  */
 
 import { useState } from "react";
@@ -69,6 +74,7 @@ export function DraftDetail({
 
   const exportable = canExport(draft.state);
   const exported = draft.state === "exported";
+  const composed = draft.kind === "pre-event";
   const hasGap = body.includes(GAP_MARKER) || draft.generatedBody.includes(GAP_MARKER);
 
   const runExport = async () => {
@@ -87,6 +93,7 @@ export function DraftDetail({
     <section
       data-testid="draft-detail"
       data-state={draft.state}
+      data-kind={draft.kind}
       aria-label={`Draft for ${recipientName}`}
       className="flex flex-col gap-3 p-4"
     >
@@ -101,6 +108,13 @@ export function DraftDetail({
         </button>
         <h2 className="truncate text-sm font-semibold">{recipientName}</h2>
       </div>
+
+      {composed && (
+        <p data-testid="draft-kind-note" className="text-xs opacity-70">
+          Pre-event email, composed from the event&apos;s details and the passages you
+          selected. No model wrote any of it; the guardrails read all of it.
+        </p>
+      )}
 
       {draft.state === "blocked" && draft.blocked ? (
         <p
@@ -119,9 +133,10 @@ export function DraftDetail({
             >
               {hasGap && (
                 <p>
-                  Where the draft says <code>{GAP_MARKER}</code>, the model was not
-                  allowed to describe the product. Write that part yourself or leave it
-                  out.
+                  Where the draft says <code>{GAP_MARKER}</code>,{" "}
+                  {composed
+                    ? "a sentence was judged claim-bearing and was not let through — product wording comes only from the library, as a selected passage. Rewrite it without the claim, or leave it out."
+                    : "the model was not allowed to describe the product. Write that part yourself or leave it out."}
                 </p>
               )}
               {draft.flagsFired.map((flag) => (
@@ -197,8 +212,11 @@ export function DraftDetail({
             >
               {audit.passagesUsed.length} approved passage
               {audit.passagesUsed.length === 1 ? "" : "s"} used. The product wording in
-              this draft was copied from the library, not written by the model; the audit
-              record names which.
+              this draft{" "}
+              {composed
+                ? "is the library's, selected by you"
+                : "was copied from the library, not written by the model"}
+              ; the audit record names which.
             </p>
           )}
 
