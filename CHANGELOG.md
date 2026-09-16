@@ -7,6 +7,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 15 — the threat model
+
+- `docs/THREAT-MODEL.md`: what is protected and from whom; four boundaries with a text
+  diagram; STRIDE per boundary, every control naming the file that enforces it or
+  saying it is documented only; prompt injection through dictated input as the
+  first-class entry, with what reaches the draft and what shows it; six worked entries
+  from their beads — ignore globs and their templates, required checks coupled to job
+  names, the lockfile superset, installed tooling rewriting the repository's controls,
+  the beads publication of 2026-09-09, and device auto-lock as a private-fork
+  precondition; residual risk in one section, each item with its bead or ADR.
+- `tests/unit/required-checks.test.ts`: the rendered job names in the three workflows
+  are exactly the three contexts branch protection requires, a `${{ matrix.* }}`
+  template resolved against the job's matrix, a missing workflow a failure. The
+  tripwire for a rename; the settings half of the coupling stays a hand check.
+- Phase 4 opens.
+
 ### Session 14 — the invite feature: the forwardable block behind its flag
 
 - Schema v9: `EventRecord.forwardableEnabled`, false on creation and backfilled false.
