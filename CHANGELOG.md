@@ -21,6 +21,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   are exactly the three contexts branch protection requires, a `${{ matrix.* }}`
   template resolved against the job's matrix, a missing workflow a failure. The
   tripwire for a rename; the settings half of the coupling stays a hand check.
+- Amended after review: §5.5 brought to the owner's decision on the private material;
+  five beads opened for the items flagged at the end of the session, and the document
+  amended for two of them — the event name and the approved passages crossing outside
+  the note delimiter, and the provider's retention arrangement.
 - Phase 4 opens.
 
 ### Session 14 — the invite feature: the forwardable block behind its flag

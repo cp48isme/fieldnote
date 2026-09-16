@@ -1,8 +1,8 @@
 # Handoff
 
-Written 2026-09-15, at the head of `docs/session-15-threat-model`, the session 15 PR, for
-the state `main` will be in when it merges. `main` is at `f05ca82`; the branch adds four
-commits including this one.
+Written 2026-09-16, at the head of `docs/session-15-threat-model`, the session 15 branch
+as amended after the owner's review, for the state `main` will be in when it merges.
+`main` is at `f05ca82`; the branch adds seven commits including this one.
 
 Every claim here was checked against the repository, git history, the trackers, or the
 GitHub API in the session that wrote it. Where something could not be verified, it says
@@ -51,8 +51,8 @@ so plainly. `docs/THREAT-MODEL.md` now says which is which, boundary by boundary
 
 ## Where we've been
 
-`main` is at `f05ca82` with 229 commits and 42 merged pull requests; this PR adds four
-commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
+`main` is at `f05ca82` with 229 commits and 42 merged pull requests; this branch adds
+seven commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
 onward, and is not repeated here. What follows is the map from session to pull request,
 with the closed-not-merged ones named because a closed PR is easy to mistake for one that
 never existed. Verified this session from `gh pr list --state all`: 48 numbers, one of
@@ -140,6 +140,11 @@ unchanged from session 14 except where marked:
 - **The required-checks tripwire sees the code side only** (new). If the required
   contexts change in GitHub's settings, the strings in the test are wrong and nothing in
   the repository says so.
+- **The event name and the approved passages cross the boundary outside the note
+  delimiter** (new). Wrapping them is a prompt-template change for a later session.
+  `fieldnote-3rl`; `docs/THREAT-MODEL.md` §4.
+- **What the provider retains of the pseudonymized request is an account arrangement
+  nobody has verified** (new). `fieldnote-n9l`; session 17 depends on the answer.
 
 **Plan §4.6's `docs/THREAT-MODEL.md` exists; Phase 4 opens.** What is protected and from
 whom; four boundaries with a text diagram; STRIDE per boundary with every control naming
@@ -195,10 +200,10 @@ which premises held and which bent.
 
 Three places, deliberately. Do not duplicate between them.
 
-**Beads — build state, local.** Verified this session: `.beads/config.yaml` has
-`git-push: false` and the remote carries no `refs/dolt/*`. 58 issues: 21 open, 35
-closed, 2 deferred, 17 ready, 4 blocked (`bd stats`; `bd ready` counts 18, and the two
-commands have disagreed by one since session 13). Run `bd ready` and `bd blocked`.
+**Beads — build state, local.** Verified this session, by doing: the tracker's data
+stays on this machine. 63 issues: 26 open, 35 closed, 2 deferred, 22 ready, 4 blocked
+(`bd stats`; `bd ready` counts 23, and the two commands have disagreed by one since
+session 13). Run `bd ready` and `bd blocked`.
 
 Named here because they qualify claims made above; the backlog itself is not listed.
 Closed this session: `fieldnote-loh`, the session's own bead, and the seven that were
@@ -215,6 +220,12 @@ joined by name. `fieldnote-6qr` — a workbook with several sheets. `fieldnote-5
 edit-distance dashboard. `fieldnote-9gp` — SRI. `fieldnote-bdw` — Safari storage
 durability. `fieldnote-unp` — the service worker update path. `fieldnote-v2s` — the
 private fork has no session. `fieldnote-6x5`, `fieldnote-ijg` — nothing is deployed.
+Opened in the amendment after review, 2026-09-16: `fieldnote-3rl` — the event name and
+the passages cross outside the note delimiter; `fieldnote-9n1` — the controls the
+generation route needs before any hosted origin, blocking `fieldnote-ijg`;
+`fieldnote-n9l` — the provider's zero-retention arrangement, unverified; `fieldnote-oa9`
+— three documents point at session 15 for a tightening it did not do; `fieldnote-bn0` —
+clipboard exposure after export, not modelled.
 
 **GitHub issues — public record.** One open: **#11**, the ESLint flat-config migration.
 
@@ -228,8 +239,8 @@ threat model changes a decision. Still owed or worth considering: ADR-0004 again
 `fieldnote-bdw` resolves; ADR-0005, the build guide's session 5 entry, and the header of
 `tests/unit/single-egress.test.ts` each say the single-egress grep is revisited in
 session 15, and it was documented rather than tightened (threat model §6), so the three
-pointers are stale; ADR-0006's five-name evidence statement; the plan §2 conversation;
-and the decision `fieldnote-af9` holds.
+pointers are stale (`fieldnote-oa9`); ADR-0006's five-name evidence statement; the plan
+§2 conversation; and the decision `fieldnote-af9` holds.
 
 ---
 
@@ -293,7 +304,8 @@ Stated rather than smoothed over.
 - **The injection entry's "likely to be withheld" is a reading of the guard, not a
   measurement.** No corpus case has a role-shaped sign-off.
 - **The single-egress tightening scheduled for session 15 was not built**, by the
-  prompt's scope guard; three documents still point at session 15 for it.
+  prompt's scope guard; three documents still point at session 15 for it
+  (`fieldnote-oa9`).
 - **The forwardable block has been forwarded by nobody**, and its two non-structural
   constraint tests are word lists over four fixed strings.
 - **The session-to-PR map above sessions 1 to 14** was verified this session by count

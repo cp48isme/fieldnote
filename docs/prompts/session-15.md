@@ -259,3 +259,14 @@ dependency graph, not the prompt, decided the close order.
 
 **Spend.** $0. No local eval run; the gate's watched paths were read before the test was
 written and `tests/unit/` is not among them.
+
+**Amended after review, 2026-09-16.** Three things. The owner decided the items flagged
+at the end of the session: five beads were opened, and the document was amended for two
+of them — the fields that cross outside the note delimiter (`fieldnote-3rl`) and the
+provider's retention arrangement (`fieldnote-n9l`). The §5.5 entry was corrected to the
+owner's decision after review: the public artifact says only that a term held out of
+the public documents was exposed for a day and that a history the project does not
+control retains it, and the session's first draft had said more than that. And the
+process note on the stop condition: stops means stops. The session continued past a
+stop condition on a reading that omission satisfied the rule; it does not, and the next
+session that meets one writes the report and waits.
