@@ -73,7 +73,7 @@ Stated plainly. None of these is exotic; several are the ordinary conditions of 
 - **A contributor's clone.** A machine without the local term list, a fork's pull request,
   a lockfile that arrived with more in it than was asked for.
 - **A reader of the public repository**, including of its history, its CI logs and
-  artifacts, and any ref the project did not know it had pushed.
+  artifacts, and anything the project published without knowing it had.
 
 Not modelled, and said so in `SECURITY.md`: a compromised operating system or browser,
 which sits under every control here; and the provider's own infrastructure, which is
@@ -135,8 +135,8 @@ None of these is a network egress and each is shown to make no request
 
 **The repository and the tools that write to it** is the boundary the guide did not
 name and the one that has failed most often. It has two sides: what a person commits,
-and what a tool does to the working tree, the configuration, and the remote without
-being asked (§3.4, §5).
+and what a tool does, unasked, to the working tree, the configuration, and where its own
+data goes (§3.4, §5).
 
 ---
 
@@ -182,7 +182,7 @@ being asked (§3.4, §5).
 | **S** | A change reaches `main` other than through a reviewed pull request from the owner: a direct push, a force push, a fork's pull request running with secrets, an action that is not the one pinned. | Branch protection with admin enforcement, no force pushes, no deletions, strict up-to-date branches, required conversation resolution; the eval job does not run on a fork's pull request; every action pinned by commit SHA; Dependabot on both ecosystems. Required approving reviews: zero, deliberate for a single maintainer. | GitHub settings, verified 2026-09-15 against the classic branch-protection API (the repository has no ruleset): *not checked by code.* `.github/workflows/evals.yml` (the `if:` guard); the SHA pins in all three workflows; `.github/dependabot.yml`. | Medium. |
 | **T** | A tool that runs in the repository rewrites its controls or its instructions: an installer repoints the hook path and rewrites `CLAUDE.md`; the dev server appends agent rules to it; a lockfile carries packages nobody asked for; a job rename unwires a required check; a sibling of an ignored file escapes the glob. | The working agreement in `CLAUDE.md`: read `git status` before staging, and an unexpected change to a governing file is a finding. `agentRules: false`. `--frozen-lockfile`. The required-checks tripwire. Wildcard globs with negated templates. | §5, entry by entry. `tests/unit/required-checks.test.ts`; `next.config.ts`; `.gitignore`. `core.hooksPath` cannot be asserted in CI because it is local configuration (§5.4). The rest: *not enforced; documented.* | High. |
 | **R** | Who made a change. Commits are not signed; authorship is the account's authentication and the pull-request trail behind each merge commit. | The pull-request trail and merge commits, and nothing more. The repository has never claimed more. | *Not enforced; documented.* | Low. |
-| **I** | Real data reaches the public repository or its history: a name, a term, or an address in a fixture, a comment, or a commit message; a credential; a private list copied to a file the glob does not match; a store the project believed internal pushing to the public remote; a CI log or artifact carrying content. | The denylist in the pre-commit hook — literal terms locally, structural patterns everywhere; gitleaks on staged content where installed, with a warning where not; secret scanning with push protection on the repository; wildcard globs with negated templates; the private lists never committed and their loaders reporting a count and never a term; the route logging no content; the eval artifact holding pseudonymized samples only; and human review of every diff touching prose, which the script's header names as the actual control. | `scripts/check-denylist.mjs` in `.husky/pre-commit` and in `.github/workflows/ci.yml`; `.gitignore`; `tests/unit/private-terms.test.ts` ("loads a file and reports a count, never the terms"); `tests/unit/generate-route.test.ts`. Limits: CI enforces structural patterns only and cannot see `.denylist.local`; the term check matches listed spellings only (`fieldnote-ech`, §4); the tracker's own store published to the public remote until 2026-09-09, before anyone looked (§5.5). | High. |
+| **I** | Real data reaches the public repository or its history: a name, a term, or an address in a fixture, a comment, or a commit message; a credential; a private list copied to a file the glob does not match; a store the project believed internal publishing its data; a CI log or artifact carrying content. | The denylist in the pre-commit hook — literal terms locally, structural patterns everywhere; gitleaks on staged content where installed, with a warning where not; secret scanning with push protection on the repository; wildcard globs with negated templates; the private lists never committed and their loaders reporting a count and never a term; the route logging no content; the eval artifact holding pseudonymized samples only; and human review of every diff touching prose, which the script's header names as the actual control. | `scripts/check-denylist.mjs` in `.husky/pre-commit` and in `.github/workflows/ci.yml`; `.gitignore`; `tests/unit/private-terms.test.ts` ("loads a file and reports a count, never the terms"); `tests/unit/generate-route.test.ts`. Limits: CI enforces structural patterns only and cannot see `.denylist.local`; the term check matches listed spellings only (`fieldnote-ech`, §4); the tracker's own store was published until 2026-09-09, before anyone looked (§5.5). | High. |
 | **D** | A gate goes quiet without failing: a required check that no longer reports; an eval run that skips when it should have run; a superseded run cancelled under a live one. | The tripwire on job names; the watched-path list, with a test that walks the directories it covers; concurrency cancels only a superseded run on the same ref. | `tests/unit/required-checks.test.ts`, `tests/unit/evals-gating.test.ts`, `scripts/evals-watched-paths.mjs`, the `concurrency` blocks in the workflows. | Medium. |
 | **E** | A tool's output instructs the agent, and the agent obeys: the appended block that advised committing itself; an installer's generated instructions to push at the end of every session. | An instruction in a tool's output is not followed on the tool's say-so. That is a working agreement in `CLAUDE.md`, and it depends on whoever is staging actually reading. | *Not enforced; documented*, `fieldnote-n8z`, `fieldnote-rrv` (§5.4). | Medium. |
 
@@ -444,38 +444,34 @@ days of September; none since the agreement; no automated control, by decision.
 
 **What happened.** The issue tracker that `CLAUDE.md`, `docs/HANDOFF.md`, and its
 template all described as internal build state had been configured by its own
-initialisation to push its whole database to this repository's public GitHub URL on every
-write. Four sessions, the owner, and the reviewing instance read "internal" as a property
-of the tool rather than a claim to verify. It was found on 2026-09-09 when a real name was
-about to be written into a bead and the writer checked where beads go first. The
-containment inventory is in the handoff at commit `2dbdcb1`, under *Known gaps*, and in
-the bead's notes; this entry is deliberately less specific than either.
+initialisation to publish its data beyond this machine. Four sessions, the owner, and
+the reviewing instance read "internal" as a property of the tool rather than a claim to
+verify. It was found on 2026-09-09 when the writer checked where the tracker's data goes
+before writing private material into it. The containment inventory is in the handoff at
+commit `2dbdcb1`, under *Known gaps*, and in the bead's notes; this entry is deliberately
+less specific than either.
 
 **The class.** The first instance in this project of a control that failed not by being
 weak but by nobody checking its egress. The other entries in this section were weak in a
 known way and said so; this one was not weak, and it published.
 
-**The containment, the same day.** The tracker's remote was removed from its own state,
-its backup's push disabled in `.beads/config.yaml` with the reason written above the
-setting, and what had been pushed was deleted from GitHub by the owner. Verified by
-doing: a bead write after the change produced nothing on the remote, and neither did a
-commit through the pre-commit hook. Re-verified in the session that wrote this document:
-`git-push: false` in the configuration, and the remote carries nothing of the tracker's.
+**The containment, the same day.** Publication was switched off and what had been
+published was deleted. Verified by doing: a write to the tracker after the change
+published nothing, and neither did a commit through the pre-commit hook. Re-verified in
+the session that wrote this document, and again in the amendment that followed it.
 
-**The decision not to request a purge, with its reasoning.** What was deleted remains
-retained on GitHub until GitHub's own garbage collection. The owner decided not to
-request a purge, and the reasoning is recorded so that this reads as a decision rather
-than an oversight: the exposure was one term; it was in no clone or fork the owner knows
-of; nobody is known to have fetched it; and the owner judged the residual acceptable.
-Accepted with it: the exposure inventory read each bead's current state and not its
-earlier states, so anything edited or deleted in a bead between 2026-09-01 and
-2026-09-09 was not searched.
+**The decision not to request a purge, with its reasoning.** A term held out of the
+public documents was exposed for a day in 2026-09, and a history the project does not
+control retains it. The owner decided not to request a purge, and the reasoning is
+recorded so that this reads as a decision rather than an oversight: the exposure was one
+term; it was in no clone or fork the owner knows of; nobody is known to have fetched it;
+and the owner judged the residual acceptable.
 
 **The three lessons, paraphrased.** First, any store the project writes findings into is
 part of the trust boundary, and its egress has to be enumerated the way the source's is:
 the single-egress check covers application code and nothing else. Second, configuration a
-tool installed is untrusted until it has been read — the same init wrote the remote, the
-hooks directory, and the hook path, and §5.4 is the same class. Third, the corrected
+tool installed is untrusted until it has been read — the same initialisation wrote more
+configuration than was asked for, and §5.4 is the same class. Third, the corrected
 agreement in `CLAUDE.md`: a finding about the private material is not written into any
 location the repository controls until a private place exists, and the public record says
 only that a finding exists. That agreement binds this document, and it is why this entry
@@ -548,7 +544,7 @@ recorded.
   passes it. `scripts/check-denylist.mjs`; `fieldnote-ech`.
 - **The end-to-end suite runs in one browser**, on a secure context, and so enters no
   environment that needs a trusted certificate, a home-screen install, or Safari's
-  eviction window. `.github/workflows/ci.yml`; `fieldnote-bdw`.
+  eviction window. `.github/workflows/ci.yml`; `fieldnote-2o9`.
 - **The service worker's update path is untested.** Coverage is a manual procedure.
   `fieldnote-unp`.
 - **Safari's eviction window is unverified.** The offline shell holds on hardware; whether
