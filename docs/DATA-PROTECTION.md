@@ -446,7 +446,7 @@ review screen ─► audit CSV ─► download               (plan §4.4)
 
 | Export | What it carries | Gate | Shown to make no request |
 |---|---|---|---|
-| **Clipboard** — a follow-up or pre-event draft | The draft body as edited, addressed to one attendee by name, with the approved passages she selected. | Export is unreachable from `generated` and nothing leaves `blocked` (`tests/unit/draft-state.test.ts`); the clipboard write comes first and the record is written only once the text is there (`onExport`, `CaptureScreen.tsx`). | `tests/e2e/review.spec.ts`. After export the text sits in the system clipboard until overwritten; that exposure is not modelled (`fieldnote-bn0`). |
+| **Clipboard** — a follow-up or pre-event draft | The draft body as edited, addressed to one attendee by name, with the approved passages she selected. | Export is unreachable from `generated` and nothing leaves `blocked` (`tests/unit/draft-state.test.ts`); the clipboard write comes first and the record is written only once the text is there (`onExport`, `CaptureScreen.tsx`). | — |
 | **Briefing PDF** | The dossier fields, the location, the site map, contacts as cards, each attendee with photo, record fields, and her briefing notes, the contingency plan last. Not the dictated notes: `BriefingInput` has no key for them (`tests/unit/briefing-compose.test.ts`). | None: nothing in it is machine-written (ADR-0009). The page states its attendee section is expected attendance as of the generation date. | `tests/e2e/briefing.spec.ts:37`. |
 | **Calendar file** (`.ics`) | One `VEVENT`: a `UID` at a reserved `.invalid` suffix, both times in UTC, the event name as `SUMMARY`, the address as `LOCATION`, `GEO`, and a `DESCRIPTION` holding the address and the two map links and nothing else. No `ATTENDEE`, no `ORGANIZER`, no free text (`src/lib/calendar/ics.ts`). | Disabled until the event has both ends. | `tests/unit/ics.test.ts`, line by line. No calendar application has opened one. |
 | **Site map** | The stored bytes, at the stored media type. | None. | With the pre-event screen's run, `tests/e2e/pre-event.spec.ts:57`. |
@@ -746,11 +746,9 @@ third-party origin"), and `tests/unit/single-egress.test.ts`, with the limit §6
 threat model states: the source check is a grep, and the browser's enforcement of
 `connect-src` is the runtime check behind it.
 
-**The repository host** holds the source, the CI logs, and the eval artifact, none of
-which is attendee data. One thing it retains that is not: a term held out of the public
-documents was exposed for a day in 2026-09, and a history the project does not control
-retains it (`docs/THREAT-MODEL.md` §5.5 and §6). That is the whole of what this document
-says about it.
+**The repository host** holds the source, the CI logs, and the eval artifact, none
+of which is attendee data. The private-material item is `docs/THREAT-MODEL.md` §5.5
+and the last item of its §6; this document cites it there and does not restate it.
 
 ---
 
@@ -765,9 +763,9 @@ enforcing structural denylist patterns only; the end-to-end suite in one browser
 service worker's update path untested; Safari's eviction window unverified; the private
 fork with no session; audit records growing without bound by design; a name with neither
 a title nor a roster entry missed; the event name and the approved passages crossing
-outside the note delimiter; the provider's retention an account arrangement; and a term
-held out of the public documents exposed for a day and retained by a history the
-project does not control. Each has its bead or its decision record there.
+outside the note delimiter; the provider's retention an account arrangement; and the
+last item, `fieldnote-loh`, as §6 words it. Each has its bead or its decision record
+there.
 
 Since that list was written, retention has been decided and not built; the second item
 now reads as §4 of this document says, with `fieldnote-tcq` closed and `fieldnote-iox`
