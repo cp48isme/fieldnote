@@ -456,9 +456,8 @@ template all described as internal build state had been configured by its own
 initialisation to publish its data beyond this machine. Four sessions, the owner, and
 the reviewing instance read "internal" as a property of the tool rather than a claim to
 verify. It was found on 2026-09-09 when the writer checked where the tracker's data goes
-before writing private material into it. The containment inventory is in the handoff at
-commit `2dbdcb1`, under *Known gaps*, and in the bead's notes; this entry is deliberately
-less specific than either.
+before writing private material into it. The containment inventory is in the bead's
+notes; this entry is deliberately less specific.
 
 **The class.** The first instance in this project of a control that failed not by being
 weak but by nobody checking its egress. The other entries in this section were weak in a

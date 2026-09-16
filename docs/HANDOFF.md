@@ -321,8 +321,8 @@ Stated rather than smoothed over.
   upgrade transaction against IndexedDB.
 - **The eval figures are one held-out run, one day.**
 - **The containment amendment of 2026-09-09 is not reproduced here.** Its full text is in
-  the handoff at commit `2dbdcb1` and in `fieldnote-loh`'s notes; the threat model's §5.5
-  is deliberately less specific than either, and its conclusions stand.
+  `fieldnote-loh`'s notes; the threat model's §5.5 is deliberately less specific, and its
+  conclusions stand.
 - **The hardware run is one phone, one day, iOS 26.6.1.** Nothing built in sessions 5 to
   15 has been run on hardware.
 - **The layout validation is one observed session**; nothing built since has been
