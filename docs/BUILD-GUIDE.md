@@ -606,6 +606,26 @@ class repeated in `.env*`, and required status checks silently depending on job 
 names. Also state ADR-0004's accepted residual risk plainly — data at rest is protected
 by full-disk encryption and origin isolation and nothing else.
 
+> **Amended 2026-09-15, session 15, on completion.** `docs/THREAT-MODEL.md`: what is
+> protected and from whom; four boundaries — the device, the browser origin, the one
+> egress, and the repository with the tools that write to it — with a text diagram;
+> STRIDE per boundary, every control naming the file that enforces it or saying it is
+> documented only, and each empty cell saying why. Injection through dictated input is
+> the first-class entry: the pseudonymizer removes names and not instructions, the
+> ruleset judges sentences by rule id and not intent, an obeyed instruction that
+> produces relational text reaches the draft and the review gate is what shows it, and
+> dictation's own substitution of a clinical term is tampering by the channel. The
+> three Phase 0 findings above became six worked entries, because the sessions since
+> owed three more: installed tooling rewriting the repository's controls, three
+> instances and one pattern; the beads publication of 2026-09-09, written under the
+> `CLAUDE.md` agreement on the private material; and device auto-lock as a private-fork
+> precondition beside ADR-0004. One control was built, because the finding was a
+> failing test: `tests/unit/required-checks.test.ts` asserts the three rendered job
+> names branch protection depends on, with the counterfactual run and `.github/`
+> unchanged. Residual risk is one section for sessions 16 and 17 to cite. The eval gate
+> skipped. The prompt was drafted by the session 14 instance and rewritten by Guardian;
+> `docs/prompts/session-15.md` has it.
+
 ### Session 16 — Data protection assessment
 *~3 hours*
 
