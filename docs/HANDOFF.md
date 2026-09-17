@@ -2,7 +2,7 @@
 
 Written 2026-09-16, at the head of `docs/session-16-data-protection`, the session 16
 branch, for the state `main` will be in when it merges. `main` is at `5d669b0`; the
-branch adds three commits including this one, and nothing on it has been pushed: the
+branch adds six commits including this one, and nothing on it has been pushed: the
 owner's reviewer reads the branch locally before anything reaches the remote.
 
 Every claim here was checked against the repository, git history, the trackers, or the
@@ -54,15 +54,15 @@ carries the non-negotiable constraints.
 ## Where we've been
 
 `main` is at `5d669b0` with 238 commits and 43 merged pull requests; this branch adds
-three commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
+six commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
 onward, and is not repeated here. What follows is the map from session to pull request,
 with the closed-not-merged ones named because a closed PR is easy to mistake for one that
 never existed. Verified this session from `gh pr list --state all`: 48 pull requests,
 five closed without merging (#3, #5, #26, #27, #35); #11 is an issue, not a PR.
 
-- **Phase 0, session 1** — two direct commits (`989d459`, `d509dca`), then **#6**, **#7**,
-  **#8**. Dependabot **#1**, **#2**, **#4** merged. **#3** and **#5** closed, not merged:
-  #3 was the `eslint-config-next` 16 bump that issue #11 tracks as a migration.
+- **Phase 0, session 1** — two direct commits (`989d459`, `d509dca`), then **#6**,
+  **#7**, **#8**. Dependabot **#1**, **#2**, **#4** merged. **#3** and **#5** closed, not
+  merged: #3 was the `eslint-config-next` 16 bump that issue #11 tracks as a migration.
 - **Documentation** — **#9**, **#10**; **#14** added this document and its template;
   **#16**, **#17**, **#18**; **#24**, **#25**.
 - **Session 2, data layer** — **#12**. **Beads** — **#13**.
@@ -76,8 +76,8 @@ five closed without merging (#3, #5, #26, #27, #35); #11 is an issue, not a PR.
   closed, not merged, each with the reason on it.
 - **Session 6, audit log and review gate** — **#37**; ADR-0008. **Between 6 and 7** —
   **#38**. Dependabot **#34** merged.
-- **Session 7, adversarial eval suite** — **#39**. **Between 7 and 8** — **#40**, ruleset
-  1.2.0 from the first held-out run.
+- **Session 7, adversarial eval suite** — **#39**. **Between 7 and 8** — **#40**,
+  ruleset 1.2.0 from the first held-out run.
 - **Session 8, roster import** — **#41**; ADR-0003 amended.
 - **Session 10, ADR-0009, the attendee view, and the clinician field** — **#42**, merged
   after **#43**.
@@ -162,11 +162,11 @@ inventory of all eleven tables from the schema, every field with the schema's ow
 reason, nothing re-classified, the classification read as ADR-0004's plan rather than as
 encryption in place; six flows in text with what enters, what is stored, what leaves,
 and by whose action; retention as the owner decided it (`fieldnote-tcq`, 2026-09-16,
-changed 2026-09-17) and as not yet built (`fieldnote-iox`); minimisation as decisions with the file that
-enforces each; rights and their limits; the one processor and what is not verified
-about it; residual risk citing the threat model's §6 by item. No legal characterisation
-anywhere, by design: session 17 does that against named frameworks, and the document
-ends with what sessions 17 and 18 need from it.
+changed 2026-09-17) and as not yet built (`fieldnote-iox`); minimisation as decisions
+with the file that enforces each; rights and their limits; the one processor and what
+is not verified about it; residual risk citing the threat model's §6 by item. No legal
+characterisation anywhere, by design: session 17 does that against named frameworks,
+and the document ends with what sessions 17 and 18 need from it.
 
 **Retention is decided and not built.** Scope, the automatic deletion at 30 days, the
 warning from day 23, and the period are in `fieldnote-tcq`'s notes of 2026-09-17, which
@@ -204,14 +204,14 @@ bead for it (`bd search "Session 17"` finds none); the guide's entry is the scop
 it in full.
 
 What it draws on, and where: `docs/THREAT-MODEL.md` §3's third column for what is
-enforced and what is documented, and §6 for the residual list; `docs/DATA-PROTECTION.md`
-§1 for the data subjects, §2 for the inventory, §3.3 and §7 for what crosses the egress
-and what does not, §4 for retention as decided and not built, §5 for the
-enforced-versus-documented status of each minimisation, and §6 for the deletion limits
-and the hash facts. Two things it depends on that are not settled: `fieldnote-n9l`, the
-provider's retention arrangement, on which mapping the boundary as data minimisation
-rests; and the wording of the §5.5 item, which it cites from the threat model's §6
-verbatim rather than writing its own.
+enforced and what is documented, and §6 for the residual list;
+`docs/DATA-PROTECTION.md` §1 for the data subjects, §2 for the inventory, §3.3 and §7
+for what crosses the egress and what does not, §4 for retention as decided and not
+built, §5 for the enforced-versus-documented status of each minimisation, and §6 for
+the deletion limits and the hash facts. Two things it depends on that are not settled:
+`fieldnote-n9l`, the provider's retention arrangement, on which mapping the boundary as
+data minimisation rests; and the wording of the §5.5 item, which it cites from the
+threat model's §6 verbatim rather than writing its own.
 
 Still owed and unchanged: a real photo and a real site map through the resize on the
 device; the real approved content loaded in the private fork; a calendar application
@@ -262,13 +262,14 @@ previous session's instance and rewritten by Guardian, and each file says so. Se
 16's file carries two redaction markers where the owner's text named the mechanism by
 which the tracker once published.
 
-**ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`; immutable once accepted,
-superseded or amended with a dated note. None amended this session: nothing in the
-assessment changes a decision, and the retention ADR belongs to `fieldnote-iox`. Still
-owed or worth considering: the retention ADR (`fieldnote-iox`); ADR-0004's availability
-amendment when `fieldnote-bdw` resolves; ADR-0008's dated note stating the cascade as it
-is (`fieldnote-5ow`); the three stale "session 15" pointers (`fieldnote-oa9`); ADR-0006's
-five-name evidence statement; and the decision `fieldnote-af9` holds.
+**ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`; immutable once
+accepted, superseded or amended with a dated note. One amended this session: ADR-0001,
+dated 2026-09-17, the split unchanged. The retention ADR belongs to `fieldnote-iox`.
+Still owed or worth considering: the retention ADR (`fieldnote-iox`); ADR-0004's
+availability amendment when `fieldnote-bdw` resolves; ADR-0008's dated note stating the
+cascade as it is (`fieldnote-5ow`); the three stale "session 15" pointers
+(`fieldnote-oa9`); ADR-0006's five-name evidence statement; and the decision
+`fieldnote-af9` holds.
 
 ---
 

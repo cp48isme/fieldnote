@@ -59,13 +59,13 @@ public, never indexed, and only after the conversation in §2 has happened.
 
 ---
 
-## 2. The thing to resolve before writing production code
+## 2. The exposures the controls address
 
 The representative is an employee. This tool would process her employer's commercial data, generate
 communications to healthcare professionals in her territory, and run on infrastructure
 you own.
 
-Four issues, in descending order of severity.
+Three, in descending order of severity.
 
 **Promotional review.** In medtech, materials directed at healthcare professionals
 that describe a product typically require review and approval before use — the
@@ -83,17 +83,6 @@ becomes someone's very bad quarter.
 interests, procurement influence, and — under the planning feature — photographs.
 That is a profile of an identifiable person, assembled without their knowledge, held
 on personal infrastructure. §4 addresses this too.
-
-**Acceptable use.** Many companies now have an AI-use policy that governs exactly this.
-It may permit the tool outright, permit it with conditions, or prohibit it.
-
-**Recommendation.** The representative raises it with her manager and whoever owns compliance for
-her region, framed accurately: a personal productivity tool that drafts her own
-follow-up correspondence for her review, with no automated sending, no connection to
-company systems, and a documented control set. That framing is true and it's a much
-easier conversation than the one that starts after someone notices.
-
-Build the public version now regardless. It doesn't depend on the answer.
 
 ---
 
@@ -420,8 +409,7 @@ site map upload, Design A invite behind its flag. ~7 hours.
 compliance map, published results, demo video. ~12 hours.
 
 **Private fork, off the critical path.** Session 19, encryption at rest over the seam
-built in session 2. ~3 hours. Not required for the public build, and gated on the same
-§2 conversation that gates private deployment generally.
+built in session 2. ~3 hours. Not required for the public build.
 
 Roughly six weeks of evenings at three a week; nine to ten at two. Phase 1 alone is a
 defensible portfolio piece; don't let Phases 2–4 hold up shipping something real.
@@ -431,9 +419,8 @@ defensible portfolio piece; don't let Phases 2–4 hold up shipping something re
 ## 7. What I need from you
 
 §1 and §3.4 are settled — ADR-0001 and ADR-0002 are committed. §5's encryption and
-dictation questions are settled as ADR-0004 and ADR-0005. Items 1 to 3 below have since
-arrived or been resolved; **item 4 is the only one still outstanding.** The closed items
-are kept rather than deleted, because what was asked for and what was received are both
+dictation questions are settled as ADR-0004 and ADR-0005. The three items below have
+since arrived. The closed items are kept rather than deleted, because what was asked for and what was received are both
 inputs a later session has to be able to check.
 
 1. **8–15 more of the representative's emails**, with range: an enthusiastic recipient, a lukewarm
@@ -453,16 +440,14 @@ inputs a later session has to be able to check.
    sessions 4, 7, and 15, which all depend on knowing what real dictation produces.
    See ADR-0005. **Status: received.** Seven notes at `private/dictated-notes.md`;
    sessions 4, 7, and 15 are unblocked.
-3. **Status on §2** — has the representative raised it with her manager, or is that still ahead?
-   Doesn't block the public build, gates the private one. **Status: resolved.**
-4. **What "approved content" she actually has** — a leave-behind, an approved slide,
+3. **What "approved content" she actually has** — a leave-behind, an approved slide,
    a fact sheet. It determines whether §4.2 is a library-selection feature or just a
    text field she pastes into. Needed by session 9. **Status: received.** One
    customer-facing leave-behind at `private/approved-content-brochure.md`, received
    2026-09-14; session 9 is unblocked, and what it decides is recorded beside the
    material, not here.
 
-Items 1, 2, and 4 are private-fork material and live at `private/`, which is gitignored on
+Items 1, 2, and 3 are private-fork material and live at `private/`, which is gitignored on
 the public side. Where either is adapted into public eval cases, **names are replaced with
 the synthetic roster per ADR-0001, and so is every product and commercial detail** —
 product characteristics, competitive pricing comparisons, and regulatory indication

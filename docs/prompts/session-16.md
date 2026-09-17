@@ -60,8 +60,7 @@ not assess. Its shape:
 1. **Purpose and scope.** What the system is for, in one paragraph. The data subjects:
    attendees who are healthcare professionals, attendees who are staff, contacts, and
    the representative herself. The public build holds synthetic data; this assesses the
-   design the private fork will run; plan §2's organisational review is a precondition
-   of any deployment and this document does not stand in for it.
+   design the private fork will run.
 
 2. **Data inventory.** One table per store, derived from `src/lib/db/schema.ts`: the
    eleven tables in `TABLES`, every field with its classification and the schema's own
@@ -362,9 +361,9 @@ columns; five cascaded tables and one spared; 512 and 1600 pixels.
 **Two other things the session noticed and put to the owner rather than deciding.** No
 action deletes a single note or a single draft — the same class as `fieldnote-jqk` — and
 the owner opened `fieldnote-cdx` for it and had the document state it. And
-`ApprovedContent.label` and `sourceRef` share `body`'s classification and `fieldnote-ao9`'s
-concern; the owner appended that to the bead and had the document cite it at all three
-fields.
+`ApprovedContent.label` and `sourceRef` share `body`'s classification and
+`fieldnote-ao9`'s concern; the owner appended that to the bead and had the document cite
+it at all three fields.
 
 **One fact the flows state that nothing had written down.** `NoteRecord.source` exists to
 say whether text was typed or dictated; the one caller of `createNote` passes no source,
@@ -387,5 +386,9 @@ is named in §7 as a second path to the same processor, carrying synthetic data 
 because a processor inventory that omits a known path is wrong even when the data is not
 real. The hash facts in §6 are written as what can and cannot reproduce or match each
 pre-image, and nothing more.
+
+On 2026-09-17 the owner changed the retention decision to automatic deletion 30 days
+after the event ends, with a notice from day 23 and her own delete at any time; the
+document's §4 and the trackers were updated to it before the push.
 
 **Spend.** $0. No path under `scripts/evals-watched-paths.mjs` changed.

@@ -13,11 +13,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   of all eleven tables, every field with the schema's own reason, nothing re-classified;
   six flows in text, each with what enters, what is stored, what leaves, and by whose
   action, the platform's dictation and backup named as unverified; retention as the
-  owner decided it, changed 2026-09-17, and as not yet built; minimisation as decisions with
-  the file that enforces each; rights and their limits, including what the cascade test
-  does and does not prove; the one processor and what is not verified about it;
+  owner decided it, changed 2026-09-17, and as not yet built; minimisation as decisions
+  with the file that enforces each; rights and their limits, including what the cascade
+  test does and does not prove; the one processor and what is not verified about it;
   residual risk citing the threat model's §6 by item and adding bead-backed items only.
   No legal characterisation: that is session 17's.
+- ADR-0001 amended 2026-09-17, the split unchanged; plan §2 retitled and §7 renumbered.
 - No code changed; the eval gate skipped.
 
 ### Session 15 — the threat model

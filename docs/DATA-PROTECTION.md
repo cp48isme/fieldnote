@@ -395,7 +395,8 @@ list loaded and how many terms, never a term. `tests/unit/generate-route.test.ts
 presence by name and never read into anything that could print it.
 
 **The response:** `text` with tokens in place, `blocked` (`truncated`, `refusal`, or
-null), `model`, `promptTemplateVersion`, and `flagsFired` (`src/lib/generation/contract.ts`).
+null), `model`, `promptTemplateVersion`, and `flagsFired`
+(`src/lib/generation/contract.ts`).
 
 **Back on the device:** the model's text passes the structural guard again and a draft
 in which a name-shaped or role-shaped string appears is withheld as `output-blocked`;
@@ -775,8 +776,8 @@ Added here, each with a bead, each specific to data protection, none already in 
   bounds the store.
 - **Eviction, on the availability axis.** Whether data leaves the device before the
   platform deletes it depends on her exporting it. One device observation now exists
-  (§4) and the storage-pressure and `persisted()` questions do not. `fieldnote-bdw`; ADR-0004 owes the availability
-  amendment when it resolves.
+  (§4) and the storage-pressure and `persisted()` questions do not. `fieldnote-bdw`;
+  ADR-0004 owes the availability amendment when it resolves.
 - **A request concerning one attendee cannot be fully met without deleting the event.**
   `fieldnote-jqk`.
 - **A request concerning one note or one draft cannot be met without deleting the
@@ -796,10 +797,10 @@ What the next two documents will need from here, and where it is. `docs/COMPLIAN
 (session 17) needs the facts it will characterise, and should cite rather than
 re-derive them: the data subjects in §1; the inventory in §2, with the classification
 column read as ADR-0004's plan and not as encryption in place; what crosses the egress
-and what does not in §3.3 and §7; the retention decision in §4 as decided and not built;
-the enforced-versus-documented status of each minimisation in §5; the deletion limits and
-the hash facts in §6; and `fieldnote-n9l`, on which its data-minimisation mapping
-depends. `docs/ARCHITECTURE.md` (session 18) owns the drawn diagrams: the six flows in §3
-are its text sources, `docs/THREAT-MODEL.md` §2 is the boundary diagram they sit inside,
-and the request table in §3.3 is the one thing every drawing of the egress should carry
-exactly.
+and what does not in §3.3 and §7; the retention decision in §4 as decided and not
+built; the enforced-versus-documented status of each minimisation in §5; the deletion
+limits and the hash facts in §6; and `fieldnote-n9l`, on which its data-minimisation
+mapping depends. `docs/ARCHITECTURE.md` (session 18) owns the drawn diagrams: the six
+flows in §3 are its text sources, `docs/THREAT-MODEL.md` §2 is the boundary diagram they
+sit inside, and the request table in §3.3 is the one thing every drawing of the egress
+should carry exactly.

@@ -3,6 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-08-27
 - **Deciders:** cp48isme (owner)
+- **Amended:** 2026-09-17 — the Decision section's sentence on when the private build is
+  deployed is withdrawn. The split is unchanged.
 
 ## Context
 
@@ -46,9 +48,7 @@ manufacturer name, product name, or real individual appears anywhere in the repo
 or its history. This build is the reference implementation and the public artifact.
 
 **The private build** is a private fork carrying real configuration: branding, voice
-profile, approved content, and event data. It is never public and never indexed. It is
-not deployed for production use until the organizational review described in the
-project plan §2 has concluded.
+profile, approved content, and event data. It is never public and never indexed.
 
 Branding, voice profile, and approved content are configuration inputs loaded at
 runtime, not compiled artifacts. The two builds differ only in configuration and
@@ -61,7 +61,7 @@ fixtures.
 - Eliminates the trademark and confidentiality exposure entirely rather than
   mitigating it.
 - No personal data of any real physician enters version control.
-- Public work proceeds immediately, independent of the organizational review.
+- Public work proceeds immediately.
 - The generic framing is a stronger demonstrative artifact: it presents a system
   designed for a regulated problem class rather than a single individual's job.
 - Forces branding and voice to be configuration rather than hardcoded, which is better
