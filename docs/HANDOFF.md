@@ -161,15 +161,16 @@ intermittent. The caveats, unchanged from session 15 except where marked:
 inventory of all eleven tables from the schema, every field with the schema's own
 reason, nothing re-classified, the classification read as ADR-0004's plan rather than as
 encryption in place; six flows in text with what enters, what is stored, what leaves,
-and by whose action; retention as the owner decided it on 2026-09-16 (`fieldnote-tcq`)
-and as not yet built (`fieldnote-iox`); minimisation as decisions with the file that
+and by whose action; retention as the owner decided it (`fieldnote-tcq`, 2026-09-16,
+changed 2026-09-17) and as not yet built (`fieldnote-iox`); minimisation as decisions with the file that
 enforces each; rights and their limits; the one processor and what is not verified
 about it; residual risk citing the threat model's §6 by item. No legal characterisation
 anywhere, by design: session 17 does that against named frameworks, and the document
 ends with what sessions 17 and 18 need from it.
 
-**Retention is decided and not built.** Scope, due point, prompt, ceiling, and periods
-are in `fieldnote-tcq`'s notes and written up in `docs/DATA-PROTECTION.md` §4.
+**Retention is decided and not built.** Scope, the automatic deletion at 30 days, the
+warning from day 23, and the period are in `fieldnote-tcq`'s notes of 2026-09-17, which
+changed the decision of 2026-09-16, and are written up in `docs/DATA-PROTECTION.md` §4.
 `fieldnote-iox` carries the implementation and the ADR it still needs, in its own
 session. Until it closes, nothing bounds the store, and ADR-0004's reliance on a small
 local store is a policy rather than a property.
@@ -267,8 +268,7 @@ assessment changes a decision, and the retention ADR belongs to `fieldnote-iox`.
 owed or worth considering: the retention ADR (`fieldnote-iox`); ADR-0004's availability
 amendment when `fieldnote-bdw` resolves; ADR-0008's dated note stating the cascade as it
 is (`fieldnote-5ow`); the three stale "session 15" pointers (`fieldnote-oa9`); ADR-0006's
-five-name evidence statement; the plan §2 conversation; and the decision `fieldnote-af9`
-holds.
+five-name evidence statement; and the decision `fieldnote-af9` holds.
 
 ---
 

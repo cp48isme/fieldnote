@@ -643,8 +643,9 @@ this session, not during it.
 > in text — capture, roster import, generation with the request the route validates
 > field by field, the five hand exports, deletion, and the platform's copies — each with
 > what enters, what is stored, what leaves, and by whose action, and the platform's
-> dictation and backup named as unverified; retention as the owner decided it on
-> 2026-09-16 (`fieldnote-tcq`) and as not yet built (`fieldnote-iox`), so the store is
+> dictation and backup named as unverified; retention as the owner decided it
+> (`fieldnote-tcq`, 2026-09-16, changed 2026-09-17) and as not yet built
+> (`fieldnote-iox`), so the store is
 > not bounded today and ADR-0004's reliance on a small store is a policy, not a property;
 > minimisation as decisions with the file that enforces each; rights and their limits —
 > the attendee-removal limit, the single-note limit, the audit-record exception, and what

@@ -3,8 +3,8 @@
 Written 2026-09-16, session 16, against `main` at `5d669b0`. Plan §4.6's row for this
 document is "DPIA-style assessment, data inventory, retention, minimization", and the
 build guide's entry adds that retention is decided before the session rather than during
-it. It was: the owner's decision of 2026-09-16 is in `fieldnote-tcq`'s notes, and §4
-writes it up as decided and not yet built.
+it. It was: the owner's decision, made 2026-09-16 and changed 2026-09-17, is in
+`fieldnote-tcq`'s notes, and §4 writes it up as decided and not yet built.
 
 **How to read it.** This assesses the public build as a design: the design the private
 fork will run with real data. The public build itself holds synthetic data (ADR-0001), so
@@ -21,9 +21,7 @@ owns the drawn diagrams.
 
 **What this document does not assess.** The private fork's deployment. Nothing is
 deployed (`fieldnote-ijg`), the private fork has no session (`fieldnote-v2s`), and
-hosting would add at least one processor this document does not know (§7). Plan §2's
-organisational review is a precondition of any deployment with real data, and this
-document does not stand in for it.
+hosting would add at least one processor this document does not know (§7).
 
 ---
 
@@ -523,26 +521,27 @@ And one input the platform processes before the application sees it: dictation
 
 ## 4. Retention
 
-**Decided, 2026-09-16, by the owner.** The decision is in `fieldnote-tcq`'s notes and is
-written here as decided, not reinterpreted.
+**Decided by the owner: 2026-09-16, and changed 2026-09-17.** The decision is in
+`fieldnote-tcq`'s notes of 2026-09-17, which supersede the notes of 2026-09-16, and is
+written here as stated, not reinterpreted.
 
 - **Scope:** an event's content — attendees, notes, drafts, contacts, images, and the
   event itself: what `deleteEvent` cascades to today (§3.5).
-- **Due:** "30 days after the event ends." The clock keys on `endsAt`; if that is null,
-  `startsAt`; if both are null, the event's `updatedAt`.
-- **Prompted, with a ceiling:** when an event is due, the application asks the
-  representative to delete it and offers the audit CSV and the briefing exports first.
-  If she has not acted, it "warns again 7 days before the ceiling, and deletes the event
-  at 60 days after the event ends."
-- **Audit records:** kept; never pruned by the application. They hold hashes and
-  metadata, not content, and pruning them would reopen what ADR-0008 rejected. The
-  store's growth in audit records is accepted and stated.
-- **Periods:** build-time constants, not a user setting. The private fork may set its
-  own values to match an employer's schedule or a legal hold.
+- **Automatic deletion:** 30 days after the event ends. The clock keys on `endsAt`; if
+  that is null, `startsAt`; if both are null, the event's `updatedAt`. No ceiling beyond
+  it, no export prompt.
+- **Warning:** from day 23, the application shows her a notice on the event that its
+  content will be deleted on the date it will be.
+- **Her delete:** she can delete an event at any time, as today (§3.5).
+- **Audit records:** kept; never pruned. Unchanged, per ADR-0008.
+- **Period:** a build-time constant, not a user setting.
+- **Why there is no export prompt:** the correspondence that leaves by her mail client
+  is the record kept elsewhere; the application's copy is working material.
 
 **Not yet implemented.** `fieldnote-iox` carries the implementation, in its own session,
 with the ADR the decision still needs. Nothing in `src/` deletes by age or on a schedule
-today: the only timer in the source is the crash-recovery heartbeat
+today, and no notice of a deletion date is shown: the only timer in the source is the
+crash-recovery heartbeat
 (`src/lib/db/recovery.ts:83`), and the only deletions are the ones §3.5 lists, each by
 her hand. Until `fieldnote-iox` closes, the store is not bounded, and ADR-0004's reliance
 on a small local store — "a device holding two events' worth of notes is a smaller loss
@@ -558,8 +557,8 @@ and says so.
 **Retention and eviction are different questions.** Retention deletes on a schedule the
 project chooses; eviction deletes on the platform's, and can only fire sooner, never
 later. Which fires first bears on whether data leaves the device before it is lost —
-the export prompt at the due point, and ADR-0004's owed availability amendment — and
-not on how long data should be kept; that is why the retention decision stopped waiting
+her exports by hand, and ADR-0004's owed availability amendment — and not on how long
+data should be kept; that is why the retention decision stopped waiting
 on `fieldnote-bdw` and why that bead stays open. What that bead now holds: one device
 observation, 2026-09-16, by the owner — the installed app not opened for eight idle
 days, iOS 26.6.1, all notes present on reopening; one device, one run — and two things
@@ -570,9 +569,8 @@ unverified, and this document does not amend it; it records the later observatio
 its limits and cites the bead. This document does not assume that eviction protects the
 data or that it threatens it.
 
-**Nothing records that an audit CSV export has been taken** (§3.4), so when the retention
-prompt offers the exports, the application will not know whether one was ever made. This
-document does not assume an export has ever been taken from a real device.
+This document does not assume an export has ever been taken from a real device; that
+nothing records the audit CSV export is stated in §3.4 and §6.
 
 ---
 
@@ -774,11 +772,10 @@ open.
 Added here, each with a bead, each specific to data protection, none already in §6:
 
 - **Retention is decided and not implemented.** Until `fieldnote-iox` closes, nothing
-  bounds the store, and the export prompt the decision relies on does not exist.
+  bounds the store.
 - **Eviction, on the availability axis.** Whether data leaves the device before the
-  platform deletes it depends on her exporting it, and nothing in the application
-  prompts her to yet. One device observation now exists (§4) and the storage-pressure
-  and `persisted()` questions do not. `fieldnote-bdw`; ADR-0004 owes the availability
+  platform deletes it depends on her exporting it. One device observation now exists
+  (§4) and the storage-pressure and `persisted()` questions do not. `fieldnote-bdw`; ADR-0004 owes the availability
   amendment when it resolves.
 - **A request concerning one attendee cannot be fully met without deleting the event.**
   `fieldnote-jqk`.
