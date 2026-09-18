@@ -2,7 +2,7 @@
 
 Written 2026-09-16, at the head of `docs/session-16-data-protection`, the session 16
 branch, for the state `main` will be in when it merges. `main` is at `5d669b0`; the
-branch adds six commits including this one, and nothing on it has been pushed: the
+branch adds seven commits including this one, and nothing on it has been pushed: the
 owner's reviewer reads the branch locally before anything reaches the remote.
 
 Every claim here was checked against the repository, git history, the trackers, or the
@@ -54,7 +54,7 @@ carries the non-negotiable constraints.
 ## Where we've been
 
 `main` is at `5d669b0` with 238 commits and 43 merged pull requests; this branch adds
-six commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
+seven commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
 onward, and is not repeated here. What follows is the map from session to pull request,
 with the closed-not-merged ones named because a closed PR is easy to mistake for one that
 never existed. Verified this session from `gh pr list --state all`: 48 pull requests,

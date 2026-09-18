@@ -53,7 +53,7 @@ system designed for a regulated domain rather than one person's spouse's job.
 ### The private build — a private fork
 
 Same code, different config: real branding, real voice profile, real events. Never
-public, never indexed, and only after the conversation in §2 has happened.
+public, never indexed.
 
 **Everything below applies to both unless marked otherwise.**
 
@@ -420,8 +420,8 @@ defensible portfolio piece; don't let Phases 2–4 hold up shipping something re
 
 §1 and §3.4 are settled — ADR-0001 and ADR-0002 are committed. §5's encryption and
 dictation questions are settled as ADR-0004 and ADR-0005. The three items below have
-since arrived. The closed items are kept rather than deleted, because what was asked for and what was received are both
-inputs a later session has to be able to check.
+since arrived. The closed items are kept rather than deleted, because what was asked
+for and what was received are both inputs a later session has to be able to check.
 
 1. **8–15 more of the representative's emails**, with range: an enthusiastic recipient, a lukewarm
    one, a department chair, a staff coordinator, and one where she's asking for
