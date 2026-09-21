@@ -521,8 +521,11 @@ that records it was believed private when it was written and was not (§5.5).
 **What does not.** The public build holds synthetic data and is unaffected. The private
 fork has no session and this repository has no visibility into it.
 
-**Residual.** High in the private fork until the precondition is written into whatever
-document governs its deployment, which does not exist yet. Cited in §6 beside ADR-0004.
+**Residual.** Lowered, and by two separate things. The document governing the deployment
+now exists: ADR-0012, which records the precondition among the things it does not settle.
+And the owner set automatic screen lock on the representative's device on 2026-09-21. What
+remains is that the application neither enforces the setting nor detects it, so this is a
+fact about one day rather than a property of the system. Cited in §6 beside ADR-0004.
 
 ---
 
@@ -542,7 +545,10 @@ recorded.
   design, so the store does not shrink to nothing when events are deleted. `fieldnote-tcq`;
   ADR-0004 as amended 2026-09-11; a decision for the owner before session 16.
 - **Device auto-lock is a precondition the application does not enforce.** Full-disk
-  encryption covers a device that has actually locked. `fieldnote-m8t`; ADR-0004 row 1.
+  encryption covers a device that has actually locked. The owner set automatic screen lock
+  on the representative's device on 2026-09-21; the application still neither enforces it
+  nor detects it, so nothing here would notice it being turned off. `fieldnote-m8t`;
+  ADR-0004 row 1; ADR-0012.
 - **Subresource integrity is partial.** The framework's entry scripts and the polyfill
   carry `integrity`; the client-component chunks React preloads do not, under either
   bundler; the nonce, `'strict-dynamic'`, and one origin over TLS are the lock the door

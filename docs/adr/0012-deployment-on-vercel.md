@@ -194,9 +194,11 @@ outlasts that one: the key is never in a variable a script holds.
 
 **No rate limit in code.** An in-memory counter on a serverless platform counts per
 instance, so it bounds nothing; see *Alternatives*. The ceiling is a **monthly spend limit
-on the model API key**, set by the owner in the provider's console. That is an action
-outside this repository, nothing here can verify it, and the handoff carries it as owed
-until it is done.
+on the model API key**, and it **is in place**: the owner set it on 2026-09-21, in the
+provider's console, on a workspace dedicated to this deployment, so what this application
+can spend is bounded separately from anything else the account does. That is an action
+outside this repository and nothing here can verify it; it is recorded because a ceiling
+nobody wrote down is a ceiling the next session assumes is missing.
 
 ### 7. What this record does not settle
 
@@ -206,8 +208,10 @@ until it is done.
   nothing has been deployed. If it is not collected, the worker's install throws and the
   installed app silently has no offline shell. `fieldnote-6x5`; session 21 verifies it
   against a real build, not by reasoning about the builder.
-- **The representative's device settings.** Automatic screen lock and sleep are a
-  deployment precondition the application does not enforce (`docs/THREAT-MODEL.md` §5.6).
+- **The representative's device settings.** Automatic screen lock is set on her device,
+  by the owner, 2026-09-21. It remains a deployment precondition the application does not
+  enforce and cannot detect (`docs/THREAT-MODEL.md` §5.6): what is settled is that it is
+  on today, not that anything here would notice if it changed.
 - **Which production URL she installs from.** Enabling Standard Protection restricts the
   production *generated* deployment URL
   ([`/docs/deployment-protection`](https://vercel.com/docs/deployment-protection), read
@@ -297,8 +301,10 @@ a user.
 - **The key is a shared secret, and whoever holds it may call the route.** It is not tied
   to the device beyond living in that browser's cookie jar. A copied cookie is a working
   credential until the hash is removed.
-- **Nothing in the repository verifies the spend limit is set.** It is the owner's action
-  in the provider's console, and the handoff carries it as owed.
+- **The spend limit is set, and nothing in the repository verifies it.** The owner set it
+  on 2026-09-21, on a workspace dedicated to this deployment. It is a setting in the
+  provider's console, so this repository cannot read it, cannot test it, and would not
+  notice if it were removed. The same standing gap as every other platform setting below.
 - **Nothing in the repository verifies the platform settings.** Deployment protection,
   the toolbar switches, the environment scoping of both variables, and the region all live
   in Vercel's dashboard or in a file the platform reads at deploy time. `vercel.json`

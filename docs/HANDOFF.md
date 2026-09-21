@@ -226,13 +226,13 @@ whether the access cookie survives in the installed app. Budgeted at ~4 hours.
 
 ### Owner actions owed, none of which this repository can verify
 
-- **The spend limit on the model API key**, in the provider's console. ADR-0012 makes it
-  the cost ceiling in place of a rate limit, so until it is set there is no ceiling.
-- **Automatic screen lock and sleep on the representative's device**, a private-fork
-  deployment precondition. `docs/THREAT-MODEL.md` §5.6; ADR-0004 row 1. Recorded there
-  rather than in an open bead, because `fieldnote-m8t` is closed.
 - **The Vercel project's settings**, once session 21 creates it: protection scope and
   method, both variables scoped to Production, analytics and the toolbar off.
+
+Two that were owed are done, both on 2026-09-21, and both remain unverifiable from here:
+the spend limit on the model API key, set in the provider's console on a workspace
+dedicated to this deployment (ADR-0012), and automatic screen lock on the
+representative's device (`docs/THREAT-MODEL.md` §5.6; ADR-0004 row 1).
 
 Still owed and unchanged: a real photo and a real site map through the resize; the real
 approved content loaded in the private fork; a calendar application opening the `.ics`; a
@@ -345,8 +345,12 @@ Stated rather than smoothed over.
   that browser's cookie jar; a copied cookie works until the hash is removed.
 - **Whether the cookie survives in the installed app on iOS is unverified.** If it does
   not, drafting refuses and she re-enters the key.
-- **The spend limit is not set, or if it is, nothing here knows.** Until it is, ADR-0012's
-  cost ceiling does not exist.
+- **The spend limit is set by the owner and nothing in the repository verifies it.** Set
+  2026-09-21, on a workspace dedicated to this deployment; nothing here reads it, tests
+  it, or would notice it being removed.
+- **Automatic screen lock is set on the representative's device**, by the owner,
+  2026-09-21 (`docs/THREAT-MODEL.md` §5.6). The application neither enforces it nor
+  detects it, so that is a fact about one day and not a property of the system.
 - **The threat model's severities are one reader's judgement.**
 - **The required-checks test sees the code side only.**
 - **`core.hooksPath` cannot be asserted in CI.**
