@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ACCESS_COOKIE_MAX_AGE_SECONDS } from "@/lib/access/key";
+import { StorageLine } from "@/components/settings/StorageLine";
 
 /**
  * The settings screen: one field, and the only place the caller key is entered. ADR-0012.
@@ -93,6 +94,16 @@ export default async function Settings({
           Removes the key from this browser. Notes, drafts, and records are untouched.
         </span>
       </form>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="font-medium">Storage</h2>
+        <StorageLine />
+        <span className="opacity-70">
+          Persistent means the browser has agreed not to clear this app&apos;s notes to
+          reclaim space. It is not a guarantee, and it is not a backup: what has to
+          outlive this device has to leave it.
+        </span>
+      </section>
 
       <Link href="/" className="underline" data-testid="access-back">
         Back to capture

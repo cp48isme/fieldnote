@@ -47,7 +47,7 @@ import { MAX_RETRIES } from "@/lib/generation/model";
 import { applyGuardrails } from "@/lib/generation/guardrails";
 import { protectApproved, restoreApproved } from "@/lib/generation/approved";
 import { requestModelDraft, textOf } from "@/lib/generation/model-call";
-import { loadPrivateTerms } from "@/lib/generation/private-terms";
+import { resolvePrivateTerms } from "@/lib/private-terms-source";
 import { PROMPT_TEMPLATE_VERSION } from "@/lib/generation/prompt";
 import { assertPseudonymized, PseudonymizationError } from "@/lib/privacy/pseudonymize";
 import {
@@ -79,16 +79,19 @@ const GenerateRequestSchema = z.object({
 const KEY_VARIABLE = "ANTHROPIC_API_KEY";
 
 /**
- * The private-term rule, loaded once. Absent on every public clone and every CI runner,
- * and said so here rather than assumed: an inactive control that looks active is worse
- * than none. See the header of `private-terms.ts`.
+ * The private-term rule, loaded once, from `.guardrail-terms.local` if it exists and from
+ * `FIELDNOTE_GUARDRAIL_TERMS` otherwise. Absent on every public clone and every CI
+ * runner, and said so here rather than assumed: an inactive control that looks active is
+ * worse than none. The line carries a status, a count, and which source answered — never
+ * a term. See `src/lib/private-terms-source.ts`.
  */
-const privateTerms = loadPrivateTerms();
+const privateTerms = resolvePrivateTerms();
 console.info(
   JSON.stringify({
     route: "generate",
     privateTerms: privateTerms.status,
     count: privateTerms.count,
+    source: privateTerms.source,
   }),
 );
 
