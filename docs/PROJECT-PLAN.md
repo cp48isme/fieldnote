@@ -48,7 +48,7 @@ fictional attendees. Everything about the engineering, the governance, and the
 compliance architecture is real and fully visible.
 
 This is the resume artifact. It's stronger de-branded, not weaker — a reviewer sees a
-system designed for a regulated domain rather than one person's spouse's job.
+system designed for a regulated domain rather than a tool built for one person.
 
 ### The private build — a private fork
 
