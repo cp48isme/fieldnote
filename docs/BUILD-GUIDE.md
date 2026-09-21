@@ -414,10 +414,10 @@ the network.
 
 Storage, upload, and the matcher that validates claim-bearing output against it.
 
-Blocked on knowing what approved content actually exists (plan §7 item 4) — it decides
+Blocked on knowing what approved content actually exists (plan §7 item 3) — it decides
 whether this is a library-selection feature or a paste field.
 
-> **Amended 2026-09-14.** Unblocked: plan §7 item 4 was received that day and lives at
+> **Amended 2026-09-14.** Unblocked: plan §7 item 3 was received that day and lives at
 > `private/approved-content-brochure.md`. What it is and what it decides are recorded
 > beside the material, per the working agreement in `CLAUDE.md` on findings about the
 > private material; the public record says only that it exists. The session that builds
@@ -635,6 +635,26 @@ probably faster than my estimate.
 Retention is not just a documentation item here: ADR-0004 leans on a small local store
 as a mitigation, so retention has to be a real implemented behaviour. Decide it before
 this session, not during it.
+
+> **Amended 2026-09-16, session 16, on completion.** `docs/DATA-PROTECTION.md`: the four
+> kinds of data subject; the inventory of all eleven tables from the schema, every field
+> with its classification and the schema's own reason, nothing re-classified, and the
+> classification read as ADR-0004's plan rather than as encryption in place; six flows
+> in text — capture, roster import, generation with the request the route validates
+> field by field, the five hand exports, deletion, and the platform's copies — each with
+> what enters, what is stored, what leaves, and by whose action, and the platform's
+> dictation and backup named as unverified; retention as the owner decided it
+> (`fieldnote-tcq`, 2026-09-16, changed 2026-09-17) and as not yet built
+> (`fieldnote-iox`), so the store is
+> not bounded today and ADR-0004's reliance on a small store is a policy, not a property;
+> minimisation as decisions with the file that enforces each; rights and their limits —
+> the attendee-removal limit, the single-note limit, the audit-record exception, and what
+> the cascade test does and does not prove; the one processor and what is not verified
+> about it; residual risk citing the threat model's §6 by item and adding bead-backed
+> items only. No legal characterisation anywhere: that is session 17's. The session
+> stopped once, on a premise the tracker carried wrongly, and resumed on the owner's
+> correction; `docs/prompts/session-16.md` has both. No code changed and the eval gate
+> skipped. The prompt was drafted by the session 15 instance and rewritten by Guardian.
 
 ### Session 17 — Compliance map
 *~3 hours*
