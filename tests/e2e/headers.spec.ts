@@ -122,10 +122,9 @@ test.describe("security headers", () => {
   }) => {
     // ADR-0012 turns the Vercel Toolbar off in project settings, and its own documentation
     // says it needs `script-src https://vercel.live` to run. This asserts the other half
-    // rather than reasoning about it: with `'strict-dynamic'` and a per-request nonce, a
-    // script element added for a third-party origin does not execute and the browser
-    // reports a violation. Nothing here contacts vercel.live; what is under test is the
-    // policy's behaviour against the class of thing an injected toolbar is.
+    // rather than reasoning about it. Nothing here reaches vercel.live: the policy refuses
+    // the script before the browser requests it, which is the observable being asserted.
+    //
     // The script is put into the served HTML, not added with `page.evaluate`. That
     // distinction is the whole test: `'strict-dynamic'` deliberately lets a script that
     // already passed the nonce check load further scripts, so injecting one from an

@@ -19,9 +19,10 @@ does. That document's §6 is the residual-risk list this one cites and does not 
 its §2 is the flow this one draws in more detail; `docs/ARCHITECTURE.md` (session 18)
 owns the drawn diagrams.
 
-**What this document does not assess.** The private fork's deployment. Nothing is
-deployed (`fieldnote-ijg`), the private fork has no session (`fieldnote-v2s`), and
-hosting would add at least one processor this document does not know (§7).
+**What this document does not assess.** The private fork's deployment as it will be run.
+Where it will run is now decided — ADR-0012, a Vercel project of its own — and §7 records
+what that adds. Nothing is deployed yet (`fieldnote-ijg`), and the private fork still has
+no session that creates it (`fieldnote-v2s`); both are session 21.
 
 ---
 
@@ -738,10 +739,22 @@ before the application receives text, and where that happens is not recorded
 backup is not recorded (`fieldnote-ap1`). Both are named here as unverified rather than
 assumed either way.
 
-**Hosting the private fork would add at least one more.** The route holds the key and
-runs on the same origin as the page; serving it from any hosted origin adds the host as a
-party and needs the controls `fieldnote-9n1` lists, which the route does not have.
-Nothing is deployed (`fieldnote-ijg`), and this document does not assess a deployment.
+**Hosting adds one more, decided and not yet done: Vercel.** ADR-0012 decides that the
+private build deploys to its own Vercel project, and nothing is deployed yet
+(`fieldnote-ijg`; session 21). What that adds when it happens, as facts rather than
+intentions: the request passes through Vercel on its way to the model provider, and the
+function's logs live there, retained for one day on the Pro plan the record chooses
+(Vercel's plan documentation, read 2026-09-21). What is in those logs is what the route
+logs, which is metadata and never content — status, model, stop reason, counts,
+durations — asserted by `tests/unit/generate-route.test.ts`; the access route logs the
+same way and never the key or its hash. The function runs in one region, `iad1`, set in
+`vercel.json`. No attendee data is stored on the platform: there is no server-side store
+(§5), so what Vercel holds is the request in flight and the log line about it.
+
+The three controls `fieldnote-9n1` asked for before any hosted origin now exist, except
+the rate limit, which ADR-0012 replaces with a spend limit on the model API key as an
+owner action outside this repository: the route refuses a body that is not JSON with 415,
+and refuses any caller without the access key with 401, before reading the body.
 
 **No analytics, telemetry, error reporting, or CDN.** Plan §5's third non-negotiable.
 The controls, as the threat model's cells name them: `connect-src 'self'` and
