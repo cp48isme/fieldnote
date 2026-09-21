@@ -149,8 +149,11 @@ intermittent. The caveats, unchanged from session 15 except where marked:
 - **The event name and the approved passages cross the boundary outside the note
   delimiter.** `fieldnote-3rl`; `docs/THREAT-MODEL.md` §4; now also
   `docs/DATA-PROTECTION.md` §3.3 and §5.
-- **What the provider retains of the pseudonymized request is an account arrangement
-  nobody has verified.** `fieldnote-n9l`; session 17 depends on the answer.
+- **The provider retains the pseudonymized request under its standard commercial
+  policy.** Zero data retention is not in place and will not be requested now (owner,
+  2026-09-21): deleted within 30 days, up to 2 years for content trust-and-safety systems
+  flag, both pages read 2026-09-21. What is retained names nobody. `fieldnote-n9l`,
+  closed.
 - **The end-to-end suite has one intermittent test** (new). `persistence.spec.ts:92`,
   `fieldnote-ccf`; a full run is green or it is this one test.
 - **The installed app has one observed failure mode on the test rig** (new, not a
@@ -208,10 +211,11 @@ enforced and what is documented, and §6 for the residual list;
 `docs/DATA-PROTECTION.md` §1 for the data subjects, §2 for the inventory, §3.3 and §7
 for what crosses the egress and what does not, §4 for retention as decided and not
 built, §5 for the enforced-versus-documented status of each minimisation, and §6 for
-the deletion limits and the hash facts. Two things it depends on that are not settled:
-`fieldnote-n9l`, the provider's retention arrangement, on which mapping the boundary as
-data minimisation rests; and the wording of the §5.5 item, which it cites from the
-threat model's §6 verbatim rather than writing its own.
+the deletion limits and the hash facts. The provider's retention is settled and is not
+zero: map it as the standard commercial policy, deleted within 30 days and up to 2 years
+for flagged content, not as a zero-retention arrangement (`fieldnote-n9l`, closed
+2026-09-21). One thing it depends on is still unsettled: the wording of the §5.5 item,
+which it cites from the threat model's §6 verbatim rather than writing its own.
 
 Still owed and unchanged: a real photo and a real site map through the resize on the
 device; the real approved content loaded in the private fork; a calendar application
@@ -247,8 +251,8 @@ Still open and load-bearing: `fieldnote-iox` — retention, decided and not buil
 `fieldnote-jqk` — attendee removal leaves notes and drafts; `fieldnote-52s`,
 `fieldnote-5ow` — the cascade test and the records that name three tables;
 `fieldnote-8w6`, `fieldnote-ap1` — where dictation runs and whether the store is backed
-up, both unrecorded; `fieldnote-3rl`, `fieldnote-n9l`, `fieldnote-9n1`, `fieldnote-bn0`
-— from the session 15 amendment; `fieldnote-oa9` — three documents point at session 15
+up, both unrecorded; `fieldnote-3rl` and `fieldnote-bn0` — from the session 15
+amendment; `fieldnote-oa9` — three documents point at session 15
 for a tightening it did not do; `fieldnote-ay2`, `fieldnote-af9`, `fieldnote-g7d`,
 `fieldnote-quj`, `fieldnote-m28`, `fieldnote-6qr`, `fieldnote-5iv`, `fieldnote-9gp`,
 `fieldnote-unp`, `fieldnote-ech`, `fieldnote-dx0`, `fieldnote-v2s`, `fieldnote-6x5`,

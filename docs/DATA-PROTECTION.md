@@ -628,8 +628,13 @@ documented*. Each was verified against the file before it was written here.
   the note delimiter, and the event name is not pseudonymized (`fieldnote-3rl`). In the
   private fork an event name routinely contains an institution or a town (§2, `events`).
   Wrapping both is a prompt-template change for a later session.
-- **What the provider retains** of the pseudonymized request is an account arrangement,
-  not a code property, and nobody has verified it (`fieldnote-n9l`; §7).
+- **What the provider retains** of the pseudonymized request, under its standard
+  commercial policy. Zero data retention is not in place on this account and will not be
+  requested now (owner, 2026-09-21): inputs and outputs are deleted within 30 days of
+  receipt or generation, and content flagged by automated trust-and-safety systems is
+  kept for up to 2 years (the commercial data retention policy and the API data retention
+  page, both read 2026-09-21). What is retained names nobody, because what crosses is
+  pseudonymized (`fieldnote-n9l`, closed; §7).
 - **Audit records grow without limit**, by decision (§4).
 
 ---
@@ -712,11 +717,15 @@ model identifier is on every audit record.
   photograph, no briefing note, no address or coordinates, no voice profile, and nothing
   about a recipient beyond their token, their class, and the notes about them. Enforced
   as §5's first three items say.
-- **What is not verified:** what the provider retains of what it receives. Plan §4.1
-  pairs the boundary with zero-retention configuration on the API; that is an account
-  arrangement, nothing in the repository verifies it, and no document records that it is
-  in place or how it was confirmed (`fieldnote-n9l`). Session 17's compliance map depends
-  on the answer.
+- **What the provider retains:** what it receives, under its standard commercial
+  retention policy. Zero data retention is not in place on this account and will not be
+  requested now (owner, 2026-09-21): inputs and outputs are deleted within 30 days of
+  receipt or generation, and content flagged by automated trust-and-safety systems is
+  kept for up to 2 years (the commercial data retention policy and the API data retention
+  page, both read 2026-09-21). What is retained names nobody, because what crosses is
+  pseudonymized. Plan §4.1, which pairs the boundary with zero-retention configuration,
+  is amended to say so; `fieldnote-n9l` is closed on that decision, and session 17's
+  compliance map maps the standard policy with these periods rather than zero retention.
 - **A second path to the same provider, from the repository and not the device:** the
   adversarial eval suite calls the live model from CI on a change under a watched path,
   with the synthetic corpus, and keeps a results artifact holding pseudonymized samples
