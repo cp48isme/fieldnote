@@ -17,6 +17,25 @@
  *   - `stop_reason: "refusal"` blocks the draft. The category is logged; the text is not.
  *
  * The API key is checked for presence, never read into anything that could print it.
+ *
+ * WHO MAY CALL IT (ADR-0012, `fieldnote-9n1`). Three refusals run before the body is
+ * read, in this order, because each is cheaper than the last and none of them needs the
+ * payload:
+ *
+ *   1. A `Content-Type` that is not JSON is refused with 415. Nothing is parsed.
+ *   2. A request with no access cookie, or one whose key does not hash to a configured
+ *      hash, is refused with 401. With `FIELDNOTE_ACCESS_KEY_HASHES` unset the route
+ *      refuses every request and says the variable is undefined: it never falls back to
+ *      open. The cookie is set by `/api/access` from a form on the settings screen and is
+ *      `HttpOnly`, so no script on the page can read it or send it anywhere.
+ *   3. The model key must be present, as before.
+ *
+ * There is no rate limit in code, by decision. A per-instance counter on a serverless
+ * platform is not a ceiling, and the ceiling that matters is a monthly spend limit on the
+ * model API key, which is the owner's action in the provider's console (ADR-0012). What
+ * the route already does when the provider refuses for rate or spend is unchanged and
+ * tested: "the model API is rate limiting" at `tests/unit/generate-route.test.ts`, the
+ * rate-limit case.
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -31,6 +50,13 @@ import { requestModelDraft, textOf } from "@/lib/generation/model-call";
 import { loadPrivateTerms } from "@/lib/generation/private-terms";
 import { PROMPT_TEMPLATE_VERSION } from "@/lib/generation/prompt";
 import { assertPseudonymized, PseudonymizationError } from "@/lib/privacy/pseudonymize";
+import {
+  ACCESS_COOKIE,
+  ACCESS_KEY_HASHES_VARIABLE,
+  configuredHashes,
+  cookieValue,
+  keyMatches,
+} from "@/lib/access/key";
 
 /** Never prerendered: this handler exists to be called, not built. */
 export const dynamic = "force-dynamic";
@@ -73,6 +99,43 @@ function log(entry: Record<string, string | number | boolean | null>): void {
 
 export async function POST(request: Request): Promise<NextResponse> {
   const startedAt = Date.now();
+
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.split(";")[0]!.trim().toLowerCase() !== "application/json") {
+    log({ status: 415, reason: "content-type" });
+    return NextResponse.json(
+      { error: "Body must be application/json." },
+      { status: 415 },
+    );
+  }
+
+  const hashes = configuredHashes(process.env[ACCESS_KEY_HASHES_VARIABLE]);
+  if (hashes.length === 0) {
+    // Unconfigured refuses everything. An open route is not a fallback.
+    log({
+      status: 401,
+      reason: "access-unconfigured",
+      variable: ACCESS_KEY_HASHES_VARIABLE,
+    });
+    return NextResponse.json(
+      { error: "This route is not accepting callers." },
+      {
+        status: 401,
+      },
+    );
+  }
+
+  const presented = cookieValue(request.headers.get("cookie"), ACCESS_COOKIE);
+  if (!(await keyMatches(presented, hashes))) {
+    // One reason for both "no cookie" and "wrong cookie": the answer to a caller who
+    // should not be here is the same either way, and the log says which without saying
+    // what was presented.
+    log({ status: 401, reason: "access-denied", presented: presented !== undefined });
+    return NextResponse.json(
+      { error: "This device is not authorised." },
+      { status: 401 },
+    );
+  }
 
   if (!process.env[KEY_VARIABLE]) {
     log({ status: 500, reason: "key-undefined", variable: KEY_VARIABLE });

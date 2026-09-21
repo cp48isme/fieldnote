@@ -29,6 +29,7 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 import { MAX_OUTPUT_TOKENS, TRUNCATION_RETRY_MULTIPLIER } from "@/lib/generation/model";
+import { hashKey } from "@/lib/access/key";
 
 const { POST } = await import("@/app/api/generate/route");
 
@@ -41,10 +42,33 @@ const VALID = {
   passages: [],
 };
 
+/** The caller key this suite's requests carry, and the hash the route is configured with. */
+const ACCESS_KEY = "fieldnote-generate-not-a-real-key";
+
+/**
+ * A request from an authorised device. The cookie is the default because every case below
+ * except the access cases is about what the route does *after* it has decided the caller
+ * may be here; `postWithout` and `postWithCookie` cover the decision itself.
+ */
 function post(body: unknown): Request {
+  return postWithCookie(body, ACCESS_KEY);
+}
+
+function postWithCookie(body: unknown, key: string): Request {
   return new Request("http://localhost/api/generate", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      cookie: `fieldnote_access=${encodeURIComponent(key)}`,
+    },
+    body: typeof body === "string" ? body : JSON.stringify(body),
+  });
+}
+
+function postWithout(body: unknown, headers: Record<string, string>): Request {
+  return new Request("http://localhost/api/generate", {
+    method: "POST",
+    headers,
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
 }
@@ -63,10 +87,59 @@ function reply(text: string, stop_reason: string, extra: Record<string, unknown>
 describe("the generation route", () => {
   let info: MockInstance<typeof console.info>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     create.mockReset();
     vi.stubEnv("ANTHROPIC_API_KEY", "set-for-the-test-not-a-real-key");
+    vi.stubEnv("FIELDNOTE_ACCESS_KEY_HASHES", await hashKey(ACCESS_KEY));
     info = vi.spyOn(console, "info").mockImplementation(() => {});
+  });
+
+  describe("who may call it (ADR-0012)", () => {
+    it("refuses a content type that is not JSON, before reading the body", async () => {
+      const response = await POST(postWithout(VALID, { "content-type": "text/plain" }));
+      expect(response.status).toBe(415);
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it("refuses a request with no access cookie", async () => {
+      const response = await POST(
+        postWithout(VALID, { "content-type": "application/json" }),
+      );
+      expect(response.status).toBe(401);
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it("refuses a request whose key is wrong", async () => {
+      const response = await POST(postWithCookie(VALID, "not-the-key"));
+      expect(response.status).toBe(401);
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it("refuses every request when the hashes variable is unset, and never falls back to open", async () => {
+      vi.stubEnv("FIELDNOTE_ACCESS_KEY_HASHES", "");
+      const response = await POST(post(VALID));
+      expect(response.status).toBe(401);
+      expect(create).not.toHaveBeenCalled();
+      expect(info.mock.calls.map((call) => String(call[0])).join("\n")).toContain(
+        "FIELDNOTE_ACCESS_KEY_HASHES",
+      );
+    });
+
+    it("accepts the right key and gets as far as the model", async () => {
+      create.mockResolvedValue(reply("Subject: x\n\nBody.", "end_turn"));
+      const response = await POST(postWithCookie(VALID, ACCESS_KEY));
+      expect(response.status).toBe(200);
+      expect(create).toHaveBeenCalled();
+    });
+
+    it("logs no key and no hash on a refusal", async () => {
+      const hash = await hashKey(ACCESS_KEY);
+      await POST(postWithCookie(VALID, "not-the-key"));
+      const lines = info.mock.calls.map((call) => String(call[0])).join("\n");
+      expect(lines).not.toContain("not-the-key");
+      expect(lines).not.toContain(hash);
+      expect(lines).toContain("access-denied");
+    });
   });
 
   it("refuses to start without the key, naming the variable and nothing else", async () => {

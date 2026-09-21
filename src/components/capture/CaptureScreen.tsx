@@ -604,6 +604,17 @@ export function CaptureScreen() {
               >
                 {view === "capture" ? `Follow-ups (${drafts.length})` : "Notes"}
               </button>
+              {/* A plain link, not a route change in this component's state: the settings
+                  screen is a server-rendered page whose forms post to /api/access, and
+                  nothing about the access key passes through the capture surface or the
+                  data layer (ADR-0012). */}
+              <a
+                href="/settings"
+                data-testid="settings-link"
+                className="min-h-11 rounded-lg border px-3 text-sm leading-[2.5rem]"
+              >
+                Device
+              </a>
             </div>
           )}
         </div>

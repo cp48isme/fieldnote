@@ -45,6 +45,13 @@ export const STATIC_HEADERS: Readonly<Record<string, string>> = {
   "Permissions-Policy": "microphone=(), camera=(), geolocation=(), payment=(), usb=()",
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
+  // ADR-0012. The private deployment is never public and never indexed, and "never
+  // indexed" is a header a crawler reads, not an intention. It is set on every response
+  // rather than on the document alone, because a deployment URL can be reached directly
+  // for any path. `public/robots.txt` says the same thing to a crawler that asks first;
+  // neither is a control against anyone who ignores them, which is what the deployment's
+  // own protection is for.
+  "X-Robots-Tag": "noindex, nofollow",
 };
 
 /**
