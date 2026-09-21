@@ -504,10 +504,9 @@ does not bear on at all.
 application and that nothing in the repository detects or enforces.
 
 **What holds now.** Nothing in the application. Automatic screen lock and sleep are
-therefore a deployment precondition for the private fork, alongside the organisational
-review in plan §2 — stated as a general precondition, naming no machine and recording no
-configuration reading, because the bead that records it was believed private when it was
-written and was not (§5.5).
+therefore a deployment precondition for the private fork — stated as a general
+precondition, naming no machine and recording no configuration reading, because the bead
+that records it was believed private when it was written and was not (§5.5).
 
 **What does not.** The public build holds synthetic data and is unaffected. The private
 fork has no session and this repository has no visibility into it.
