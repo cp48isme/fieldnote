@@ -125,6 +125,16 @@ model's text with tokens in place. The route logs status, reason, durations, and
 never content. Nothing else leaves the device by network: the browser enforces
 `connect-src 'self'` on every request the page makes (§3.3).
 
+**One other request goes to this origin, and it is not an egress.** Since ADR-0012 the
+settings screen posts the caller key to `/api/access` as a plain HTML form, and the
+answer is an `HttpOnly` cookie the browser attaches to `/api` requests. It carries the
+key and nothing about any attendee, it goes to this origin and no further, and the model
+egress above is unchanged. It is a form submission rather than a `fetch`, so
+`tests/unit/single-egress.test.ts` — a grep for call sites — does not see it and could
+not. What bounds it is `form-action 'self'` in the policy, asserted against a live
+response in `tests/e2e/headers.spec.ts`: the browser will not post that form anywhere
+else.
+
 What leaves the device by hand is the representative's own action into her own
 applications: the draft to the clipboard and into her mail client after review
 (`CLAUDE.md`: the system never sends), the briefing as a download (ADR-0009), the
@@ -168,10 +178,10 @@ data goes (§3.4, §5).
 
 | | Threat | Control | Enforced by | Severity |
 |---|---|---|---|---|
-| **S** | The client is pointed somewhere other than the route; the route is called by something other than the page; the upstream is impersonated. | The client's only destination is the route on this origin, and the source has one network call site; the key is held on the server side of the route, checked for presence by name, and never printed; transport to the provider is the SDK's and the platform's. There are no accounts, by design (`SECURITY.md`); who can reach the server once it is hosted is a deployment question with no session (`fieldnote-ijg`, `fieldnote-9n1`; plan §8). | `tests/unit/single-egress.test.ts` ("points the API client at the model route and nothing else"), `tests/unit/generate-route.test.ts` ("refuses to start without the key, naming the variable and nothing else"), `tests/unit/model-call.test.ts` (one `messages.create` across `src/` and `tests/evals/`). Upstream transport: *not enforced here; documented.* | Medium. |
+| **S** | The client is pointed somewhere other than the route; the route is called by something other than the page; the upstream is impersonated. | The client's only destination is the route on this origin, and the source has one network call site; the key is held on the server side of the route, checked for presence by name, and never printed; transport to the provider is the SDK's and the platform's. There are no accounts, by design (`SECURITY.md`), and since ADR-0012 there is a caller key instead: the route hashes the key presented in an `HttpOnly` cookie and compares it in constant time against the hashes in `FIELDNOTE_ACCESS_KEY_HASHES`, refusing with 401 before it reads the body, and refusing every request when the variable is unset rather than falling back to open. The key is set by a form post to `/api/access` and is in no script-readable store. | `tests/unit/single-egress.test.ts` ("points the API client at the model route and nothing else"), `tests/unit/generate-route.test.ts` ("refuses to start without the key, naming the variable and nothing else"), `tests/unit/model-call.test.ts` (one `messages.create` across `src/` and `tests/evals/`); the caller key in `tests/unit/access-key.test.ts` (the comparison goes through `timingSafeEqual`, and every configured hash is compared), `tests/unit/access-route.test.ts` (the cookie's every attribute; a wrong key sets nothing; unconfigured refuses), and `tests/unit/generate-route.test.ts` ("refuses a request with no access cookie"; "refuses every request when the hashes variable is unset, and never falls back to open"), with `tests/e2e/access-key.spec.ts` showing in a browser that `document.cookie` cannot read it. Who may reach the hosted origin at all: ADR-0012, and the platform settings behind it are a hand check (`fieldnote-ijg`, session 21). Upstream transport: *not enforced here; documented.* | Medium. |
 | **T** | What crosses is altered: a request that is not the schema; a payload that failed pseudonymization; the model's answer carrying a name, a role, a claim, or a private term. | The route validates the schema and runs the structural half of the guard behind the client's full check; the model's text passes the guard again on return and a name-shaped or role-shaped string withholds the draft; then the ruleset, one sentence at a time, with the gap marker left where a sentence was; then the private-term rule on the route, where the file exists. | `tests/unit/generate-route.test.ts`, `tests/unit/pipeline.test.ts` ("never lets a name or a role reach the request"; "withholds a draft in which the model invented a roster name"), `tests/unit/guardrails.test.ts`, `tests/unit/private-terms.test.ts` (the mechanism; the real list is untestable in public by construction). | High. |
 | **R** | A generation happens with no record; the route's log carries content. | Every generation writes a record beside its draft in one transaction, with the model, both versions, both hashes, and the flags; a withheld generation is written with its reason and no body; the route logs status, reason, and counts and no note or draft text. | `tests/unit/repository-drafts.test.ts`, `tests/unit/pipeline.test.ts` ("audit hashes"), `tests/unit/generate-route.test.ts` ("logs metadata only: no note text, no draft text, no key"), `tests/e2e/review.spec.ts`; ADR-0008. | Medium. |
-| **I** | Identity crosses: a name the roster knows, a name it does not, a role, a contact; the provider retains what crossed. | Three passes and a fail-closed guard (ADR-0006, ADR-0007); a contact never reaches the generation layer; the request is hashed for the record after pseudonymization, so the record reconstructs against nothing that names anyone. What the provider keeps of the pseudonymized text is outside this repository: plan §4.1 pairs the boundary with zero-retention configuration on the API, and nothing here verifies it. | `tests/unit/pseudonymize.test.ts` ("is not decorative: a roster-only tokenizer fails it"), `tests/unit/contacts-boundary.test.ts`, `tests/unit/pipeline.test.ts`; `connect-src 'self'` in `tests/e2e/headers.spec.ts`. Residual: a name with neither a title nor a roster entry, a role outside the head-noun list or written mid-sentence without a determiner (ADR-0006, ADR-0007 *Residual risk*). The provider's retention: *not enforced; documented*, plan §4.1, `fieldnote-n9l`. | High. |
+| **I** | Identity crosses: a name the roster knows, a name it does not, a role, a contact; the provider retains what crossed. | Three passes and a fail-closed guard (ADR-0006, ADR-0007); a contact never reaches the generation layer; the request is hashed for the record after pseudonymization, so the record reconstructs against nothing that names anyone. What the provider keeps of the pseudonymized text is decided and known: zero data retention is **not** in place on this account and will not be requested now (owner, 2026-09-21), so the provider's standard commercial retention policy applies — inputs and outputs deleted within 30 days of receipt or generation, and content flagged by automated trust-and-safety systems kept for up to 2 years (the commercial data retention policy and the API data retention page, both read 2026-09-21). What crosses is pseudonymized, so what is retained for those periods names nobody. | `tests/unit/pseudonymize.test.ts` ("is not decorative: a roster-only tokenizer fails it"), `tests/unit/contacts-boundary.test.ts`, `tests/unit/pipeline.test.ts`; `connect-src 'self'` in `tests/e2e/headers.spec.ts`. Residual: a name with neither a title nor a roster entry, a role outside the head-noun list or written mid-sentence without a determiner (ADR-0006, ADR-0007 *Residual risk*). The provider's retention: a decision, not a control — plan §4.1 as amended 2026-09-21, `fieldnote-n9l`, closed. | High. |
 | **D** | The provider is down, rate-limits, truncates, or refuses. | Transient failures are retried by the SDK; a truncation is retried once at a doubled ceiling and a second blocks the draft; a refusal blocks with its category logged; each recipient's draft carries its own outcome and the batch continues. Capture works offline; generation does not. | `tests/unit/generate-route.test.ts`, `tests/unit/pipeline.test.ts` ("blocks and failures, one recipient at a time"). | Low. |
 | **E** | The model's output gains authority it was not given: it authors a claim, invents a name, writes the greeting, closes a note's delimiter, or its draft is exported unread. | Claim-bearing text is selected from the library or blocked; a name-shaped string is withheld; the greeting is composed on the device from the record; the delimiter cannot be closed from inside a note; export is unreachable from `generated` and nothing leaves `blocked`. | `tests/unit/guardrails.test.ts`, `tests/unit/evals-gate.test.ts` (a weakened rule lets the oracle through, without spend), `tests/unit/pipeline.test.ts`, `tests/unit/prompt.test.ts`, `tests/unit/draft-state.test.ts`; live, `tests/evals/` under `.github/workflows/evals.yml`. | High. |
 
@@ -511,8 +521,11 @@ that records it was believed private when it was written and was not (§5.5).
 **What does not.** The public build holds synthetic data and is unaffected. The private
 fork has no session and this repository has no visibility into it.
 
-**Residual.** High in the private fork until the precondition is written into whatever
-document governs its deployment, which does not exist yet. Cited in §6 beside ADR-0004.
+**Residual.** Lowered, and by two separate things. The document governing the deployment
+now exists: ADR-0012, which records the precondition among the things it does not settle.
+And the owner set automatic screen lock on the representative's device on 2026-09-21. What
+remains is that the application neither enforces the setting nor detects it, so this is a
+fact about one day rather than a property of the system. Cited in §6 beside ADR-0004.
 
 ---
 
@@ -532,7 +545,10 @@ recorded.
   design, so the store does not shrink to nothing when events are deleted. `fieldnote-tcq`;
   ADR-0004 as amended 2026-09-11; a decision for the owner before session 16.
 - **Device auto-lock is a precondition the application does not enforce.** Full-disk
-  encryption covers a device that has actually locked. `fieldnote-m8t`; ADR-0004 row 1.
+  encryption covers a device that has actually locked. The owner set automatic screen lock
+  on the representative's device on 2026-09-21; the application still neither enforces it
+  nor detects it, so nothing here would notice it being turned off. `fieldnote-m8t`;
+  ADR-0004 row 1; ADR-0012.
 - **Subresource integrity is partial.** The framework's entry scripts and the polyfill
   carry `integrity`; the client-component chunks React preloads do not, under either
   bundler; the nonce, `'strict-dynamic'`, and one origin over TLS are the lock the door
@@ -544,7 +560,11 @@ recorded.
   the runtime check behind it. `tests/unit/single-egress.test.ts`; ADR-0005 as amended
   2026-09-01. The tightening that ADR and the build guide scheduled for this session was
   not built: the live `connect-src` assertion the guide asked for already exists in
-  `tests/e2e/headers.spec.ts`, and the grep is cited here with its limit attached.
+  `tests/e2e/headers.spec.ts`, and the grep is cited here with its limit attached. Since
+  ADR-0012 there is a second same-origin request it does not see, and could not: the
+  settings screen posts the caller key to `/api/access` as a form, not a `fetch`. It is
+  bounded by `form-action 'self'` rather than by the grep, and §2 records it. The model
+  egress is unchanged.
 - **CI enforces structural denylist patterns only and cannot see `.denylist.local`.**
   The term check exists only in the local pre-commit hook, and it matches listed
   spellings only: a name split across words, missing a letter, or carrying a plural
@@ -570,10 +590,14 @@ recorded.
   delimiter.** The event name as entered and not pseudonymized, the passages by id and
   body; neither has the structural guarantee the notes have, and wrapping them is a
   prompt-template change for a later session. `fieldnote-3rl`.
-- **What the provider retains of the pseudonymized request is an account arrangement,
-  not a code property.** Plan §4.1 pairs the boundary with zero-retention configuration
-  on the API; nothing in the repository verifies it, and session 17's compliance map
-  depends on the answer. `fieldnote-n9l`.
+- **The provider retains the pseudonymized request under its standard commercial
+  policy.** Zero data retention is not in place on this account and will not be
+  requested now (owner, 2026-09-21): inputs and outputs are deleted within 30 days of
+  receipt or generation, and content flagged by automated trust-and-safety systems is
+  kept for up to 2 years (the commercial data retention policy and the API data
+  retention page, both read 2026-09-21). What is retained names nobody, because what
+  crosses is pseudonymized; the residual is that it exists at all, off the device, for
+  those periods. Plan §4.1 as amended 2026-09-21; `fieldnote-n9l`, closed.
 - **A term held out of the public documents was exposed for a day in 2026-09 and a
   history the project does not control retains it, accepted by the owner's decision.**
   `fieldnote-loh`.

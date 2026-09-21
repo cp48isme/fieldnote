@@ -7,6 +7,29 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 20 — the deployment decision and the route's caller controls
+
+- ADR-0012: where the application runs and who may call the route that spends money,
+  with every claim about the platform cited to its page and the date read. The private
+  build deploys first, to its own project on a personal account on the Pro plan, because
+  the free tier's terms permit non-commercial use only. Preview and every non-production
+  URL protected; the model key and the access hashes scoped to Production. Web
+  Analytics, Speed Insights, and the toolbar off. One function region, in `vercel.json`.
+  Noindex as a header and a file.
+- The generation route refuses a body that is not JSON with 415, and an unknown caller
+  with 401, both before reading the body, and refuses everything when unconfigured
+  rather than falling back to open. The caller key is held as a SHA-256 hash on the
+  server and compared in constant time; it reaches the server in an `HttpOnly` cookie
+  set by a plain form on a new settings screen, so nothing about it is in IndexedDB,
+  `localStorage`, or `document.cookie`. `scripts/generate-access-key.mjs` prints a key
+  once and its hash and writes neither. No rate limit in code, by decision.
+- The provider's retention is decided and is not zero: the standard commercial policy
+  applies, with the periods recorded and the pages dated. The threat model, the
+  assessment, the plan, and the handoff say so as a fact.
+- `docs/BUILD-GUIDE.md` gains a Deployment section: this session, session 21 for the
+  private repository and the deployment, and session 22 for retention.
+- Unit 344, end-to-end 43. The eval gate skips: nothing under a watched path changed.
+
 ### Session 16 — the data protection assessment
 
 - `docs/DATA-PROTECTION.md`: purpose and the four kinds of data subject; the inventory

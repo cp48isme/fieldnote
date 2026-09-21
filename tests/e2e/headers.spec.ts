@@ -30,6 +30,8 @@ function expectStaticHeaders(response: APIResponse) {
   expect(headers["permissions-policy"]).toContain("microphone=()");
   expect(headers["cross-origin-opener-policy"]).toBe("same-origin");
   expect(headers["cross-origin-resource-policy"]).toBe("same-origin");
+  // ADR-0012: never public, never indexed, on every response and not just the document.
+  expect(headers["x-robots-tag"]).toBe("noindex, nofollow");
 }
 
 test.describe("security headers", () => {
@@ -92,19 +94,75 @@ test.describe("security headers", () => {
   });
 
   test("the generation route carries the headers too", async ({ request }) => {
-    // A malformed body, so nothing reaches the model and no key is needed. What is under
-    // test is that the route's responses are covered, not what it generates. The status
-    // depends on the environment: with the key defined the route rejects the body (400);
-    // on a CI runner, where the key is deliberately absent, it refuses before reading the
-    // body and names the variable (500). Both are the route working, and both responses
-    // must carry the headers. The first CI run of this suite found the 500 path.
+    // No access cookie, so the route refuses with 401 before it reads anything (ADR-0012)
+    // and nothing reaches the model. That makes the status the same everywhere, which it
+    // was not before: this case used to accept either 400 or 500 depending on whether the
+    // model key happened to be defined. What is under test here is that the route's
+    // responses carry the headers, whatever the route decides.
     const response = await request.post("/api/generate", {
       headers: { "content-type": "application/json" },
       data: "not json",
     });
-    expect([400, 500]).toContain(response.status());
+    expect(response.status()).toBe(401);
     expectStaticHeaders(response);
     expect(response.headers()["content-security-policy"]).toContain("connect-src 'self'");
+  });
+
+  test("robots.txt disallows everything and carries the headers", async ({ request }) => {
+    const response = await request.get("/robots.txt");
+    expect(response.ok()).toBe(true);
+    const body = await response.text();
+    expect(body).toContain("User-agent: *");
+    expect(body).toContain("Disallow: /");
+    expectStaticHeaders(response);
+  });
+
+  test("the policy blocks an unnonced third-party script, which is what the toolbar is", async ({
+    page,
+  }) => {
+    // ADR-0012 turns the Vercel Toolbar off in project settings, and its own documentation
+    // says it needs `script-src https://vercel.live` to run. This asserts the other half
+    // rather than reasoning about it. Nothing here reaches vercel.live: the policy refuses
+    // the script before the browser requests it, which is the observable being asserted.
+    //
+    // The script is put into the served HTML, not added with `page.evaluate`. That
+    // distinction is the whole test: `'strict-dynamic'` deliberately lets a script that
+    // already passed the nonce check load further scripts, so injecting one from an
+    // evaluated context is the case the policy allows and proves nothing. A platform that
+    // injects a toolbar writes a tag into the markup, which is parser-inserted and needs
+    // a nonce of its own — and does not have one.
+    const TOOLBAR = "https://vercel.live/_next-live/feedback/feedback.js";
+    await page.route("**/", async (route) => {
+      const response = await route.fetch();
+      const html = (await response.text()).replace(
+        "</head>",
+        `<script src="${TOOLBAR}"></script></head>`,
+      );
+      // The original headers are kept, so the policy and its nonce are the real ones.
+      await route.fulfill({ response, body: html });
+    });
+
+    const violations: string[] = [];
+    await page.exposeFunction("recordViolation", (detail: string) => {
+      violations.push(detail);
+    });
+    await page.addInitScript(() => {
+      document.addEventListener("securitypolicyviolation", (event) => {
+        (window as unknown as { recordViolation: (d: string) => void }).recordViolation(
+          `${event.violatedDirective} ${event.blockedURI}`,
+        );
+      });
+    });
+
+    await page.goto("/");
+    await expect
+      .poll(() => violations.filter((v) => v.startsWith("script-src")), {
+        timeout: 10_000,
+      })
+      .not.toHaveLength(0);
+    expect(violations.filter((v) => v.startsWith("script-src")).join("\n")).toContain(
+      "vercel.live",
+    );
   });
 
   test("the worker and the manifest are covered", async ({ request }) => {

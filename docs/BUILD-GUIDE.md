@@ -693,6 +693,84 @@ migration moves an existing plaintext store forward without loss.
 
 ---
 
+## Deployment
+
+Three sessions, numbered after 19 because renumbering invalidates every cross-reference
+in the plan, the guide, and the handoff — the same reasoning session 19 carries. Hours
+are estimates, not measurements.
+
+### Session 20 — Deployment decision and route controls
+*~4 hours*
+
+ADR-0012: where the application runs, and who may call the route that spends money. The
+route's controls built, per `fieldnote-9n1`.
+
+> **Amended 2026-09-21, session 20, on completion.** `docs/adr/0012-deployment-on-vercel.md`,
+> with every claim about the platform cited to its page and the date read: the private
+> build deploys first, to its own project on a personal account on the Pro plan, because
+> Hobby's terms permit non-commercial use only; Standard Protection with Vercel
+> Authentication on preview and every non-production URL, with the model key and the
+> access hashes scoped to Production so two things must fail before a preview can spend;
+> Web Analytics, Speed Insights, and the Toolbar off, with the record honest that
+> `connect-src` would not have blocked the first two because they collect same-origin;
+> one region, `iad1`, in `vercel.json`; noindex as a header and a file. The route now
+> refuses a body that is not JSON with 415 and an unknown caller with 401, before reading
+> the body, and refuses everything when unconfigured rather than falling back to open.
+> The caller key is held as a hash on the server and reaches it in an `HttpOnly` cookie
+> set by a plain form on a new settings screen, so `src/lib/generation/client.ts` is
+> untouched, the eval gate still skips, and nothing about the key is in IndexedDB or
+> readable by a script. No rate limit in code: a per-instance counter is not a ceiling,
+> and the spend limit on the API key is, which is the owner's action. The session
+> stopped once before building, on the first design putting the key in an `Authorization`
+> header, which would have changed a watched path; the owner redesigned it around the
+> cookie. Dependabot #50 and #51 merged and #52 closed on the way in. The provider's
+> retention was decided in the same session and is not zero. Unit 344, end-to-end 43.
+
+### Session 21 — The private repository, deployed
+*~4 hours*
+
+The private repository created from the public one — a new private repository, not a
+GitHub fork, so that nothing about it is visible from the public side and no fork
+relationship exists to follow. Its Vercel project configured per ADR-0012: Standard
+Protection with Vercel Authentication, both variables scoped to Production, analytics
+and the toolbar off, the region as `vercel.json` sets it. A key generated with
+`scripts/generate-access-key.mjs` and installed, hash on the deployment and key on the
+device.
+
+Then the two checks that can only be done against a real deployment. **`fieldnote-6x5`**:
+whether `public/sw.js` and `public/precache.json` survive a Vercel build, confirmed by
+loading the deployed app, watching the worker reach activated, and fetching
+`/precache.json` for JSON rather than a 404 — the failure is silent, so it has to be
+looked at. **A device check against the deployed origin**: install to the home screen
+from the production domain, confirm the access cookie survives a relaunch, capture a
+note offline, and record the iOS version.
+
+**Done when:** the private deployment exists and is reachable only as ADR-0012 says; the
+worker's precache is confirmed on the real build; the cookie and the offline shell are
+confirmed on the device; and whatever is not true is written down rather than fixed
+quietly.
+
+### Session 22 — Retention, implemented
+*~3 hours*
+
+`fieldnote-iox`, the retention policy as the owner decided it on 2026-09-17: automatic
+deletion 30 days after the event ends, keyed on `endsAt` with the `startsAt` and
+`updatedAt` fallbacks; a notice on the event from day 23 saying the date its content will
+be deleted; her own delete at any time, as today; audit records kept and never pruned;
+the period a build-time constant. A test for each rule, the ADR the decision still needs,
+and ADR-0004's retention consequence pointed at it.
+
+Answer the schema question before writing code: whether anything must be stored — a
+warned-at or dismissed-at timestamp — or whether the rule is computed from the event's
+existing fields on every load. A stored field is a schema version and a migration with a
+test.
+
+**Done when:** an event's content deletes on the schedule, the notice appears from day
+23 with the right date, audit records survive it, and `docs/DATA-PROTECTION.md` §4 stops
+saying "not yet implemented".
+
+---
+
 ## Totals
 
 Hours are midpoints where a session is given as a range.

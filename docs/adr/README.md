@@ -22,6 +22,7 @@ the artifact.
 | [0009](0009-briefing-is-downloaded-never-sent.md) | The briefing is a document the representative writes and downloads; the application lays it out and never sends it | Accepted | 2026-09-14 |
 | [0010](0010-pdf-generation-library.md) | `pdf-lib` for producing the briefing document | Accepted | 2026-09-15 |
 | [0011](0011-pre-event-email-is-a-draft.md) | A pre-event email is a draft under the review gate, model or not | Accepted | 2026-09-15 |
+| [0012](0012-deployment-on-vercel.md) | Deployment on Vercel, and who may call the generation route | Accepted | 2026-09-21 |
 
 ## What each one settles
 
@@ -73,6 +74,18 @@ points rather than deferring them.
 the registry and advisory material for each, and the deciding reason — the smaller thing
 to trust, a library of primitives with no script, form, or HTML capability — set against
 the cost it carries, which is that it is unmaintained and the record says so.
+
+**0012** settles where the application runs and who may call the route that spends
+money, which are one decision because each depends on the other. The private build
+deploys first, to its own project on a personal account on the Pro plan — Hobby's terms
+permit non-commercial use only. Preview and every non-production URL are protected, and
+the model key is scoped to Production, so two things must fail before a preview can spend.
+Analytics and the toolbar are off, and the record is honest about which of them the
+content security policy would actually block. One region, `iad1`, in `vercel.json`. The
+route gains a caller key, held as a hash on the server and carried in an `HttpOnly`
+cookie set by a form, so nothing about it is in IndexedDB or readable by a script; there
+is no rate limit in code, because a per-instance counter is not a ceiling and a spend
+limit on the API key is.
 
 **0011** settles the two questions plan §3.3 left open for the pre-event email: it is a
 draft under the review gate, with an audit record carrying a null model, because the gate

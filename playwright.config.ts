@@ -29,5 +29,14 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    // The caller key's hash, so `tests/e2e/access-key.spec.ts` can post the matching key
+    // to the real route and watch the real cookie come back (ADR-0012). Synthetic, and
+    // obviously so: it is the SHA-256 of E2E_ACCESS_KEY in that spec. Merged over
+    // `process.env` by Playwright, so the rest of the environment is untouched — and
+    // `ANTHROPIC_API_KEY` stays absent on CI, which is why no test here reaches a model.
+    env: {
+      FIELDNOTE_ACCESS_KEY_HASHES:
+        "f8bc042e1fb04094da38cd383f0475f02c12539d0e8db439b8b5cc8252ef9368",
+    },
   },
 });

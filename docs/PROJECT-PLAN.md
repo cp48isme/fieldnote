@@ -223,6 +223,9 @@ Pair it with zero-retention configuration on the API and you have a genuinely st
 demonstrable data-minimization story. Write it up as a data flow diagram. It's the
 single most impressive thing in the repo.
 
+> **Amended 2026-09-21:** zero data retention is not in place; the standard commercial
+> retention policy applies (`fieldnote-n9l`).
+
 **The single-egress claim is load-bearing and constrains later decisions.** It is the
 reason ADR-0005 rejects API transcription: a second egress would not weaken this
 section, it would falsify it. Any future proposal that adds a network destination

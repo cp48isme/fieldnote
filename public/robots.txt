@@ -1,0 +1,7 @@
+# ADR-0012. Nothing here is for the public web: the private deployment carries one
+# representative's working notes, and the public build is a reference implementation
+# read on GitHub rather than crawled. The `X-Robots-Tag: noindex, nofollow` header in
+# src/proxy.ts says the same thing on every response, for a crawler that does not ask
+# for this file first.
+User-agent: *
+Disallow: /

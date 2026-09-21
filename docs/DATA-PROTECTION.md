@@ -19,9 +19,10 @@ does. That document's §6 is the residual-risk list this one cites and does not 
 its §2 is the flow this one draws in more detail; `docs/ARCHITECTURE.md` (session 18)
 owns the drawn diagrams.
 
-**What this document does not assess.** The private fork's deployment. Nothing is
-deployed (`fieldnote-ijg`), the private fork has no session (`fieldnote-v2s`), and
-hosting would add at least one processor this document does not know (§7).
+**What this document does not assess.** The private fork's deployment as it will be run.
+Where it will run is now decided — ADR-0012, a Vercel project of its own — and §7 records
+what that adds. Nothing is deployed yet (`fieldnote-ijg`), and the private fork still has
+no session that creates it (`fieldnote-v2s`); both are session 21.
 
 ---
 
@@ -628,8 +629,13 @@ documented*. Each was verified against the file before it was written here.
   the note delimiter, and the event name is not pseudonymized (`fieldnote-3rl`). In the
   private fork an event name routinely contains an institution or a town (§2, `events`).
   Wrapping both is a prompt-template change for a later session.
-- **What the provider retains** of the pseudonymized request is an account arrangement,
-  not a code property, and nobody has verified it (`fieldnote-n9l`; §7).
+- **What the provider retains** of the pseudonymized request, under its standard
+  commercial policy. Zero data retention is not in place on this account and will not be
+  requested now (owner, 2026-09-21): inputs and outputs are deleted within 30 days of
+  receipt or generation, and content flagged by automated trust-and-safety systems is
+  kept for up to 2 years (the commercial data retention policy and the API data retention
+  page, both read 2026-09-21). What is retained names nobody, because what crosses is
+  pseudonymized (`fieldnote-n9l`, closed; §7).
 - **Audit records grow without limit**, by decision (§4).
 
 ---
@@ -712,11 +718,15 @@ model identifier is on every audit record.
   photograph, no briefing note, no address or coordinates, no voice profile, and nothing
   about a recipient beyond their token, their class, and the notes about them. Enforced
   as §5's first three items say.
-- **What is not verified:** what the provider retains of what it receives. Plan §4.1
-  pairs the boundary with zero-retention configuration on the API; that is an account
-  arrangement, nothing in the repository verifies it, and no document records that it is
-  in place or how it was confirmed (`fieldnote-n9l`). Session 17's compliance map depends
-  on the answer.
+- **What the provider retains:** what it receives, under its standard commercial
+  retention policy. Zero data retention is not in place on this account and will not be
+  requested now (owner, 2026-09-21): inputs and outputs are deleted within 30 days of
+  receipt or generation, and content flagged by automated trust-and-safety systems is
+  kept for up to 2 years (the commercial data retention policy and the API data retention
+  page, both read 2026-09-21). What is retained names nobody, because what crosses is
+  pseudonymized. Plan §4.1, which pairs the boundary with zero-retention configuration,
+  is amended to say so; `fieldnote-n9l` is closed on that decision, and session 17's
+  compliance map maps the standard policy with these periods rather than zero retention.
 - **A second path to the same provider, from the repository and not the device:** the
   adversarial eval suite calls the live model from CI on a change under a watched path,
   with the synthetic corpus, and keeps a results artifact holding pseudonymized samples
@@ -729,10 +739,22 @@ before the application receives text, and where that happens is not recorded
 backup is not recorded (`fieldnote-ap1`). Both are named here as unverified rather than
 assumed either way.
 
-**Hosting the private fork would add at least one more.** The route holds the key and
-runs on the same origin as the page; serving it from any hosted origin adds the host as a
-party and needs the controls `fieldnote-9n1` lists, which the route does not have.
-Nothing is deployed (`fieldnote-ijg`), and this document does not assess a deployment.
+**Hosting adds one more, decided and not yet done: Vercel.** ADR-0012 decides that the
+private build deploys to its own Vercel project, and nothing is deployed yet
+(`fieldnote-ijg`; session 21). What that adds when it happens, as facts rather than
+intentions: the request passes through Vercel on its way to the model provider, and the
+function's logs live there, retained for one day on the Pro plan the record chooses
+(Vercel's plan documentation, read 2026-09-21). What is in those logs is what the route
+logs, which is metadata and never content — status, model, stop reason, counts,
+durations — asserted by `tests/unit/generate-route.test.ts`; the access route logs the
+same way and never the key or its hash. The function runs in one region, `iad1`, set in
+`vercel.json`. No attendee data is stored on the platform: there is no server-side store
+(§5), so what Vercel holds is the request in flight and the log line about it.
+
+The three controls `fieldnote-9n1` asked for before any hosted origin now exist, except
+the rate limit, which ADR-0012 replaces with a spend limit on the model API key as an
+owner action outside this repository: the route refuses a body that is not JSON with 415,
+and refuses any caller without the access key with 401, before reading the body.
 
 **No analytics, telemetry, error reporting, or CDN.** Plan §5's third non-negotiable.
 The controls, as the threat model's cells name them: `connect-src 'self'` and
