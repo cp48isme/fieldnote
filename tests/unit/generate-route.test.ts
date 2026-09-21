@@ -280,3 +280,41 @@ describe("the generation route", () => {
     expect(response.status).toBe(502);
   });
 });
+
+/**
+ * The start-up line, which fires once when the module loads. Testing it means resetting
+ * the module registry and importing the route again with the environment as it would be
+ * on a deployment — the file is absent there, so the variable is the only source.
+ */
+describe("the private-term rule's source, reported at start-up (ADR-0012)", () => {
+  const TERM = "Quillfeather";
+
+  async function startUpLine(env: string | undefined): Promise<string> {
+    vi.resetModules();
+    if (env === undefined) vi.stubEnv("FIELDNOTE_GUARDRAIL_TERMS", "");
+    else vi.stubEnv("FIELDNOTE_GUARDRAIL_TERMS", env);
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    await import("@/app/api/generate/route");
+    const line = info.mock.calls.map((call) => String(call[0])).join("\n");
+    info.mockRestore();
+    return line;
+  }
+
+  it("reports a count and a source, and never a term, when the variable carries the list", async () => {
+    const line = await startUpLine(`${TERM}\nSecond term`);
+    expect(line).toContain('"privateTerms":"loaded"');
+    expect(line).toContain('"count":2');
+    expect(line).toContain('"source":"environment"');
+    expect(line).not.toContain(TERM);
+    expect(line).not.toContain("Second term");
+  });
+
+  it("reports the rule inert, with no source, when neither the file nor the variable is there", async () => {
+    // Every public clone and every CI runner. An inactive control that looks active is
+    // worse than none, so the line says so.
+    const line = await startUpLine(undefined);
+    expect(line).toContain('"privateTerms":"absent"');
+    expect(line).toContain('"count":0');
+    expect(line).toContain('"source":"none"');
+  });
+});

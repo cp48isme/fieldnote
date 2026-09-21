@@ -53,6 +53,25 @@ test.describe("the caller key", () => {
     expect(visible).not.toContain("fieldnote_access");
   });
 
+  test("the settings screen reports what the browser says about storage", async ({
+    page,
+  }) => {
+    // `fieldnote-bdw`, ADR-0012. The application asks for persistent storage once at
+    // start-up and records nothing; this line is where the answer is read back, and on
+    // the device check it is the whole result. Which of the three states a desktop
+    // Chromium reports is the browser's business — what is under test is that the line
+    // resolves to one of them rather than sticking at "reading…" or rendering nothing.
+    await page.goto("/settings");
+    const line = page.getByTestId("storage-state");
+    await expect(line).toBeVisible();
+    await expect(line).not.toHaveAttribute("data-state", "reading");
+    await expect(line).toHaveAttribute(
+      "data-state",
+      /^(persistent|not-persistent|unknown)$/,
+    );
+    await expect(line).toContainText("Storage on this device:");
+  });
+
   test("a wrong key sets nothing and says so", async ({ page }) => {
     await enterKey(page, "not-the-key");
     await expect(page.getByTestId("access-failed")).toBeVisible();

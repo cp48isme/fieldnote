@@ -15,6 +15,8 @@
 
 import { useEffect } from "react";
 
+import { requestPersistentStorage } from "@/lib/storage/persistence";
+
 export function ServiceWorkerRegistration() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
@@ -26,6 +28,19 @@ export function ServiceWorkerRegistration() {
         cause,
       );
     });
+  }, []);
+
+  /**
+   * Ask the browser to keep the store, once per load (`fieldnote-bdw`, ADR-0012).
+   *
+   * In its own effect, not the one above, and outside the production guard: the two are
+   * unrelated, and asking is as worth doing in development as anywhere. The answer is
+   * deliberately dropped — `navigator.storage` is the record, and the settings screen
+   * reads it back. `requestPersistentStorage` never rejects, so nothing here can stop
+   * the application starting.
+   */
+  useEffect(() => {
+    void requestPersistentStorage();
   }, []);
 
   return null;
