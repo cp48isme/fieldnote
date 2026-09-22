@@ -387,3 +387,43 @@ describe("the private-term rule and approved passages, with a list loaded", () =
     expect(body.flagsFired).not.toContain(PRIVATE_TERM_RULE_ID);
   });
 });
+
+/**
+ * The model key's presence in the start-up line (`fieldnote-cno`'s sibling finding,
+ * ADR-0012 as amended). The route already refused without it; what it did not do was say
+ * so anywhere a deployment's logs would show, which is why a key that never reached
+ * Production was found by someone drafting on a phone instead of by reading a log.
+ */
+describe("the model key, reported at start-up", () => {
+  async function startUpLine(value: string | undefined): Promise<string> {
+    vi.resetModules();
+    vi.stubEnv("FIELDNOTE_GUARDRAIL_TERMS", "");
+    if (value === undefined) vi.stubEnv("ANTHROPIC_API_KEY", "");
+    else vi.stubEnv("ANTHROPIC_API_KEY", value);
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    await import("@/app/api/generate/route");
+    const line = info.mock.calls.map((call) => String(call[0])).join("\n");
+    info.mockRestore();
+    return line;
+  }
+
+  it("reports present when the variable is set, and never the value", async () => {
+    const secret = "sk-not-a-real-key-0123456789";
+    const line = await startUpLine(secret);
+    expect(line).toContain('"modelKey":"present"');
+    expect(line).not.toContain(secret);
+    // Not a prefix and not a length either: presence is the whole of what is reported.
+    expect(line).not.toContain("sk-");
+    expect(line).not.toContain(String(secret.length));
+  });
+
+  it("reports absent when the variable is unset", async () => {
+    const line = await startUpLine(undefined);
+    expect(line).toContain('"modelKey":"absent"');
+  });
+
+  it("treats an empty string as absent, which is how the route already treats it", async () => {
+    const line = await startUpLine("");
+    expect(line).toContain('"modelKey":"absent"');
+  });
+});

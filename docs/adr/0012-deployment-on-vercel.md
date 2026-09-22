@@ -27,6 +27,24 @@
     domain. The generated production URL and the branch URL both redirect to a Vercel
     login under Standard Protection, so neither is installable by her, which is the
     intended shape rather than a surprise.
+- **Amended:** 2026-09-23, session 23. Two changes to what decision 6 describes, neither
+  altering a decision.
+  - **The start-up line now reports both variables the route refuses without.** It
+    already carried the private-term rule's status, count, and source; it now also
+    carries `modelKey`, `present` or `absent`, from whether `ANTHROPIC_API_KEY` is
+    non-empty — never the value, never a length, never a prefix. The reason is a failure:
+    on 2026-09-22 a model key that had not reached Production was found only when someone
+    drafted on the device and got a 500. The access hashes announce their absence through
+    which 401 the route returns, so an outside check catches them; the model key was
+    silent until a request with a valid caller key got that far, which is the one request
+    an outside check cannot make. Both now say so once, at start-up, where a deployment's
+    logs show them.
+  - **The redirect after `/api/access` changed**, so the target named in decision 6 is no
+    longer accurate. A match redirected to `/`, which meant a saved key looked exactly
+    like having done nothing. Every outcome now returns to `/settings` with a flag —
+    `saved=1`, `forgotten=1`, or the existing `failed=1` — and the screen says which.
+    The cookie's attributes and the route's decisions are unchanged; only where the 303
+    points, and what the screen renders, are different. `fieldnote-cno`.
 
 ## Context
 

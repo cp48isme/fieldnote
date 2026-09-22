@@ -22,7 +22,7 @@ the artifact.
 | [0009](0009-briefing-is-downloaded-never-sent.md) | The briefing is a document the representative writes and downloads; the application lays it out and never sends it | Accepted | 2026-09-14 |
 | [0010](0010-pdf-generation-library.md) | `pdf-lib` for producing the briefing document | Accepted | 2026-09-15 |
 | [0011](0011-pre-event-email-is-a-draft.md) | A pre-event email is a draft under the review gate, model or not | Accepted | 2026-09-15 |
-| [0012](0012-deployment-on-vercel.md) | Deployment on Vercel, and who may call the generation route | Accepted, amended 2026-09-22 | 2026-09-21 |
+| [0012](0012-deployment-on-vercel.md) | Deployment on Vercel, and who may call the generation route | Accepted, amended 2026-09-22 and 2026-09-23 | 2026-09-21 |
 
 ## What each one settles
 

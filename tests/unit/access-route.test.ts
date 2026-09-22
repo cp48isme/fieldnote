@@ -50,7 +50,9 @@ describe("the access route", () => {
     const response = await POST(form({ action: "save", key: KEY }));
 
     expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe("/");
+    // Back to the settings screen with a flag, not to the app in silence: a saved key
+    // used to look exactly like having done nothing (`fieldnote-cno`).
+    expect(response.headers.get("location")).toBe("/settings?saved=1");
 
     const cookie = response.headers.get("set-cookie") ?? "";
     expect(cookie).toContain(`fieldnote_access=${encodeURIComponent(KEY)}`);
@@ -98,7 +100,7 @@ describe("the access route", () => {
     vi.stubEnv("FIELDNOTE_ACCESS_KEY_HASHES", "");
     const response = await POST(form({ action: "forget" }));
     expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe("/");
+    expect(response.headers.get("location")).toBe("/settings?forgotten=1");
     const cookie = response.headers.get("set-cookie") ?? "";
     expect(cookie).toContain("fieldnote_access=;");
     expect(cookie).toContain("Max-Age=0");

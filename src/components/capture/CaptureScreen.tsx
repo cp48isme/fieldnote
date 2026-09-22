@@ -533,7 +533,7 @@ export function CaptureScreen() {
     // keyboard opens. `min-h-0` on the scroller is what stops flexbox growing the column
     // past the viewport instead of scrolling inside it.
     <main className="flex h-[100dvh] flex-col">
-      <header className="shrink-0 border-b border-black/10 px-4 py-3 dark:border-white/15">
+      <header className="shrink-0 border-b border-edge px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
           {event ? (
             <EventSwitcher
@@ -604,19 +604,27 @@ export function CaptureScreen() {
               >
                 {view === "capture" ? `Follow-ups (${drafts.length})` : "Notes"}
               </button>
-              {/* A plain link, not a route change in this component's state: the settings
-                  screen is a server-rendered page whose forms post to /api/access, and
-                  nothing about the access key passes through the capture surface or the
-                  data layer (ADR-0012). */}
-              <a
-                href="/settings"
-                data-testid="settings-link"
-                className="min-h-11 rounded-lg border px-3 text-sm leading-[2.5rem]"
-              >
-                Device
-              </a>
             </div>
           )}
+          {/*
+            Outside the event gate, deliberately (`fieldnote-cno`, found on the device).
+            Everything else in this header describes an event, so it waits for one; the
+            settings link must not, because on a fresh install there is no event and the
+            access key has to be entered before anything can be drafted. Gated, the order
+            she met was: install, open, no way to authorise the device.
+
+            A plain link, not a route change in this component's state: the settings
+            screen is a server-rendered page whose forms post to /api/access, and nothing
+            about the access key passes through the capture surface or the data layer
+            (ADR-0012).
+          */}
+          <a
+            href="/settings"
+            data-testid="settings-link"
+            className="min-h-11 shrink-0 rounded-lg border border-edge px-3 text-sm leading-[2.5rem]"
+          >
+            Device
+          </a>
         </div>
       </header>
 
@@ -626,7 +634,7 @@ export function CaptureScreen() {
             <p
               data-testid="recovery-unavailable"
               role="status"
-              className="mx-4 mt-4 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm"
+              className="mx-4 mt-4 rounded-lg border border-amber-700 bg-amber-500/10 p-3 text-sm"
             >
               Capture is working and your notes are saving. Crash recovery is not armed
               for this session, so if the app closes unexpectedly it will not be able to

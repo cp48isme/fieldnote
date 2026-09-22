@@ -34,10 +34,11 @@ test.describe("the caller key", () => {
   }) => {
     await enterKey(page, ACCESS_KEY);
 
-    // The 303 lands back on the app, not on the settings screen.
-    await expect(
-      page.getByTestId("capture-dock").or(page.getByTestId("event-name")),
-    ).toBeVisible();
+    // The 303 lands back on the settings screen and says so (`fieldnote-cno`).
+    await expect(page.getByTestId("access-saved")).toBeVisible();
+    await expect(page.getByTestId("access-saved")).toContainText(
+      "This device is remembered",
+    );
 
     const cookie = await accessCookie(page);
     expect(cookie, "the cookie was set").toBeDefined();
@@ -84,9 +85,10 @@ test.describe("the caller key", () => {
 
     await page.goto("/settings");
     await page.getByTestId("access-forget").click();
-    await expect(
-      page.getByTestId("event-name").or(page.getByTestId("capture-dock")),
-    ).toBeVisible();
+    await expect(page.getByTestId("access-forgotten")).toBeVisible();
+    await expect(page.getByTestId("access-forgotten")).toContainText(
+      "This device has been forgotten",
+    );
 
     expect(await accessCookie(page)).toBeUndefined();
   });
@@ -127,5 +129,27 @@ test.describe("the caller key", () => {
     await expect(page.getByTestId("follow-ups-empty")).toBeVisible();
     await page.getByTestId("draft-follow-ups").click();
     await expect(page.getByTestId("draft-row")).toHaveCount(1);
+  });
+});
+
+test.describe("reaching the settings screen (fieldnote-cno)", () => {
+  test("a fresh install shows the Device link before any event exists", async ({
+    page,
+  }) => {
+    // The finding, from the device on 2026-09-22: the link used to sit inside the block
+    // that renders only once an event is set, so the order she met on a new phone was
+    // install, open, no way to authorise the device. This context has empty storage, so
+    // it is that first load.
+    await page.goto("/");
+    await expect(page.getByTestId("event-name")).toBeVisible();
+    await expect(page.getByTestId("toggle-view")).toHaveCount(0);
+
+    const link = page.getByTestId("settings-link");
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page.getByTestId("access-key-input")).toBeVisible();
+    await expect(page.getByTestId("access-guidance")).toContainText(
+      "can't check later whether a key is saved",
+    );
   });
 });

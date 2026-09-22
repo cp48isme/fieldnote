@@ -814,6 +814,43 @@ test.
 23 with the right date, audit records survive it, and `docs/DATA-PROTECTION.md` §4 stops
 saying "not yet implemented".
 
+### Session 23 — The device findings
+*~3 hours*
+
+What the first real use of the deployment turned up, on the device rather than in any
+test: `fieldnote-cno`'s two interface findings, a palette that followed the phone into
+dark mode, and a deployment variable that announced nothing about itself.
+
+> **Amended 2026-09-23, session 23, on completion.** Four changes, one deploy.
+>
+> **Reachable settings.** The Device link left the block that renders only once an event
+> exists, so a fresh install can authorise itself before creating anything. The order she
+> met on a new phone was install, open, no way to enter the key.
+>
+> **A saved key says so.** Every outcome of the access form now returns to the settings
+> screen with a flag — saved, forgotten, or the existing failure — and the screen says
+> which. It also says, always, that it cannot check later whether a key is stored, which
+> is true and was previously left for her to discover: the cookie is scoped to the route,
+> by design, so the page never sees it. The cookie's attributes and the route's decisions
+> are untouched.
+>
+> **One palette, light, always.** The dark variant is removed rather than overridden —
+> every `dark:` utility, the `prefers-color-scheme` block, and the theme colours in the
+> manifest and the layout. The background is a warm cream, `#faf6ee`, because a white
+> page in direct sun is a mirror. `color-scheme: light` stops the browser rendering form
+> controls dark underneath it. Every text and boundary pair was measured in a browser
+> rather than reasoned about, and three failed: the error red at 4.43:1, and two notice
+> borders at 2.51:1 and 1.43:1. All three moved to darker shades and the table in the
+> session report lists every ratio. The control boundary is now a token at 3.32:1, up
+> from black at ten percent, which was 1.26:1 — invisible in daylight.
+>
+> **The model key announces itself.** The route's start-up line now reports whether
+> `ANTHROPIC_API_KEY` is present, never its value. On 2026-09-22 a key that had not
+> reached Production was found only by drafting on the phone.
+>
+> Unit 367, end-to-end 49. No watched path changed. The private repository was
+> fast-forwarded to the merged public `main`, which is what deploys it.
+
 ---
 
 ## Totals

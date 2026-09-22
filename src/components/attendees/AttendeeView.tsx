@@ -306,7 +306,7 @@ export function AttendeeView({
           </button>
         </div>
         {error && (
-          <p data-testid="attendee-error" role="alert" className="text-sm text-red-600">
+          <p data-testid="attendee-error" role="alert" className="text-sm text-red-700">
             {error}
           </p>
         )}
@@ -331,12 +331,12 @@ export function AttendeeView({
               alt={`Photo of ${attendee.displayName}`}
               width={photo.width}
               height={photo.height}
-              className="h-24 w-24 rounded-lg border border-black/10 object-cover dark:border-white/15"
+              className="h-24 w-24 rounded-lg border border-edge object-cover"
             />
           ) : (
             <span
               data-testid="attendee-photo-none"
-              className="flex h-24 w-24 items-center justify-center rounded-lg border border-dashed border-black/20 text-xs opacity-60 dark:border-white/25"
+              className="flex h-24 w-24 items-center justify-center rounded-lg border border-dashed border-edge text-xs opacity-60"
             >
               No photo
             </span>
@@ -374,7 +374,7 @@ export function AttendeeView({
           <p
             data-testid="attendee-photo-error"
             role="alert"
-            className="text-sm text-red-600"
+            className="text-sm text-red-700"
           >
             {photoError}
           </p>
@@ -416,7 +416,7 @@ export function AttendeeView({
           data-testid="attendee-delete"
           onClick={() => void remove()}
           disabled={deleting}
-          className="min-h-11 self-start rounded-lg border border-red-600/40 px-4 text-sm text-red-700 disabled:opacity-40 dark:text-red-400"
+          className="min-h-11 self-start rounded-lg border border-red-700 px-4 text-sm text-red-700 disabled:opacity-40"
         >
           {deleting ? "Removing…" : "Remove this person from the event"}
         </button>
@@ -439,7 +439,7 @@ export function AttendeeView({
                 <li
                   key={entry.attendee.id}
                   data-testid="history-event"
-                  className="flex flex-col gap-2 rounded-lg border border-black/10 p-3 text-sm dark:border-white/15"
+                  className="flex flex-col gap-2 rounded-lg border border-edge p-3 text-sm"
                 >
                   <span className="font-medium">
                     {entry.event?.name ?? "An event since deleted"}
@@ -457,7 +457,7 @@ export function AttendeeView({
                     <p
                       key={note.id}
                       data-testid="history-note"
-                      className="whitespace-pre-wrap rounded border border-black/10 p-2 text-sm dark:border-white/15"
+                      className="whitespace-pre-wrap rounded border border-edge p-2 text-sm"
                     >
                       {note.body.trim() || "(empty note)"}
                     </p>

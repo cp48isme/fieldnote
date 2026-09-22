@@ -21,8 +21,11 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#ffffff",
-    theme_color: "#1e293b",
+    // One palette, light, always (session 23). Both match `--background` in
+    // `globals.css`, so the splash screen and the status bar are the same cream as the
+    // page rather than a white flash and a dark bar around it.
+    background_color: "#faf6ee",
+    theme_color: "#faf6ee",
     icons: [
       {
         src: "/icons/icon.svg",
