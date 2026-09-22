@@ -1,13 +1,14 @@
 # Handoff
 
-Written 2026-09-21, at the head of `feat/session-20-deployment`, the session 20 branch,
-for the state `main` will be in when it merges. `main` is at `ea2d04b`; the branch adds
-five commits including this one, and nothing on it has been pushed: the owner's reviewer
-reads the branch locally before anything reaches the remote.
+Written 2026-09-22, at the head of `docs/session-21-deployed`, the second of session
+21's two branches, for the state `main` will be in when it merges. `main` is at
+`697066c`, which already carries session 21's first branch; this one adds the record.
 
-Every claim here was checked against the repository, git history, the trackers, Vercel's
-documentation, or the GitHub API in the session that wrote it. Where something could not
-be verified, it says so rather than smoothing over the gap.
+Every claim here was checked against the repository, git history, the trackers, the
+GitHub API, or the running deployment in the session that wrote it. Where something
+could not be verified, it says so rather than smoothing over the gap. Nothing in this
+document names the private repository, its Vercel project, or any deployment URL or
+domain; that is the session's ground rule and not an omission.
 
 Regenerate this document from `docs/HANDOFF-TEMPLATE.md` at the end of each session, by
 re-reading the sources. Do not edit the previous handoff in place — a handoff written
@@ -31,32 +32,35 @@ Two things shape everything else.
 **Public build, private fork.** This repository is the de-branded public build:
 synthetic data, no manufacturer, no product, no real people anywhere including commit
 history, no photograph of anyone, and no address-shaped string outside the two shapes
-RFC 2606 reserves. A private fork carries real configuration and the real approved
-content, and is never published. ADR-0001 is the record.
+RFC 2606 reserves. Since 2026-09-21 the private build exists as a separate private
+repository, created from public `main` rather than forked, carrying real configuration
+and deployed for the representative. It is never published. ADR-0001 is the record and
+ADR-0012 is the deployment.
 
 **Governance is load-bearing, not decorative.** The compliance architecture is
 production code held to the same standard as any feature. A control is expected to be
 *enforced*, not asserted: the denylist runs in a pre-commit hook and in CI; the
 data-access boundary, the single-egress claim, the one-model-call rule, the draft state
 machine, the no-draft-without-its-record invariant, the rule that a contact never reaches
-the generation layer, the three job names branch protection depends on, and — since this
-session — the caller key on the generation route are failing tests; the security headers
-are asserted against a live response; the adversarial suite runs against the live model
-and fails the build if a violation reaches a draft; claim-bearing text is selected from
-the library or blocked, never authored; and where a control cannot be enforced the
-documentation says so plainly. `docs/THREAT-MODEL.md` says which is which, boundary by
-boundary; `docs/DATA-PROTECTION.md` does the same for every minimisation decision.
-`CLAUDE.md` carries the non-negotiable constraints.
+the generation layer, the three job names branch protection depends on, and the caller
+key on the generation route are failing tests; the security headers are asserted against
+a live response and, since this session, verified against the running deployment; the
+adversarial suite runs against the live model and fails the build if a violation reaches
+a draft; claim-bearing text is selected from the library or blocked, never authored; and
+where a control cannot be enforced the documentation says so plainly.
+`docs/THREAT-MODEL.md` says which is which, boundary by boundary;
+`docs/DATA-PROTECTION.md` does the same for every minimisation decision. `CLAUDE.md`
+carries the non-negotiable constraints.
 
 ---
 
 ## Where we've been
 
-`main` is at `ea2d04b` with 253 commits and 46 merged pull requests; this branch adds
-five commits. `CHANGELOG.md` is the record of what each session shipped, from session 2
-onward, and is not repeated here. What follows is the map from session to pull request,
-with the closed-not-merged ones named because a closed PR is easy to mistake for one that
-never existed. Verified this session from `gh pr list --state all`: 52 pull requests, six
+`main` is at `697066c` with 262 commits and 48 merged pull requests; this branch adds the
+session 21 record. `CHANGELOG.md` is the record of what each session shipped and is not
+repeated here. What follows is the map from session to pull request, with the
+closed-not-merged ones named because a closed PR is easy to mistake for one that never
+existed. Verified this session from `gh pr list --state all`: 54 pull requests, six
 closed without merging (#3, #5, #26, #27, #35, #52).
 
 - **Phase 0, session 1** — two direct commits (`989d459`, `d509dca`), then **#6**,
@@ -75,13 +79,11 @@ closed without merging (#3, #5, #26, #27, #35, #52).
   closed, not merged, each with the reason on it.
 - **Session 6, audit log and review gate** — **#37**; ADR-0008. **Between 6 and 7** —
   **#38**. Dependabot **#34** merged.
-- **Session 7, adversarial eval suite** — **#39**. **Between 7 and 8** — **#40**,
-  ruleset 1.2.0 from the first held-out run.
+- **Session 7, adversarial eval suite** — **#39**. **Between 7 and 8** — **#40**.
 - **Session 8, roster import** — **#41**; ADR-0003 amended.
 - **Session 10, ADR-0009, the attendee view, and the clinician field** — **#42**, merged
   after **#43**.
-- **Session 9, the approved content library** — **#44**; prompt 1.2.0, ruleset 1.3.0,
-  schema v5, ADR-0008 amended.
+- **Session 9, the approved content library** — **#44**; schema v5, ADR-0008 amended.
 - **Session 11, the briefing** — **#45**; ADR-0010, ADR-0004 amended, schema v6.
 - **Session 12, the pre-event email, the location, and the site map** — **#46**;
   ADR-0011, schema v7.
@@ -89,243 +91,214 @@ closed without merging (#3, #5, #26, #27, #35, #52).
   schema v8.
 - **Session 14, the invite feature** — **#48**; ADR-0002 amended, schema v9. Phase 3
   closed.
-- **Session 15, the threat model** — **#49**; `tests/unit/required-checks.test.ts`.
-  Phase 4 opened.
-- **Session 16, the data protection assessment** — **#53**. `docs/DATA-PROTECTION.md`;
-  ADR-0001 amended; plan §2 retitled and §7 renumbered. No code changed.
-- **Dependabot, this session** — **#50** (two action pins) and **#51** (ten npm minor
-  and patch bumps) merged, one at a time with main's CI green between them. **#52**, the
-  `eslint-config-next` 16 bump, closed not merged: issue #11 tracks the flat-config
-  migration that has to land first.
-- **Session 20, the deployment decision and the route's caller controls** — this branch,
-  no PR yet. ADR-0012.
+- **Session 15, the threat model** — **#49**. Phase 4 opened.
+- **Session 16, the data protection assessment** — **#53**; ADR-0001 amended.
+- **Dependabot, session 20** — **#50** and **#51** merged; **#52** closed, not merged,
+  pointing at issue #11.
+- **Session 20, the deployment decision and the route's caller controls** — **#54**;
+  ADR-0012.
+- **Session 21, the private repository, deployed** — **#55** for the code the deployment
+  needed, and this branch for the record. ADR-0012 amended.
 
 ---
 
 ## Where we are
 
-`main` is at `ea2d04b`, CI green on it. No pull requests are open. Zero open Dependabot
-alerts. This branch has not been pushed, so it has no CI run: everything below about its
-checks is from local runs.
+`main` is at `697066c`, CI green on it. No pull requests are open. Zero open Dependabot
+alerts. This branch has not been pushed yet, so everything below about its checks is
+from local runs.
 
-**Branch protection** requires three status checks — `Verify`, `Adversarial guardrail
-suite`, `Analyze (javascript-typescript)` — with admin enforcement on, strict up-to-date
-branches, required conversation resolution, force pushes and deletions disabled, and
-signed commits not required. Required approving reviews: **0**, deliberate for a
-single-maintainer repository. `tests/unit/required-checks.test.ts` asserts the three
-workflows render exactly those job names; the settings side is still a hand check. The
-strict-up-to-date rule showed its teeth this session: both Dependabot branches were
-behind `main` and each had to be updated, and re-read after the update, before it could
-merge.
+**The private build is deployed.** As of 2026-09-21, from a private repository created
+from public `main` rather than forked — no fork relationship exists to follow — with no
+other collaborators and GitHub Actions disabled on it, because the public repository
+runs the tests and that one is a deployment source. Its Vercel project is configured as
+ADR-0012 says. The representative reached it from her own phone, installed from the
+production domain, with no machine of the owner's running.
 
-**What the green checks actually mean.** `Verify` runs the denylist, lint, typecheck,
-unit tests (344), build, and the end-to-end suite (43). `Adversarial guardrail suite`
-would skip the model on this branch: nothing under a watched path changes, checked by
-reading the diff against `scripts/evals-watched-paths.mjs`, and keeping it that way is
-why the caller key is a cookie rather than a header. Locally this session: unit 344 of
-344; end-to-end 43 of 43 in one full run, with no flake. The caveats:
+**What was verified against the running deployment**, from outside it, on 2026-09-21 and
+2026-09-22:
 
-- **The eval figures are one held-out run at five samples per case**, in `README.md`,
-  dated 2026-09-15 under ruleset 1.4.0. 0 of 70 reached, 4 of 70 produced. Prompt and
-  ruleset are untouched since.
+- Every security header on the document and on the route, `X-Robots-Tag: noindex,
+  nofollow` included, and `robots.txt` disallowing everything.
+- `/sw.js` served as JavaScript and `/precache.json` as JSON with thirty same-origin
+  entries. That is `fieldnote-6x5`, closed: the silent failure it described did not
+  happen on a real build.
+- The route refusing a non-JSON content type with 415 and an unknown caller with 401.
+  The 401's wording is the tell that the access hashes reached Production.
+- The generated production URL and the branch URL both redirecting to a Vercel login.
+  **No preview deployment exists, so the preview case is untested rather than passed.**
+- The private-term rule reporting loaded, from the environment, with the expected count.
+
+**What the device showed**, iOS 26.6.2: storage reported persistent; capture, drafting,
+and the review gate worked; the offline shell held, with the event and note present after
+the app was killed in airplane mode and a new note saved; and the access cookie survived
+a relaunch, so the key is entered once.
+
+**What the green checks mean.** `Verify` runs the denylist, lint, typecheck, unit tests
+(364), build, and the end-to-end suite (44). `Adversarial guardrail suite` skipped on
+both of this session's branches: nothing under a watched path changed, which is why the
+private-term resolver sits where it does. The caveats:
+
+- **The eval figures are one held-out run at five samples per case**, dated 2026-09-15
+  under ruleset 1.4.0. Prompt and ruleset are untouched since.
 - **The injection measurement is two payloads and one canary.**
 - **The forwardable block has been forwarded by nobody.**
 - **The calendar file has been opened by no calendar application.**
 - **The pre-event email has never been sent to anyone.**
 - **No real photograph and no real site map has been through the resize.**
 - **The PDF library is unmaintained** by decision (ADR-0010).
-- **The library has never held real approved copy.**
-- **The single-egress check is a grep**, and since ADR-0012 there is a second
-  same-origin request it does not see and could not: the settings form post. What bounds
-  that is `form-action 'self'`, asserted live. `docs/THREAT-MODEL.md` §6.
+- **The library has never held real approved copy**, so every draft on the device came
+  back with gap markers, which is the empty library working.
+- **The single-egress check is a grep**, and does not see the settings form post.
 - **SRI is partial** (`fieldnote-9gp`); **CI enforces structural denylist patterns
   only**; **the end-to-end suite runs in one browser**; **the service worker's update
   path is untested** (`fieldnote-unp`).
 - **The required-checks tripwire sees the code side only.**
-- **The event name and the approved passages cross the boundary outside the note
-  delimiter.** `fieldnote-3rl`.
-- **The end-to-end suite has one intermittent test**, `persistence.spec.ts:92`,
-  `fieldnote-ccf`. It passed in this session's full run.
-- **The installed app has one observed failure mode on the LAN rig** (`fieldnote-cjs`).
-- **Nothing in the repository verifies any Vercel setting** (new). Deployment
-  protection, the toolbar switches, the environment scoping of both variables, and the
-  spend limit all live in the platform's dashboard or the provider's console.
-  `vercel.json` carries the region; the rest is a hand check, the same standing gap as
-  branch protection.
+- **The event name and the approved passages cross outside the note delimiter**
+  (`fieldnote-3rl`).
+- **`persistence.spec.ts:92` is intermittent** (`fieldnote-ccf`). It passed in this
+  session's full runs.
+- **Nothing in the repository verifies any platform setting.** Deployment protection,
+  the toolbar switches, the environment scoping of all three variables, the spend limit,
+  and the device's auto-lock are all settings elsewhere. `vercel.json` carries the
+  region; the rest is a hand check each session.
+- **The private term list is untestable in public by construction** (new). The mechanism
+  and the passage exemption are tested with synthetic terms; whether the real list is
+  complete or current is knowable only where it lives.
 
-**Plan §4.6's document set is complete except two.** `docs/ARCHITECTURE.md` and
-`docs/AI-SYSTEM-CARD.md` do not exist (checked with `ls docs`); `docs/COMPLIANCE-MAP.md`
-does not either and is session 17.
+**ADR-0012 is amended**, 2026-09-22, with five facts the real platform settled: the
+Speed Insights collection route ships whether or not the product is enabled, while
+nothing on the page loads it; the cookie survives on iOS; persistent storage is granted;
+the precache survives a Vercel build; and she installs from the production domain.
 
-**ADR-0012 exists.** Where the application runs and who may call the route, decided
-together. Every claim about the platform is cited to its page with the date read,
-2026-09-21. The Pro plan is required rather than preferred: the free tier's terms permit
-non-commercial personal use only, and the fair use guidelines define commercial usage to
-include a tool used for the financial gain of anyone involved, naming a paid employee.
-
-**The route is no longer open.** It refuses a body that is not JSON with 415 and an
-unknown caller with 401, both before reading the body, and refuses everything when
-`FIELDNOTE_ACCESS_KEY_HASHES` is unset rather than falling back to open. The key is held
-as a hash on the server, compared through `timingSafeEqual` with every configured hash
-compared even after one matches, and reaches the server in an `HttpOnly` cookie set by a
-plain form on a new settings screen. Nothing about it is in IndexedDB, `localStorage`, or
-`document.cookie`, and a browser test asserts the last of those.
-
-**The provider's retention is decided and is not zero.** Zero data retention is not in
-place on the account and will not be requested now (owner, 2026-09-21). The standard
-commercial policy applies: inputs and outputs deleted within 30 days of receipt or
-generation, and content flagged by automated trust-and-safety systems kept for up to 2
-years, both pages read 2026-09-21. What is retained names nobody, because what crosses is
-pseudonymized. `fieldnote-n9l` is closed.
-
-**Retention in the local store is decided and not built.** Automatic deletion 30 days
-after the event ends, a notice from day 23, her own delete at any time, audit records
-kept, the period a build-time constant (`fieldnote-tcq`, 2026-09-17). `fieldnote-iox` is
-the implementation and is now session 22.
-
-**Schema is at v9.** Unchanged this session, and deliberately: the caller key needed no
-schema field, which is what the cookie design bought.
+**Schema is at v9**, unchanged, and deliberately: neither the caller key nor the storage
+line needed a field.
 
 **Versions.** Prompt template 1.2.0; guardrail ruleset 1.4.0. Neither changed.
 
-**Documentation set.** `README.md`, `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md` (a new
-Deployment section; session 20 amended on completion), `docs/TESTING-ON-DEVICE.md`,
+**Documentation set.** `README.md`, `docs/PROJECT-PLAN.md`, `docs/BUILD-GUIDE.md`
+(session 21 amended on completion), `docs/TESTING-ON-DEVICE.md`,
 `docs/THREAT-MODEL.md`, `docs/DATA-PROTECTION.md`, twelve ADRs with an index and
-`CLAUDE.md`'s list complete, `docs/prompts/` through session 20, this handoff and its
-template, `CHANGELOG.md`, `SECURITY.md`.
+`CLAUDE.md`'s list complete, `docs/prompts/` through session 21, this handoff and its
+template, `CHANGELOG.md`, `SECURITY.md`. Plan §4.6's `docs/ARCHITECTURE.md`,
+`docs/AI-SYSTEM-CARD.md`, and `docs/COMPLIANCE-MAP.md` do not exist yet.
 
 ---
 
 ## What's next
 
-Two sessions are now ready, and they are independent of each other. Session 17 is the
-next Phase 4 document; session 21 is the first deployment. The guide describes both and
-should be read in full before either.
+Two sessions are ready and independent of each other.
 
 ### Session 17 — Compliance map
 
 Controls mapped to NIST AI RMF, the EU AI Act, and ISO/IEC 42001; precise about the risk
-tier rather than expansive; ADR-0004's seam mapped as a seam. Budgeted at ~3 hours. There
-is no bead for it; the guide's entry is the scope.
+tier rather than expansive; ADR-0004's seam mapped as a seam. ~3 hours, no bead, the
+guide's entry is the scope. It draws on the threat model's §3 and §6, the assessment
+throughout, and now ADR-0012 for hosting and the caller key. The provider's retention is
+settled and is not zero: map the standard commercial policy, deleted within 30 days and
+up to 2 years for flagged content, not a zero-retention arrangement.
 
-What it draws on: `docs/THREAT-MODEL.md` §3's third column and §6;
-`docs/DATA-PROTECTION.md` §1, §2, §3.3, §4, §5, §6, and §7; and now ADR-0012 for the
-hosting decision and the route's caller control. **The provider's retention is settled
-and is not zero** — map it as the standard commercial policy with the periods above, not
-as a zero-retention arrangement (`fieldnote-n9l`, closed). One thing is still unsettled:
-the wording of the §5.5 item, which it cites from the threat model's §6 verbatim rather
-than writing its own.
+### Session 22 — Retention, implemented
 
-### Session 21 — The private repository, deployed
-
-The private repository created from the public one as a new private repository rather
-than a GitHub fork; its Vercel project configured as ADR-0012 says; a key generated and
-installed; `fieldnote-6x5` verified against a real build, because a missing precache
-manifest fails silently; and a device check against the deployed origin, including
-whether the access cookie survives in the installed app. Budgeted at ~4 hours.
+`fieldnote-iox`, as the owner decided it on 2026-09-17: automatic deletion 30 days after
+the event ends, a notice from day 23, her own delete at any time, audit records kept, the
+period a build-time constant. A test for each rule, the ADR the decision still needs, and
+ADR-0004's retention consequence pointed at it. ~3 hours.
 
 ### Owner actions owed, none of which this repository can verify
 
-- **The Vercel project's settings**, once session 21 creates it: protection scope and
-  method, both variables scoped to Production, analytics and the toolbar off.
+- **The Vercel project's settings**, as a standing hand check: protection scope and
+  method, all three variables scoped to Production, analytics and the toolbar off.
 
-Two that were owed are done, both on 2026-09-21, and both remain unverifiable from here:
-the spend limit on the model API key, set in the provider's console on a workspace
-dedicated to this deployment (ADR-0012), and automatic screen lock on the
-representative's device (`docs/THREAT-MODEL.md` §5.6; ADR-0004 row 1).
+Done and unverifiable from here: the spend limit on the model API key, set 2026-09-21 on
+a workspace dedicated to this deployment and replaced along with the key on 2026-09-22
+after the key had not reached Production; and automatic screen lock on the
+representative's device, 2026-09-21 (`docs/THREAT-MODEL.md` §5.6).
 
 Still owed and unchanged: a real photo and a real site map through the resize; the real
-approved content loaded in the private fork; a calendar application opening the `.ics`; a
-forwarded block read in a second mail client; and the rest of `fieldnote-bdw` — one
-device observation exists, eight idle days on iOS 26.6.1 with the notes present, and
-storage pressure and `persisted()` remain unobserved.
+approved content loaded, which is now the first thing the deployment is waiting for; a
+calendar application opening the `.ics`; a forwarded block read in a second mail client;
+and the rest of `fieldnote-bdw` — the seven idle days and real storage pressure.
 
-Either way: check the prompt's premises against the repository before building on them,
-and stop when one is wrong. Session 20's prompt was written by Guardian, and one premise
-in it could not be built without triggering the eval gate;
-`docs/prompts/session-20.md` records the stop and the owner's redesign.
+Check the prompt's premises against the repository before building on them, and stop
+when one is wrong. `docs/prompts/session-21.md` records where this session's stopped and
+why.
 
 ### Where outstanding work lives
 
 Three places, deliberately. Do not duplicate between them.
 
 **Beads — build state, local.** Verified this session, by doing, before the first
-tracker write and after the last: the tracker's data stays on this machine. 73 issues: 33
-open, 39 closed, 2 blocked, 31 ready (`bd stats`). Run `bd ready` and `bd blocked`.
+tracker write and after the last: the tracker's data stays on this machine. 74 issues: 30
+open, 43 closed, 1 blocked, 29 ready (`bd stats`).
 
-Named here because they qualify claims made above. Closed this session: `fieldnote-9n1`,
-the route's controls, with the reason naming ADR-0012 and the tests; `fieldnote-n9l`, the
-provider's retention, on the owner's decision. Annotated: `fieldnote-ijg` and
-`fieldnote-v2s`, which sessions 21 and 22 now own. Still open and load-bearing:
-`fieldnote-iox` — retention, session 22; `fieldnote-6x5` — the precache manifest on a
-real build, which blocks `fieldnote-ijg` and is session 21's first check;
-`fieldnote-jqk`, `fieldnote-cdx` — the two deletion limits, both owner decisions;
-`fieldnote-52s`, `fieldnote-5ow` — the cascade test and the records that name three
-tables; `fieldnote-8w6`, `fieldnote-ap1` — where dictation runs and whether the store is
-backed up; `fieldnote-3rl` — the fields outside the note delimiter; `fieldnote-bn0` — the
-clipboard after export; `fieldnote-ccf` — the intermittent test; `fieldnote-cjs` — the
-proxy's error page; `fieldnote-bdw`, `fieldnote-9gp`, `fieldnote-unp`, `fieldnote-ech`,
-`fieldnote-dx0`, `fieldnote-oa9`, `fieldnote-ao9`, `fieldnote-tg4`, and the rest of the
-backlog, unchanged.
+Closed this session: `fieldnote-6x5`, the precache on a real build; `fieldnote-ijg`, the
+deployment; `fieldnote-v2s`, the private fork's missing session; `fieldnote-cjs`, moot on
+a deployment with no proxy in front of it. Appended: `fieldnote-bdw`, with the second
+device observation. Opened: `fieldnote-cno`, the two interface findings from the device
+check, recorded rather than fixed on the owner's instruction. Still open and
+load-bearing: `fieldnote-iox` — retention, session 22; `fieldnote-bdw` — the seven-day
+window and storage pressure, now the whole of it; `fieldnote-jqk` and `fieldnote-cdx` —
+the two deletion limits, owner decisions; `fieldnote-52s`, `fieldnote-5ow` — the cascade
+test and the records naming three tables; `fieldnote-8w6`, `fieldnote-ap1` — where
+dictation runs and whether the store is backed up; `fieldnote-3rl` — the fields outside
+the note delimiter; `fieldnote-bn0`, `fieldnote-ccf`, `fieldnote-9gp`, `fieldnote-unp`,
+`fieldnote-ech`, `fieldnote-dx0`, `fieldnote-oa9`, `fieldnote-ao9`, `fieldnote-tg4`, and
+the rest of the backlog, unchanged.
 
 **GitHub issues — public record.** One open: **#11**, the ESLint flat-config migration.
-#52 was closed pointing at it.
 
 **Session prompts — what was asked.** `docs/prompts/`, one file per session from 3
-through 16, plus 20. Session 20's carries the prompt, the owner's two mid-session
-additions, and how it went.
+through 16, plus 20 and 21.
 
 **ADRs — decisions.** `docs/adr/`, index at `docs/adr/README.md`; immutable once
-accepted, superseded or amended with a dated note. One added this session: ADR-0012. None
-amended. Still owed or worth considering: the retention ADR (`fieldnote-iox`, session
-22); ADR-0004's availability amendment when `fieldnote-bdw` resolves; ADR-0008's dated
-note stating the cascade as it is (`fieldnote-5ow`); the three stale "session 15"
-pointers (`fieldnote-oa9`); ADR-0006's five-name evidence statement; and the decision
-`fieldnote-af9` holds.
+accepted, superseded or amended with a dated note. One amended this session: ADR-0012,
+2026-09-22. Still owed: the retention ADR (`fieldnote-iox`); ADR-0004's availability
+amendment when `fieldnote-bdw` resolves; ADR-0008's dated note on the cascade
+(`fieldnote-5ow`); the three stale "session 15" pointers (`fieldnote-oa9`); ADR-0006's
+five-name evidence statement; and the decision `fieldnote-af9` holds.
 
 ---
 
 ## How to work in this repo
 
 - **Read the build guide session in full before writing prompts for it.**
-- **Verify the guide's and the prompt's premises before building on them, and stop when
-  one is wrong** — including a premise the tracker carries: a bead is a claim, not a
-  source.
-- **A fact-finding command whose output is cut is not a fact.**
+- **Verify the premises before building on them, and stop when one is wrong** —
+  including a premise the tracker carries: a bead is a claim, not a source.
 - **Check the watched paths before writing code, not after.** A change under
   `src/lib/generation/` or `src/lib/privacy/` makes the adversarial suite call the live
-  model. Session 20's first design did, and was redesigned rather than paid for.
-- **A live weakness not already in a bead goes to the owner in the session, and nowhere
-  the repository controls.**
+  model. Twice now a design has been reshaped to avoid it; both times the reshaped
+  version was defensible on its own terms, and both times the file says so.
+- **A platform's defaults are a claim to check.** The deployment answers on an analytics
+  route nobody enabled. Nothing collects, but nothing in the repository would have
+  predicted it either.
+- **A live weakness not already in a bead goes to the owner in the session.**
 - **A dependency gets an ADR before it is installed.**
 - **A control that is not tested is not a control, and one that reads as tested is
   worse.**
-- **Verify by running, not by reasoning.** Session 20's first attempt to test that the
-  policy blocks an injected toolbar script tested the case the policy deliberately
-  allows.
+- **Verify by running, not by reasoning.**
 - **`pnpm evals` costs real spend.**
 - **The Content Security Policy is a control, not a setting.**
 - **Check what is listening before trusting a red or green e2e run.** `lsof -iTCP:3000`.
-  A stale server from an earlier session made the whole suite red against a build that
-  predated the branch, again. And one full-suite failure of `persistence.spec.ts:92`
-  alone is `fieldnote-ccf`, not a regression; anything else red is.
-- **Dependabot branches go stale.** Protection requires up-to-date branches, so each
-  needs updating before it merges — and the diff re-read afterwards, because an update is
-  a chance for the lockfile to change.
-- **Verify a pinned action rather than trusting the bump.** Dereference the tag and
-  compare the commit.
+  One full-suite failure of `persistence.spec.ts:92` alone is `fieldnote-ccf`, not a
+  regression; anything else red is.
+- **Dependabot branches go stale**, and protection requires up-to-date branches. Update,
+  then re-read the diff, because an update is a chance for the lockfile to change.
+- **Verify a pinned action rather than trusting the bump.**
 - **The denylist can fire on ordinary vocabulary and on any address-shaped string.**
 - **A refused commit leaves its files staged.** Read `git status` before every commit.
 - **The constraints in `CLAUDE.md` are not optional.**
 - **A finding about the private material is not written into any location the repository
-  controls.**
+  controls**, and nor is the private repository's name, its project, or any deployment
+  URL or domain.
 - **Never `--no-verify`.** Check `git config core.hooksPath` still reads `.husky/_` after
   any tool that installs hooks, including every `bd` command.
 - **`bd update --notes` replaces the field; `--append-notes` appends.**
 - **`gh pr create`, never `--fill`.**
 - **Stage explicit paths.** Prettier reformats committed files, so read the wrapped text
   before anchoring an edit on it. Markdown is excluded from Prettier and hand-wrapped.
-- **One session, one PR.** Findings that are not blocking get beads.
+- **One session, one PR**, except where a session must ship code before it can do the
+  rest, as this one did.
 - **Separate commits per logical change.** Merge commit, not squash.
 
 ---
@@ -334,44 +307,37 @@ pointers (`fieldnote-oa9`); ADR-0006's five-name evidence statement; and the dec
 
 Stated rather than smoothed over.
 
-- **This branch has not been pushed and has no CI run.** Every figure above is a local
-  run on this machine.
-- **ADR-0012 has been read by nobody but the instance that wrote it.** Its Vercel claims
-  were read from the documentation on 2026-09-21 and cited; the reasoning around them is
-  one reader's.
-- **Nothing is deployed, so every Vercel claim is about a platform this project has not
-  used yet.** Whether the settings behave as documented is session 21's to find out.
-- **The caller key is a shared secret.** It is not bound to the device beyond living in
-  that browser's cookie jar; a copied cookie works until the hash is removed.
-- **Whether the cookie survives in the installed app on iOS is unverified.** If it does
-  not, drafting refuses and she re-enters the key.
-- **The spend limit is set by the owner and nothing in the repository verifies it.** Set
-  2026-09-21, on a workspace dedicated to this deployment; nothing here reads it, tests
-  it, or would notice it being removed.
-- **Automatic screen lock is set on the representative's device**, by the owner,
-  2026-09-21 (`docs/THREAT-MODEL.md` §5.6). The application neither enforces it nor
-  detects it, so that is a fact about one day and not a property of the system.
+- **This branch has not been pushed and has no CI run.**
+- **The deployment has been used by one person, on one phone, on one day.** Everything
+  in *Where we are* about it is that.
+- **No preview deployment exists**, so preview protection is untested.
+- **The real approved content has still never been loaded**, so no draft has ever
+  carried a real passage, on the device or anywhere.
+- **The private term list is four terms the working instance never saw.** That the rule
+  loaded with a count of four is the whole of what is known about it here.
+- **Nothing in the repository verifies any platform setting or the spend limit.**
+- **The model key not reaching Production was found by a person drafting on a phone**,
+  not by anything here. The access hashes announce their absence through the route's
+  401 wording; the model key does not announce itself until someone with a valid key
+  drafts.
+- **`fieldnote-cno`'s two findings are recorded and not fixed**, on the owner's
+  instruction.
 - **The threat model's severities are one reader's judgement.**
 - **The required-checks test sees the code side only.**
 - **`core.hooksPath` cannot be asserted in CI.**
 - **The single-egress tightening scheduled for session 15 was not built**
   (`fieldnote-oa9`).
-- **The session-to-PR map above sessions 1 to 16** was verified this session by count and
-  by the closed-without-merging set, not by re-reading each PR.
-- **The 1.4.0 rule was written for a sentence nobody saw.**
+- **The session-to-PR map above sessions 1 to 20** was verified by count and by the
+  closed-without-merging set, not by re-reading each PR.
 - **The migration tests run the upgrade functions over fake rows.**
 - **The eval figures are one held-out run, one day.**
 - **The containment amendment of 2026-09-09 is not reproduced here.**
-- **The hardware evidence is one phone, iOS 26.6.1, on two days.** Nothing built since
-  session 5 has been exercised on hardware beyond opening the app and reading the notes.
-- **Storage under pressure and `navigator.storage.persisted()` are unobserved.**
+- **The seven-day eviction window and real storage pressure are unobserved.**
 - **Where the platform's dictation runs, and whether the store is in a backup, are
   unrecorded.**
-- **Audit records grow without bound** by design, and local retention is decided and not
-  built.
+- **Audit records grow without bound** by design, and retention is decided and not built.
 - **A name with neither a title nor a roster entry is still missed.**
-- **Hours in the build guide are estimates, not measurements**, and the three new
-  Deployment entries are estimates for work nobody has done.
+- **Hours in the build guide are estimates, not measurements.**
 
 ---
 

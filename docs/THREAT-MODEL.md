@@ -574,9 +574,14 @@ recorded.
   eviction window. `.github/workflows/ci.yml`; `fieldnote-2o9`.
 - **The service worker's update path is untested.** Coverage is a manual procedure.
   `fieldnote-unp`.
-- **Safari's eviction window is unverified.** The offline shell holds on hardware; whether
-  the store survives seven idle days, and whether persistence would be granted, has not
-  been observed. `fieldnote-bdw`; ADR-0004 owes a dated amendment when it resolves.
+- **Safari's eviction window is unverified; persistence is now granted.** The offline
+  shell holds on hardware, and on 2026-09-22 the installed app on the deployment reported
+  `navigator.storage.persisted()` as persistent, which the application now asks for at
+  start-up. A persisted origin is exempt from eviction under storage pressure, so that
+  answer narrows this considerably. What is still unobserved: whether the store survives
+  seven idle days, which only waiting tests, and behaviour under real storage pressure.
+  One device, iOS 26.6.2. `fieldnote-bdw`; ADR-0004 owes a dated amendment when it
+  resolves.
 - **The private fork has no session and this repository has no visibility into it.** The
   real approved content, the real term lists, the encryption of session 19, and every
   deployment precondition are verified only there, by whoever maintains it.
