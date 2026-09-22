@@ -750,6 +750,51 @@ worker's precache is confirmed on the real build; the cookie and the offline she
 confirmed on the device; and whatever is not true is written down rather than fixed
 quietly.
 
+> **Amended 2026-09-22, session 21, on completion.** It took two public pull requests,
+> deliberately: the first carried the code the deployment needed, because the private
+> repository is created from public `main`, and the second is this record.
+>
+> **What the first shipped.** The private-term rule now loads from an environment
+> variable when there is no local file, because on a hosted platform there is no file and
+> the rule would have been silently inert on the one build carrying the real list. The
+> file still wins where it exists. The resolver composes what the loader already exports,
+> so no watched path changed and the eval gate skipped; it sits outside the directory it
+> belongs in for that reason alone and says so. The application also now asks for
+> persistent storage once at start-up and records the answer nowhere, and the settings
+> screen reads it back.
+>
+> **What was created.** A new private repository, made from public `main` rather than
+> forked, so no fork relationship exists to follow: verified private, no other
+> collaborators, Actions disabled because the public repository runs the tests. Its
+> head matched public `main` exactly. Its Vercel project was configured as ADR-0012 says,
+> with all three variables scoped to Production.
+>
+> **What was verified from outside the deployment.** Every security header on the
+> document and on the route, `X-Robots-Tag` included; `robots.txt` disallowing
+> everything; `/sw.js` and `/precache.json` both served, the second as JSON with thirty
+> same-origin entries, which closes the silent failure `fieldnote-6x5` described; the
+> route refusing a non-JSON content type with 415 and an unknown caller with 401, the
+> wording confirming the hashes reached Production; the generated and branch URLs
+> redirecting to a Vercel login; and the private-term rule reporting loaded from the
+> environment with the expected count. No preview deployment existed, so that case is
+> untested rather than passed.
+>
+> **What the device showed**, iOS 26.6.2, installed from the production domain: storage
+> reported persistent; capture, drafting, and the review gate worked; after killing the
+> app in airplane mode the event and note were there and a new note saved, and drafting
+> offline failed in the way it should, leaving a withheld draft; and the access cookie
+> survived a relaunch, so the key is entered once.
+>
+> **What went wrong and was fixed outside this repository.** The first draft attempt on
+> the device returned a 500 naming the model key variable, which had not reached
+> Production; the owner replaced the key in the same dedicated workspace on 2026-09-22
+> and redeployed, after which drafting worked.
+>
+> **Two things found and deliberately not fixed here.** The settings link appears only
+> once an event exists, so a fresh install cannot reach settings first; and the settings
+> screen gives no confirmation that a key was saved. Both are recorded for a later
+> change rather than repaired in the record of the session that found them.
+
 ### Session 22 — Retention, implemented
 *~3 hours*
 

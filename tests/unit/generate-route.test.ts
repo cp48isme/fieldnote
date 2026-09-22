@@ -30,6 +30,8 @@ vi.mock("@anthropic-ai/sdk", () => {
 
 import { MAX_OUTPUT_TOKENS, TRUNCATION_RETRY_MULTIPLIER } from "@/lib/generation/model";
 import { hashKey } from "@/lib/access/key";
+import { GAP_MARKER } from "@/lib/generation/prompt";
+import { PRIVATE_TERM_RULE_ID } from "@/lib/generation/contract";
 
 const { POST } = await import("@/app/api/generate/route");
 
@@ -316,5 +318,72 @@ describe("the private-term rule's source, reported at start-up (ADR-0012)", () =
     expect(line).toContain('"privateTerms":"absent"');
     expect(line).toContain('"count":0');
     expect(line).toContain('"source":"none"');
+  });
+});
+
+/**
+ * The private-term rule against an approved passage, with a list actually loaded.
+ *
+ * The case at "holds an approved passage out of its own private-term rule" runs with no
+ * list, so it proves the protect-and-restore round trip and nothing about what the rule
+ * does to a term inside a passage. This is the other half, and it is the half the
+ * deployment depends on: real approved copy carries the product's own name, which is
+ * exactly what the private list holds (`fieldnote-quj`, ADR-0012). A passage the model
+ * copied exactly must survive; the same term in the model's own sentence must not.
+ *
+ * The term is synthetic, per ADR-0001. The real list is untestable in public by
+ * construction and this says nothing about it.
+ */
+describe("the private-term rule and approved passages, with a list loaded", () => {
+  const TERM = "Quillfeather";
+  const PASSAGE = {
+    id: "p-synthetic",
+    body: `The ${TERM} console sits at eye level and is cleaned between cases.`,
+  };
+
+  async function postWithTerms(text: string) {
+    vi.resetModules();
+    vi.stubEnv("ANTHROPIC_API_KEY", "set-for-the-test-not-a-real-key");
+    vi.stubEnv("FIELDNOTE_ACCESS_KEY_HASHES", await hashKey(ACCESS_KEY));
+    vi.stubEnv("FIELDNOTE_GUARDRAIL_TERMS", TERM);
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const route = await import("@/app/api/generate/route");
+    create.mockResolvedValueOnce(reply(text, "end_turn"));
+    const response = await route.POST(
+      postWithCookie({ ...VALID, passages: [PASSAGE] }, ACCESS_KEY),
+    );
+    return (await response.json()) as { text: string; flagsFired: string[] };
+  }
+
+  it("keeps the passage intact and flags the model's own use of the same term", async () => {
+    const body = await postWithTerms(
+      [
+        "Thank you for your time on the truck.",
+        "",
+        PASSAGE.body,
+        "",
+        `I will send the ${TERM} specification over tomorrow.`,
+        "",
+        "Kind regards,",
+      ].join("\n"),
+    );
+
+    // The passage came back exactly as the library wrote it, term and all.
+    expect(body.text).toContain(PASSAGE.body);
+    // The model's own sentence did not: it was replaced with the gap marker.
+    expect(body.text).not.toContain(`I will send the ${TERM} specification`);
+    expect(body.text).toContain(GAP_MARKER);
+    expect(body.flagsFired).toContain(PRIVATE_TERM_RULE_ID);
+  });
+
+  // This one is the counterfactual for the protection itself: remove `protectApproved`
+  // from the route and the passage's own term fires the rule, so this case fails.
+  it("flags nothing when the only use of the term is inside the passage", async () => {
+    const body = await postWithTerms(
+      ["Thank you for your time.", "", PASSAGE.body, "", "Kind regards,"].join("\n"),
+    );
+    expect(body.text).toContain(PASSAGE.body);
+    expect(body.text).not.toContain(GAP_MARKER);
+    expect(body.flagsFired).not.toContain(PRIVATE_TERM_RULE_ID);
   });
 });

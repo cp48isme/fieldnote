@@ -3,6 +3,30 @@
 - **Status:** Accepted
 - **Date:** 2026-09-21
 - **Deciders:** cp48isme (owner)
+- **Amended:** 2026-09-22, session 21, on contact with the real platform. The decision is
+  unchanged; five facts in it are now observed rather than expected.
+  - **The Speed Insights collection route ships whether or not the product is enabled.**
+    Decision 3 says these are off by construction because the packages are absent, and
+    that remains true of collection: the served page references neither product and every
+    script tag on it is a same-origin chunk. But the deployment answers 200, with a real
+    script, on Vercel's Speed Insights script path, which Vercel's own quickstart says is
+    added to deployments automatically. The Web Analytics script path and the vitals
+    collection path both return 404. So the absent dependency is the control, as the
+    decision said; what the decision did not anticipate is that the platform's route
+    exists anyway, which a reader checking the deployment would otherwise find alarming.
+  - **The cookie survives in the installed app on iOS.** *Consequences* listed this as
+    unverified. On 2026-09-22, iOS 26.6.2, the installed app drafted after being killed
+    and reopened without the key being entered again.
+  - **Persistent storage is granted.** The application now asks once at start-up, and the
+    browser answered persistent on the installed app. `fieldnote-bdw`; the seven-day
+    window and storage pressure are still unobserved.
+  - **The service worker's precache survives a Vercel build.** `fieldnote-6x5`, which
+    item 7 left open: the deployment serves `/sw.js` as JavaScript and `/precache.json` as
+    JSON with thirty same-origin entries, and the offline shell held on the device.
+  - **Which production URL she installs from**, also item 7: the project's production
+    domain. The generated production URL and the branch URL both redirect to a Vercel
+    login under Standard Protection, so neither is installable by her, which is the
+    intended shape rather than a surprise.
 
 ## Context
 

@@ -21,8 +21,9 @@ owns the drawn diagrams.
 
 **What this document does not assess.** The private fork's deployment as it will be run.
 Where it will run is now decided — ADR-0012, a Vercel project of its own — and §7 records
-what that adds. Nothing is deployed yet (`fieldnote-ijg`), and the private fork still has
-no session that creates it (`fieldnote-v2s`); both are session 21.
+what that adds. Since 2026-09-21 the private build is deployed there, from the private
+repository, and §7 records what was verified against it from outside. What this document
+still does not assess is that deployment in use with real data.
 
 ---
 
@@ -561,15 +562,16 @@ project chooses; eviction deletes on the platform's, and can only fire sooner, n
 later. Which fires first bears on whether data leaves the device before it is lost —
 her exports by hand, and ADR-0004's owed availability amendment — and not on how long
 data should be kept; that is why the retention decision stopped waiting
-on `fieldnote-bdw` and why that bead stays open. What that bead now holds: one device
-observation, 2026-09-16, by the owner — the installed app not opened for eight idle
-days, iOS 26.6.1, all notes present on reopening; one device, one run — and two things
-unobserved: behaviour under storage pressure, and what `navigator.storage.persisted()`
-reports. The application does not request persistent storage today (no reference to
-`navigator.storage` in `src/`). `docs/THREAT-MODEL.md` §6 still says eviction is
-unverified, and this document does not amend it; it records the later observation with
-its limits and cites the bead. This document does not assume that eviction protects the
-data or that it threatens it.
+on `fieldnote-bdw` and why that bead stays open. What that bead now holds: two device
+observations, both the owner's. On 2026-09-16, the installed app not opened for eight
+idle days, iOS 26.6.1, all notes present on reopening. On 2026-09-22, against the
+deployment, iOS 26.6.2: the application now asks for persistent storage once at start-up
+and the browser granted it, so the settings screen read "Storage on this device:
+persistent". A persisted origin is exempt from eviction under storage pressure, so both
+layers are on the application's side rather than only the home-screen exemption. One
+device and one run each. Still unobserved: the seven idle days, which only waiting
+tests, and real storage pressure. This document does not assume that eviction protects
+the data or that it threatens it.
 
 This document does not assume an export has ever been taken from a real device; that
 nothing records the audit CSV export is stated in §3.4 and §6.
@@ -739,9 +741,9 @@ before the application receives text, and where that happens is not recorded
 backup is not recorded (`fieldnote-ap1`). Both are named here as unverified rather than
 assumed either way.
 
-**Hosting adds one more, decided and not yet done: Vercel.** ADR-0012 decides that the
-private build deploys to its own Vercel project, and nothing is deployed yet
-(`fieldnote-ijg`; session 21). What that adds when it happens, as facts rather than
+**Hosting adds one more, and it is now real: Vercel.** ADR-0012 decided that the private
+build deploys to its own Vercel project, and since 2026-09-21 it does
+(`fieldnote-ijg`, closed). What that adds, as facts rather than
 intentions: the request passes through Vercel on its way to the model provider, and the
 function's logs live there, retained for one day on the Pro plan the record chooses
 (Vercel's plan documentation, read 2026-09-21). What is in those logs is what the route
@@ -750,6 +752,16 @@ durations — asserted by `tests/unit/generate-route.test.ts`; the access route 
 same way and never the key or its hash. The function runs in one region, `iad1`, set in
 `vercel.json`. No attendee data is stored on the platform: there is no server-side store
 (§5), so what Vercel holds is the request in flight and the log line about it.
+
+Verified against the running deployment on 2026-09-21, from outside it: every security
+header on the document and on the route, including `X-Robots-Tag: noindex, nofollow`;
+`robots.txt` disallowing everything; the route refusing a non-JSON content type with 415
+and an unknown caller with 401; the generated and branch URLs requiring a Vercel login;
+and the served page referencing no third-party script. One platform fact worth recording
+rather than leaving to be discovered: the deployment answers on Vercel's Speed Insights
+script path even though the product is not enabled, which is the platform's own default
+routing. Nothing collects, because the page never loads it and the package is not
+installed. ADR-0012 carries the detail.
 
 The three controls `fieldnote-9n1` asked for before any hosted origin now exist, except
 the rate limit, which ADR-0012 replaces with a spend limit on the model API key as an
@@ -797,9 +809,10 @@ Added here, each with a bead, each specific to data protection, none already in 
 - **Retention is decided and not implemented.** Until `fieldnote-iox` closes, nothing
   bounds the store.
 - **Eviction, on the availability axis.** Whether data leaves the device before the
-  platform deletes it depends on her exporting it. One device observation now exists
-  (§4) and the storage-pressure and `persisted()` questions do not. `fieldnote-bdw`;
-  ADR-0004 owes the availability amendment when it resolves.
+  platform deletes it depends on her exporting it. Two device observations now exist
+  (§4), and `persisted()` reports persistent; the seven-day window and behaviour under
+  storage pressure remain unobserved. `fieldnote-bdw`; ADR-0004 owes the availability
+  amendment when it resolves.
 - **A request concerning one attendee cannot be fully met without deleting the event.**
   `fieldnote-jqk`.
 - **A request concerning one note or one draft cannot be met without deleting the

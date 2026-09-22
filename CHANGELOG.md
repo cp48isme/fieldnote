@@ -7,6 +7,25 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 21 — the private repository, deployed
+
+- The private-term rule loads from `FIELDNOTE_GUARDRAIL_TERMS` when there is no local
+  file, so it is active on a hosted platform instead of silently inert on the one build
+  that carries the real list. The file still wins where it exists, and the start-up line
+  reports which source answered, never a term.
+- The application asks for persistent storage once at start-up and records the answer
+  nowhere; the settings screen reads it back as persistent, not persistent, or unknown.
+- The private build is deployed, from a private repository created from public `main`
+  rather than forked. Verified from outside the deployment: every security header, the
+  noindex header and `robots.txt`, the service worker and its precache manifest, the
+  route refusing a wrong content type and an unknown caller, and the generated and
+  branch URLs requiring a login. On the device, iOS 26.6.2: storage persistent, the
+  offline shell holding, and the access cookie surviving a relaunch.
+- ADR-0012 amended 2026-09-22 with the five facts the real platform settled, including
+  that the platform's Speed Insights collection route ships whether or not the product
+  is enabled, while nothing on the page loads it.
+- `fieldnote-6x5`, `fieldnote-ijg`, `fieldnote-v2s`, and `fieldnote-cjs` closed.
+
 ### Session 20 — the deployment decision and the route's caller controls
 
 - ADR-0012: where the application runs and who may call the route that spends money,
