@@ -132,7 +132,7 @@ export function FollowUps({
                     data-state={draft.state}
                     data-kind={draft.kind}
                     onClick={() => onOpen(draft)}
-                    className="flex min-h-16 w-full flex-col gap-1 rounded-lg border border-black/10 p-3 text-left dark:border-white/15"
+                    className="flex min-h-16 w-full flex-col gap-1 rounded-lg border border-edge p-3 text-left"
                   >
                     <span className="flex items-baseline justify-between gap-3 text-xs">
                       <span className="font-medium">{name ?? UNKNOWN_RECIPIENT}</span>

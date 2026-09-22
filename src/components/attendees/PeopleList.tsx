@@ -69,7 +69,7 @@ export function PeopleList({ attendees, onOpen, onClose }: PeopleListProps) {
                 data-testid="person-row"
                 data-attendee-id={attendee.id}
                 onClick={() => onOpen(attendee)}
-                className="flex min-h-14 w-full flex-col gap-1 rounded-lg border border-black/10 p-3 text-left dark:border-white/15"
+                className="flex min-h-14 w-full flex-col gap-1 rounded-lg border border-edge p-3 text-left"
               >
                 <span className="font-medium">{attendee.displayName}</span>
                 <span className="text-xs opacity-70">

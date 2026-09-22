@@ -1,8 +1,7 @@
 # Handoff
 
-Written 2026-09-22, at the head of `docs/session-21-deployed`, the second of session
-21's two branches, for the state `main` will be in when it merges. `main` is at
-`697066c`, which already carries session 21's first branch; this one adds the record.
+Written 2026-09-23, at the head of `feat/session-23-device-findings`, for the state
+`main` will be in when it merges. `main` is at `6c9a3cd`.
 
 Every claim here was checked against the repository, git history, the trackers, the
 GitHub API, or the running deployment in the session that wrote it. Where something
@@ -98,7 +97,9 @@ closed without merging (#3, #5, #26, #27, #35, #52).
 - **Session 20, the deployment decision and the route's caller controls** — **#54**;
   ADR-0012.
 - **Session 21, the private repository, deployed** — **#55** for the code the deployment
-  needed, and this branch for the record. ADR-0012 amended.
+  needed, **#56** for the record. ADR-0012 amended.
+- **Session 23, the device findings** — this branch. ADR-0012 amended again;
+  `fieldnote-cno` closed.
 
 ---
 
@@ -171,8 +172,19 @@ Speed Insights collection route ships whether or not the product is enabled, whi
 nothing on the page loads it; the cookie survives on iOS; persistent storage is granted;
 the precache survives a Vercel build; and she installs from the production domain.
 
-**Schema is at v9**, unchanged, and deliberately: neither the caller key nor the storage
-line needed a field.
+**The interface findings from the device are fixed.** The Device link no longer waits
+for an event, so a fresh install can authorise itself; every outcome of the access form
+returns to the settings screen and says what happened; and the screen states plainly
+that it cannot check later whether a key is stored. `fieldnote-cno` is closed.
+
+**One palette, light, always.** The dark variant is removed rather than overridden, the
+background is a warm cream, and `color-scheme: light` keeps the browser from rendering
+form controls dark under it. Every pair was measured in a browser rather than reasoned
+about; three failed and were darkened, and the control boundary went from 1.26:1 to
+3.32:1. `tests/e2e/theme.spec.ts` asserts the palette with the browser emulating dark.
+
+**Schema is at v9**, unchanged, and deliberately: neither the caller key, the storage
+line, nor anything in session 23 needed a field.
 
 **Versions.** Prompt template 1.2.0; guardrail ruleset 1.4.0. Neither changed.
 
@@ -210,10 +222,12 @@ ADR-0004's retention consequence pointed at it. ~3 hours.
 - **The Vercel project's settings**, as a standing hand check: protection scope and
   method, all three variables scoped to Production, analytics and the toolbar off.
 
-Done and unverifiable from here: the spend limit on the model API key, set 2026-09-21 on
-a workspace dedicated to this deployment and replaced along with the key on 2026-09-22
-after the key had not reached Production; and automatic screen lock on the
-representative's device, 2026-09-21 (`docs/THREAT-MODEL.md` §5.6).
+Done and unverifiable from here, with a correction to what session 21's handoff said:
+the **spend limit** on the model API key was set on 2026-09-21 and was **not** replaced.
+What was replaced, on 2026-09-22, was the **model key**, within the same capped
+workspace, after the original had not reached Production. The previous handoff ran the
+two together. Also done: automatic screen lock on the representative's device,
+2026-09-21 (`docs/THREAT-MODEL.md` §5.6).
 
 Still owed and unchanged: a real photo and a real site map through the resize; the real
 approved content loaded, which is now the first thing the deployment is waiting for; a
@@ -297,8 +311,14 @@ five-name evidence statement; and the decision `fieldnote-af9` holds.
 - **`gh pr create`, never `--fill`.**
 - **Stage explicit paths.** Prettier reformats committed files, so read the wrapped text
   before anchoring an edit on it. Markdown is excluded from Prettier and hand-wrapped.
+- **Every change that should reach the representative needs the private repository
+  synced, and each sync is a production deploy.** Merging to public `main` changes
+  nothing she can see. The private repository is fast-forwarded from `upstream/main` and
+  pushed, which is what triggers the build; it must never diverge, so if a fast-forward
+  is not possible, stop rather than merge. Plan the deploy as part of the session, not
+  after it.
 - **One session, one PR**, except where a session must ship code before it can do the
-  rest, as this one did.
+  rest, as session 21 did.
 - **Separate commits per logical change.** Merge commit, not squash.
 
 ---
@@ -317,9 +337,9 @@ Stated rather than smoothed over.
   loaded with a count of four is the whole of what is known about it here.
 - **Nothing in the repository verifies any platform setting or the spend limit.**
 - **The model key not reaching Production was found by a person drafting on a phone**,
-  not by anything here. The access hashes announce their absence through the route's
-  401 wording; the model key does not announce itself until someone with a valid key
-  drafts.
+  not by anything here. Since session 23 the start-up line reports whether it is present,
+  so the next occurrence shows in the logs; that is a report, not a test, and nothing
+  fails if it reads absent.
 - **`fieldnote-cno`'s two findings are recorded and not fixed**, on the owner's
   instruction.
 - **The threat model's severities are one reader's judgement.**

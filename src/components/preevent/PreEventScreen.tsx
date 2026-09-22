@@ -498,7 +498,7 @@ export function PreEventScreen({
                 data-media-type={siteMap.mediaType}
                 src={siteMapUrl}
                 alt="Site map"
-                className="max-h-40 max-w-[50%] rounded-lg border border-black/10 object-contain dark:border-white/15"
+                className="max-h-40 max-w-[50%] rounded-lg border border-edge object-contain"
               />
             ) : (
               <span data-testid="pre-event-site-map-none" className="text-xs opacity-60">
@@ -552,7 +552,7 @@ export function PreEventScreen({
             <p
               data-testid="pre-event-site-map-error"
               role="alert"
-              className="text-sm text-red-600"
+              className="text-sm text-red-700"
             >
               {siteMapError}
             </p>
@@ -620,7 +620,7 @@ export function PreEventScreen({
             <ul className="flex flex-col gap-2">
               {library.map((passage) => (
                 <li key={passage.id}>
-                  <label className="flex items-start gap-3 rounded-lg border border-black/10 p-3 text-sm dark:border-white/15">
+                  <label className="flex items-start gap-3 rounded-lg border border-edge p-3 text-sm">
                     <input
                       type="checkbox"
                       data-testid="pre-event-passage"
@@ -660,7 +660,7 @@ export function PreEventScreen({
           <ul className="flex flex-col gap-2">
             {sortedAttendees.map((attendee) => (
               <li key={attendee.id}>
-                <label className="flex min-h-11 items-center gap-3 rounded-lg border border-black/10 px-3 text-sm dark:border-white/15">
+                <label className="flex min-h-11 items-center gap-3 rounded-lg border border-edge px-3 text-sm">
                   <input
                     type="checkbox"
                     data-testid="pre-event-recipient"
@@ -680,7 +680,7 @@ export function PreEventScreen({
       {/* 5. The forwardable block (ADR-0002) */}
       <div data-testid="pre-event-forwardable-section" className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold">5. For a colleague</h3>
-        <label className="flex min-h-11 items-center gap-3 rounded-lg border border-black/10 px-3 text-sm dark:border-white/15">
+        <label className="flex min-h-11 items-center gap-3 rounded-lg border border-edge px-3 text-sm">
           <input
             type="checkbox"
             data-testid="pre-event-forwardable"
@@ -725,7 +725,7 @@ export function PreEventScreen({
           <p
             data-testid="pre-event-compose-error"
             role="alert"
-            className="text-sm text-red-600"
+            className="text-sm text-red-700"
           >
             {composeError}
           </p>

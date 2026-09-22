@@ -78,7 +78,7 @@ export function CaptureDock({
       // keyboard opens, and a sticky element inside a dvh-sized column stays above it
       // where a fixed one is pushed underneath. The safe-area inset keeps it clear of the
       // home indicator without leaving a permanent gap on devices that have none.
-      className="sticky bottom-0 shrink-0 border-t border-black/10 bg-[var(--background)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/15"
+      className="sticky bottom-0 shrink-0 border-t border-edge bg-[var(--background)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
     >
       <div className="mx-auto flex max-w-2xl flex-col gap-3">
         <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export function CaptureDock({
           <p
             data-testid="save-state"
             data-state={saveState}
-            className={`text-xs ${saveState === "error" ? "text-red-600" : "opacity-60"}`}
+            className={`text-xs ${saveState === "error" ? "text-red-700" : "opacity-60"}`}
           >
             {saveState === "error" && saveError
               ? `${SAVE_STATE_LABELS.error}: ${saveError.message}`

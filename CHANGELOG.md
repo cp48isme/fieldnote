@@ -7,6 +7,24 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 23 — the device findings
+
+- The Device link renders whether or not an event exists, so a fresh install can reach
+  the settings screen and authorise itself before creating anything.
+- Every outcome of the access form returns to the settings screen and says what
+  happened: remembered, forgotten, or not recognised. The screen also says, always, that
+  it cannot check later whether a key is stored. The cookie and the route's decisions are
+  unchanged.
+- One palette, light, always. The dark variant is removed rather than overridden, the
+  background is a warm cream, and `color-scheme: light` keeps form controls from
+  rendering dark under it. Every text and boundary pair was measured in a browser; three
+  failed WCAG AA and moved to darker shades, and the control boundary went from 1.26:1 to
+  3.32:1.
+- The generation route's start-up line reports whether the model key is present, never
+  its value, so a variable that has not reached a deployment says so in the logs rather
+  than waiting to be found by someone drafting.
+- ADR-0012 amended 2026-09-23. `fieldnote-cno` closed.
+
 ### Session 21 — the private repository, deployed
 
 - The private-term rule loads from `FIELDNOTE_GUARDRAIL_TERMS` when there is no local

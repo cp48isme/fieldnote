@@ -28,7 +28,7 @@ export function RecoveryNotice({ recovered, onDismiss }: RecoveryNoticeProps) {
     <section
       data-testid="recovered-session"
       role="status"
-      className="mx-4 mt-4 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-sm"
+      className="mx-4 mt-4 rounded-lg border border-amber-700 bg-amber-500/10 p-4 text-sm"
     >
       <p className="font-medium">Recovered unsaved session</p>
       <p className="mt-1 opacity-80">

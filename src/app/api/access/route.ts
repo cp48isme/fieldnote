@@ -37,8 +37,17 @@ export const dynamic = "force-dynamic";
 
 const FORM_MEDIA_TYPE = "application/x-www-form-urlencoded";
 
-/** Where the browser is sent after a decision. A 303 so the reload is a GET, not a repost. */
-const AFTER_SAVE = "/";
+/**
+ * Where the browser is sent after a decision. A 303 so the reload is a GET, not a repost.
+ *
+ * Every outcome lands back on the settings screen with a flag, rather than a success
+ * dropping her on the app with nothing said (`fieldnote-cno`, found on the device). The
+ * screen cannot check afterwards whether a key is stored — the cookie is scoped
+ * `Path=/api` by design, so the browser does not send it to a page — which means the
+ * redirect is the only place a confirmation can come from.
+ */
+const AFTER_SAVE = "/settings?saved=1";
+const AFTER_FORGET = "/settings?forgotten=1";
 const AFTER_FAILURE = "/settings?failed=1";
 
 /** Metadata only. Every field here is a string, a number, or a boolean. */
@@ -107,7 +116,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // Forgetting needs no key and no configuration: expiring a cookie cannot be an attack.
   if (action === "forget") {
     log({ status: 303, action, reason: "forgotten" });
-    return redirect(AFTER_SAVE, setCookie("", 0));
+    return redirect(AFTER_FORGET, setCookie("", 0));
   }
 
   const hashes = configuredHashes(process.env[ACCESS_KEY_HASHES_VARIABLE]);

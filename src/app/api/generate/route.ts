@@ -92,6 +92,12 @@ console.info(
     privateTerms: privateTerms.status,
     count: privateTerms.count,
     source: privateTerms.source,
+    // Presence only, never the value, never a length, never a prefix. On 2026-09-22 a
+    // model key that had not reached Production was found by someone drafting on a
+    // phone, because the route says nothing about it until a request with a valid
+    // caller key gets that far. Now both variables the route refuses without announce
+    // themselves once, at start-up, where a deployment's logs will show them.
+    modelKey: process.env[KEY_VARIABLE] ? "present" : "absent",
   }),
 );
 

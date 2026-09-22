@@ -120,7 +120,7 @@ export function DraftDetail({
         <p
           data-testid="draft-blocked"
           role="status"
-          className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm"
+          className="rounded-lg border border-amber-700 bg-amber-500/10 p-3 text-sm"
         >
           {explanationFor(draft.blocked)}
         </p>
@@ -129,7 +129,7 @@ export function DraftDetail({
           {(draft.flagsFired.length > 0 || hasGap) && (
             <div
               data-testid="draft-flags"
-              className="flex flex-col gap-1 rounded-lg border border-black/10 p-3 text-sm dark:border-white/15"
+              className="flex flex-col gap-1 rounded-lg border border-edge p-3 text-sm"
             >
               {hasGap && (
                 <p>
@@ -158,7 +158,7 @@ export function DraftDetail({
             onChange={(event) => onBodyChange(event.target.value)}
             readOnly={exported}
             aria-label="Draft text"
-            className="h-72 w-full resize-none rounded-lg border border-black/10 p-3 text-base leading-relaxed dark:border-white/15"
+            className="h-72 w-full resize-none rounded-lg border border-edge p-3 text-base leading-relaxed"
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -199,7 +199,7 @@ export function DraftDetail({
           </div>
 
           {exportError && (
-            <p data-testid="export-error" role="alert" className="text-sm text-red-600">
+            <p data-testid="export-error" role="alert" className="text-sm text-red-700">
               {exportError}
             </p>
           )}

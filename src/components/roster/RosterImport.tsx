@@ -199,7 +199,7 @@ export function RosterImport({
             <p
               data-testid="roster-error"
               role="alert"
-              className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm"
+              className="rounded-lg border border-amber-700 bg-amber-500/10 p-3 text-sm"
             >
               {step.error}
             </p>
@@ -282,7 +282,7 @@ export function RosterImport({
       {step.kind === "done" && (
         <div className="flex flex-col gap-2">
           {step.error ? (
-            <p data-testid="roster-error" role="alert" className="text-sm text-red-600">
+            <p data-testid="roster-error" role="alert" className="text-sm text-red-700">
               Nothing was imported: {step.error}
             </p>
           ) : (
@@ -326,7 +326,7 @@ function ReviewStep({ proposals, answers, busy, onAnswer, onImport }: ReviewStep
                 data-testid="roster-proposal"
                 data-row={p.person.row}
                 data-answer={answers.get(p.person.row) ?? "unanswered"}
-                className="flex flex-col gap-2 rounded-lg border border-black/10 p-3 text-sm dark:border-white/15"
+                className="flex flex-col gap-2 rounded-lg border border-edge p-3 text-sm"
               >
                 <span>
                   <span className="font-medium">{p.person.displayName}</span> on the sheet
@@ -338,7 +338,7 @@ function ReviewStep({ proposals, answers, busy, onAnswer, onImport }: ReviewStep
                     type="button"
                     data-testid="roster-same"
                     onClick={() => onAnswer(p.person.row, "same")}
-                    className={`min-h-11 flex-1 rounded-lg border px-3 ${answers.get(p.person.row) === "same" ? "border-sky-500 bg-sky-500/10" : ""}`}
+                    className={`min-h-11 flex-1 rounded-lg border px-3 ${answers.get(p.person.row) === "same" ? "border-sky-700 bg-sky-500/10" : ""}`}
                   >
                     Same person
                   </button>
@@ -346,7 +346,7 @@ function ReviewStep({ proposals, answers, busy, onAnswer, onImport }: ReviewStep
                     type="button"
                     data-testid="roster-new"
                     onClick={() => onAnswer(p.person.row, "new")}
-                    className={`min-h-11 flex-1 rounded-lg border px-3 ${answers.get(p.person.row) === "new" ? "border-sky-500 bg-sky-500/10" : ""}`}
+                    className={`min-h-11 flex-1 rounded-lg border px-3 ${answers.get(p.person.row) === "new" ? "border-sky-700 bg-sky-500/10" : ""}`}
                   >
                     New person
                   </button>

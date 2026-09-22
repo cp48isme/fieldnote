@@ -63,9 +63,7 @@ export function NoteLog({ notes, attendees, activeNoteId, onOpenNote }: NoteLogP
               data-active={isActive}
               onClick={() => onOpenNote(note)}
               className={`flex min-h-16 w-full flex-col gap-1 rounded-lg border p-3 text-left ${
-                isActive
-                  ? "border-sky-500 bg-sky-500/10"
-                  : "border-black/10 dark:border-white/15"
+                isActive ? "border-sky-700 bg-sky-500/10" : "border-edge"
               }`}
             >
               <span className="flex items-baseline justify-between gap-3 text-xs">

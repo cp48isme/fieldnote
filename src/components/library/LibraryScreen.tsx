@@ -126,7 +126,7 @@ export function LibraryScreen({ passages, onChanged, onClose }: LibraryScreenPro
             key={passage.id}
             data-testid="library-row"
             data-passage-id={passage.id}
-            className="flex flex-col gap-2 rounded-lg border border-black/10 p-3 text-sm dark:border-white/15"
+            className="flex flex-col gap-2 rounded-lg border border-edge p-3 text-sm"
           >
             <span className="font-medium">{passage.label}</span>
             <span className="whitespace-pre-wrap">{passage.body}</span>
@@ -212,7 +212,7 @@ export function LibraryScreen({ passages, onChanged, onClose }: LibraryScreenPro
             />
           </label>
           {error && (
-            <p data-testid="library-error" role="alert" className="text-sm text-red-600">
+            <p data-testid="library-error" role="alert" className="text-sm text-red-700">
               {error}
             </p>
           )}

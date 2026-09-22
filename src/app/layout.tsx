@@ -36,7 +36,8 @@ export const metadata: Metadata = {
  * was reaching for, without taking zoom away from someone who needs it.
  */
 export const viewport: Viewport = {
-  themeColor: "#1e293b",
+  // Matches `--background` and the manifest: one palette, light, always (session 23).
+  themeColor: "#faf6ee",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

@@ -38,7 +38,7 @@ export function BlockingNotice({
       role="alert"
       className="flex min-h-[100dvh] items-center justify-center p-6"
     >
-      <div className="flex max-w-md flex-col gap-3 rounded-lg border border-amber-500/50 bg-amber-500/10 p-5">
+      <div className="flex max-w-md flex-col gap-3 rounded-lg border border-amber-700 bg-amber-500/10 p-5">
         <h1 className="text-base font-semibold">{title}</h1>
         <p className="text-sm opacity-90">{explanation}</p>
         <p className="text-sm font-medium">{action}</p>

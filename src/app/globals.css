@@ -1,22 +1,44 @@
 @import "tailwindcss";
 
+/**
+ * One palette, light, always.
+ *
+ * The dark variant is removed rather than overridden. The device this runs on is a phone
+ * held in daylight at an event, often outdoors, and a dark theme that follows the
+ * operating system's setting made the capture surface hard to read there — reported from
+ * the device on 2026-09-22. A single palette is also one set of contrast ratios to check
+ * rather than two, and the second set was never checked.
+ *
+ * `color-scheme: light` is what stops the browser rendering form controls, scrollbars,
+ * and the on-screen keyboard's accessory bar in their dark forms on a device set to dark.
+ * Without it the background is cream and the inputs are not.
+ *
+ * The cream is warm on purpose: a pure white page in direct sun is a mirror, and the
+ * difference costs nothing in contrast. Every ratio against it is in the session 23
+ * report and in `tests/e2e/theme.spec.ts`.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  --background: #faf6ee;
+  --foreground: #1a1712;
+
+  /**
+   * The boundary of anything a finger can act on: a button, an input, a card that is a
+   * button. 3.32:1 against the background, which clears WCAG 1.4.11's 3:1 for the visual
+   * information required to identify a control. The old value was black at 10 percent,
+   * which is 1.26:1 — invisible in daylight and short of the requirement by a factor of
+   * two and a half.
+   */
+  --edge: #8a8783;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-edge: var(--edge);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

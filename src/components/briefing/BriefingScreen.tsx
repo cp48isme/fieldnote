@@ -327,7 +327,7 @@ export function BriefingScreen({
             <li
               key={contact.id}
               data-testid="briefing-contact"
-              className="flex flex-col gap-1 rounded-lg border border-black/10 p-3 text-sm dark:border-white/15"
+              className="flex flex-col gap-1 rounded-lg border border-edge p-3 text-sm"
             >
               <span className="font-medium">{contact.name}</span>
               <span className="text-xs opacity-70">
@@ -401,7 +401,7 @@ export function BriefingScreen({
               <p
                 data-testid="briefing-contact-error"
                 role="alert"
-                className="text-sm text-red-600"
+                className="text-sm text-red-700"
               >
                 {contactError}
               </p>
@@ -448,7 +448,7 @@ export function BriefingScreen({
                   data-attendee-id={attendee.id}
                   data-has-photo={thumbnails.has(attendee.id) ? "true" : "false"}
                   onClick={() => onOpenAttendee(attendee)}
-                  className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-black/10 p-3 text-left dark:border-white/15"
+                  className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-edge p-3 text-left"
                 >
                   {thumbnails.has(attendee.id) ? (
                     // Local bytes as a data: URL, not a remote image.
@@ -459,7 +459,7 @@ export function BriefingScreen({
                       className="h-12 w-12 rounded object-cover"
                     />
                   ) : (
-                    <span className="flex h-12 w-12 items-center justify-center rounded border border-dashed border-black/20 text-[10px] opacity-60 dark:border-white/25">
+                    <span className="flex h-12 w-12 items-center justify-center rounded border border-dashed border-edge text-[10px] opacity-60">
                       No photo
                     </span>
                   )}
@@ -502,7 +502,7 @@ export function BriefingScreen({
           <p
             data-testid="briefing-generate-error"
             role="alert"
-            className="text-sm text-red-600"
+            className="text-sm text-red-700"
           >
             {generateError}
           </p>

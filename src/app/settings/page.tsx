@@ -27,9 +27,12 @@ const DAYS = Math.round(ACCESS_COOKIE_MAX_AGE_SECONDS / 86_400);
 export default async function Settings({
   searchParams,
 }: {
-  searchParams: Promise<{ failed?: string }>;
+  searchParams: Promise<{ failed?: string; saved?: string; forgotten?: string }>;
 }) {
-  const failed = (await searchParams).failed === "1";
+  const flags = await searchParams;
+  const failed = flags.failed === "1";
+  const saved = flags.saved === "1";
+  const forgotten = flags.forgotten === "1";
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 p-6 text-sm">
@@ -42,15 +45,48 @@ export default async function Settings({
         </p>
       </header>
 
+      {/*
+        Each outcome says what happened, because nothing here can check afterwards: the
+        cookie is scoped `Path=/api` so the browser never sends it to this page, and a
+        saved key used to look exactly like having done nothing (`fieldnote-cno`).
+      */}
+      {saved && (
+        <p
+          role="status"
+          data-testid="access-saved"
+          className="rounded-lg border border-sky-700 bg-sky-500/10 p-4"
+        >
+          This device is remembered. You can close this screen.{" "}
+          <Link href="/" className="underline" data-testid="access-saved-back">
+            Back to capture
+          </Link>
+        </p>
+      )}
+
+      {forgotten && (
+        <p
+          role="status"
+          data-testid="access-forgotten"
+          className="rounded-lg border border-sky-700 bg-sky-500/10 p-4"
+        >
+          This device has been forgotten.
+        </p>
+      )}
+
       {failed && (
         <p
           role="status"
           data-testid="access-failed"
-          className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4"
+          className="rounded-lg border border-amber-700 bg-amber-500/10 p-4"
         >
           That key was not recognised. Nothing was saved. Check it and try again.
         </p>
       )}
+
+      <p className="opacity-70" data-testid="access-guidance">
+        This screen can&apos;t check later whether a key is saved. If drafting says the
+        device isn&apos;t authorised, enter the key again.
+      </p>
 
       <form
         method="POST"
@@ -69,13 +105,13 @@ export default async function Settings({
             spellCheck={false}
             data-testid="access-key-input"
             // 16px, so iOS does not zoom the page when this takes focus.
-            className="rounded-lg border border-black/20 bg-transparent p-3 text-base"
+            className="rounded-lg border border-edge bg-transparent p-3 text-base"
           />
         </label>
         <button
           type="submit"
           data-testid="access-save"
-          className="self-start rounded-lg border border-black/20 px-4 py-2 font-medium"
+          className="self-start rounded-lg border border-edge px-4 py-2 font-medium"
         >
           Remember this device
         </button>
@@ -86,7 +122,7 @@ export default async function Settings({
         <button
           type="submit"
           data-testid="access-forget"
-          className="self-start rounded-lg border border-black/20 px-4 py-2"
+          className="self-start rounded-lg border border-edge px-4 py-2"
         >
           Forget this device
         </button>
