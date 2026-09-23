@@ -3,7 +3,7 @@
  *
  * ADR-0013, and the owner's decision of 2026-09-17 in `fieldnote-iox`'s notes. The
  * decision, in full, because a rule scattered across a component is a rule nobody can
- * check: an event's content is deleted 30 days after the event ends; from day 23 the app
+ * check: an event's content is deleted 14 days after the event ends; from day 7 the app
  * says so and gives the date; she can still delete anything at any time; audit records
  * are never pruned; and the periods are build-time constants rather than a setting.
  *
@@ -32,17 +32,23 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
  * private fork may carry a different number to match an employer's schedule, and no
  * screen offers it as a setting.
  */
-export const RETENTION_DAYS = 30;
+export const RETENTION_DAYS = 14;
 
 /**
- * How long before deletion the notice appears. The decision says "from day 23", which is
- * this subtracted from `RETENTION_DAYS`; it is written as the gap rather than as 23 so
- * that changing the retention period moves the notice with it instead of silently
- * putting it after the deletion.
+ * How long before deletion the notice appears. The decision says "from day 7", which is
+ * this subtracted from `RETENTION_DAYS`; it is written as the gap rather than as a day
+ * number so that changing the retention period moves the notice with it instead of
+ * silently putting it after the deletion. It kept its shape when the period went from
+ * thirty days to fourteen on 2026-09-23, which is what writing it as a gap was for.
  */
 export const NOTICE_DAYS_BEFORE_DELETION = 7;
 
-/** Day 23, derived rather than repeated. `tests/unit/retention.test.ts` asserts it is 23. */
+/**
+ * The day the notice starts, derived rather than repeated. At the current periods it
+ * equals `NOTICE_DAYS_BEFORE_DELETION`, because fourteen days with seven days of notice
+ * puts the notice at the halfway point. That is arithmetic at these two values and not a
+ * relationship between them, so nothing here or in the tests leans on it.
+ */
 export const NOTICE_FROM_DAY = RETENTION_DAYS - NOTICE_DAYS_BEFORE_DELETION;
 
 /**

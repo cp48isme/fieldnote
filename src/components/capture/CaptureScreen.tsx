@@ -661,7 +661,7 @@ export function CaptureScreen() {
           )}
 
           {/*
-            The retention notice for the open event, from day 23 (ADR-0013). Rendered
+            The retention notice for the open event, from day 7 (ADR-0013). Rendered
             beside the recovery notice because both are things the app tells her about
             this device's state rather than about the event's content, and neither is a
             control. `retentionFor` is computed on each render from the event's own

@@ -14,6 +14,16 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/**
+ * The two periods, mirrored from `src/lib/db/retention.ts` rather than imported: that
+ * module reaches Dexie through the repository, and pulling IndexedDB into the Node
+ * process that drives the browser is a worse trade than restating two numbers. Every age
+ * below is written against these, so a change to the policy moves the fixtures with it.
+ */
+const RETENTION_DAYS = 14;
+const NOTICE_DAYS_BEFORE_DELETION = 7;
+const NOTICE_FROM_DAY = RETENTION_DAYS - NOTICE_DAYS_BEFORE_DELETION;
+
 /** `YYYY-MM-DDTHH:mm`, the shape a `datetime-local` input takes, in local time. */
 function localInputValue(at: number): string {
   const d = new Date(at);
@@ -77,8 +87,12 @@ test.describe("retention", () => {
       });
     });
 
-    // Ends 40 days ago: past the 30-day point before the page is ever reloaded.
-    await eventEndingAt(page, "Halewood mobile unit", Date.now() - 40 * DAY);
+    // Ends well past the retention period, before the page is ever reloaded.
+    await eventEndingAt(
+      page,
+      "Halewood mobile unit",
+      Date.now() - (RETENTION_DAYS + 6) * DAY,
+    );
 
     // A draft, so there is an audit record to outlive the event (ADR-0008).
     await page.getByTestId("toggle-add-attendee").click();
@@ -106,18 +120,20 @@ test.describe("retention", () => {
   test("an event inside the window shows the notice with the date it will be deleted", async ({
     page,
   }) => {
-    // Ended 25 days ago: inside the last seven days before the 30-day point.
-    const endedAt = Date.now() - 25 * DAY;
+    // Inside the notice window, with three days to go.
+    const daysRemaining = 3;
+    expect(daysRemaining).toBeLessThan(NOTICE_DAYS_BEFORE_DELETION);
+    const endedAt = Date.now() - (RETENTION_DAYS - daysRemaining) * DAY;
     await eventEndingAt(page, "Carrowmore mobile unit", endedAt);
 
     const notice = page.getByTestId("retention-notice");
     await expect(notice).toBeVisible();
     await expect(notice).toContainText("will be deleted on");
     await expect(notice).toContainText("The audit records are kept.");
-    await expect(notice).toHaveAttribute("data-days-remaining", "5");
+    await expect(notice).toHaveAttribute("data-days-remaining", String(daysRemaining));
 
     // The date shown is the event's end plus the retention period, in the device's locale.
-    const due = new Date(endedAt + 30 * DAY);
+    const due = new Date(endedAt + RETENTION_DAYS * DAY);
     const expected = due.toLocaleDateString(undefined, {
       year: "numeric",
       month: "long",
@@ -132,7 +148,12 @@ test.describe("retention", () => {
   });
 
   test("an event well inside its life shows no notice", async ({ page }) => {
-    await eventEndingAt(page, "Northgate demonstration day", Date.now() - 2 * DAY);
+    // A day before the notice opens, so the window's edge is what this asserts.
+    await eventEndingAt(
+      page,
+      "Northgate demonstration day",
+      Date.now() - (NOTICE_FROM_DAY - 1) * DAY,
+    );
     await expect(page.getByTestId("capture-dock")).toBeVisible();
     await expect(page.getByTestId("retention-notice")).toHaveCount(0);
   });

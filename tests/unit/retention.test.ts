@@ -61,16 +61,20 @@ function eventAt(times: Partial<EventRecord>): EventRecord {
 }
 
 describe("the periods are build-time constants, and the rule reads them", () => {
-  it("keeps content for 30 days and gives notice for the last 7", () => {
-    expect(RETENTION_DAYS).toBe(30);
+  it("keeps content for 14 days and gives notice for the last 7", () => {
+    // The only two literals in this file, and they are the decision itself: everything
+    // below reads them rather than repeating what they happen to be today.
+    expect(RETENTION_DAYS).toBe(14);
     expect(NOTICE_DAYS_BEFORE_DELETION).toBe(7);
   });
 
-  it("derives day 23 rather than repeating it", () => {
-    // The decision says "from day 23". Written as the gap, so changing the retention
-    // period moves the notice with it instead of putting it after the deletion.
-    expect(NOTICE_FROM_DAY).toBe(23);
+  it("derives the notice day rather than repeating it", () => {
+    // Written as the gap, so changing the retention period moves the notice with it
+    // instead of putting it after the deletion. It survived exactly that on 2026-09-23,
+    // when the period went from thirty days to fourteen and this line did not move.
     expect(NOTICE_FROM_DAY).toBe(RETENTION_DAYS - NOTICE_DAYS_BEFORE_DELETION);
+    expect(NOTICE_FROM_DAY).toBeGreaterThan(0);
+    expect(NOTICE_FROM_DAY).toBeLessThan(RETENTION_DAYS);
   });
 
   it("computes every date from the constants, not from literals", () => {
@@ -109,20 +113,20 @@ describe("the due point", () => {
   const ended = 1_000_000_000_000;
   const event = eventAt({ endsAt: ended });
 
-  it("is due at 30 days from endsAt", () => {
-    expect(retentionFor(event, ended + 30 * DAY).state).toBe("due");
-    expect(retentionFor(event, ended + 31 * DAY).state).toBe("due");
+  it("is due at the retention period from endsAt, and after", () => {
+    expect(retentionFor(event, ended + RETENTION_DAYS * DAY).state).toBe("due");
+    expect(retentionFor(event, ended + (RETENTION_DAYS + 1) * DAY).state).toBe("due");
   });
 
-  it("is not due at 29 days", () => {
-    expect(retentionFor(event, ended + 29 * DAY).state).not.toBe("due");
+  it("is not due the day before", () => {
+    expect(retentionFor(event, ended + (RETENTION_DAYS - 1) * DAY).state).not.toBe("due");
   });
 
   it("is due on the fallback clocks too", () => {
     const byStart = eventAt({ endsAt: null, startsAt: ended });
     const byUpdate = eventAt({ endsAt: null, startsAt: null, updatedAt: ended });
-    expect(retentionFor(byStart, ended + 30 * DAY).state).toBe("due");
-    expect(retentionFor(byUpdate, ended + 30 * DAY).state).toBe("due");
+    expect(retentionFor(byStart, ended + RETENTION_DAYS * DAY).state).toBe("due");
+    expect(retentionFor(byUpdate, ended + RETENTION_DAYS * DAY).state).toBe("due");
   });
 });
 
@@ -130,24 +134,26 @@ describe("the notice window", () => {
   const ended = 1_000_000_000_000;
   const event = eventAt({ endsAt: ended });
 
-  it("shows the notice from day 23", () => {
-    const at23 = retentionFor(event, ended + 23 * DAY);
-    expect(at23.state).toBe("notice");
-    expect(at23.daysRemaining).toBe(7);
+  it("shows the notice from the notice day, with the whole window remaining", () => {
+    const opening = retentionFor(event, ended + NOTICE_FROM_DAY * DAY);
+    expect(opening.state).toBe("notice");
+    expect(opening.daysRemaining).toBe(NOTICE_DAYS_BEFORE_DELETION);
   });
 
-  it("does not show it at day 22", () => {
-    expect(retentionFor(event, ended + 22 * DAY).state).toBe("active");
+  it("does not show it the day before", () => {
+    expect(retentionFor(event, ended + (NOTICE_FROM_DAY - 1) * DAY).state).toBe("active");
   });
 
   it("states the date the content will be deleted", () => {
-    const { dueAt } = retentionFor(event, ended + 24 * DAY);
+    const { dueAt } = retentionFor(event, ended + (NOTICE_FROM_DAY + 1) * DAY);
     expect(dueAt).toBe(ended + RETENTION_DAYS * DAY);
-    expect(new Date(dueAt).toISOString()).toBe(new Date(ended + 30 * DAY).toISOString());
+    expect(new Date(dueAt).getTime() - new Date(ended).getTime()).toBe(
+      RETENTION_DAYS * DAY,
+    );
   });
 
   it("stops being a notice once it is due", () => {
-    expect(retentionFor(event, ended + 30 * DAY).state).toBe("due");
+    expect(retentionFor(event, ended + RETENTION_DAYS * DAY).state).toBe("due");
   });
 });
 
@@ -204,10 +210,12 @@ describe("the sweep", () => {
     const event = await createEvent({ name: "Northgate demonstration day" });
     await createNote({ eventId: event.id, attendeeId: null, body: "Still current." });
 
-    expect(await sweepExpiredEvents(now + 29 * DAY)).toEqual([]);
+    expect(await sweepExpiredEvents(now + (RETENTION_DAYS - 1) * DAY)).toEqual([]);
     expect(await listEvents()).toHaveLength(1);
     expect(await listNotes(event.id)).toHaveLength(1);
-    expect(retentionFor((await listEvents())[0]!, now + 24 * DAY).state).toBe("notice");
+    expect(
+      retentionFor((await listEvents())[0]!, now + NOTICE_FROM_DAY * DAY).state,
+    ).toBe("notice");
   });
 
   it("deletes every event past due, not only the first", async () => {
@@ -222,12 +230,14 @@ describe("the sweep", () => {
   it("keys the sweep on endsAt when the event has one", async () => {
     const now = Date.now();
     const event = await createEvent({ name: "Ends later" });
-    // `updatedAt` is now, but the event ends well in the future: not due.
+    // `updatedAt` is now, but the event ends well in the future.
     await updateEventTimes(event.id, {
       startsAt: now + 60 * DAY,
       endsAt: now + 61 * DAY,
     });
-    expect(await sweepExpiredEvents(now + 40 * DAY)).toEqual([]);
+    // Past due on the `updatedAt` fallback, nowhere near it on `endsAt`. If the sweep
+    // read the wrong clock this is the moment it would delete a future event.
+    expect(await sweepExpiredEvents(now + (RETENTION_DAYS + 1) * DAY)).toEqual([]);
     expect(await listEvents()).toHaveLength(1);
   });
 });
