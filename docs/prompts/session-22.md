@@ -187,5 +187,17 @@ error in the new unit test rather than in the source, because `NewDraftInput` re
 `guardrailRulesetVersion` and the fixture omitted it; the build is what caught it, not the
 test run, since Vitest does not typecheck.
 
+**The period changed after the checks were green, and that is the useful part.** The
+owner set it to fourteen days, notice from day seven, while the pull request sat waiting
+to merge. The source change was two constants. Nothing else in `src/` moved, because the
+rule reads the constants and the notice is written as a gap subtracted from the period
+rather than as a day number, so the window kept its shape instead of landing after the
+deletion. The unit tests needed the two literals in the one case that pins the decision
+and nothing else: every other case already named the rule. The end-to-end spec restates
+the periods at the top, because importing the module there would pull Dexie into the Node
+process, and each fixture age is written against them. The rest of the work was prose —
+the ADR, the assessment, the threat model, the index, this guide entry, the changelog.
+Worth knowing if a period ever moves again: the code is cheap and the documents are not.
+
 **Spend.** $0. No watched path changed, and the end-to-end retention case mocks the model
 route exactly as the review suite does.

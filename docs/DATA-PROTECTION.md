@@ -524,22 +524,28 @@ And one input the platform processes before the application sees it: dictation
 
 ## 4. Retention
 
-**Decided by the owner on 2026-09-16, changed 2026-09-17, and implemented 2026-09-23.**
-The decision is ADR-0013, from `fieldnote-tcq`'s notes of 2026-09-17, which supersede the
-notes of 2026-09-16; it is written here as stated, not reinterpreted.
+**Decided by the owner on 2026-09-16, changed 2026-09-17, implemented 2026-09-23, and
+the periods set the same day.** The decision is ADR-0013, from `fieldnote-tcq`'s notes of
+2026-09-17, which supersede the notes of 2026-09-16; it is written here as stated, not
+reinterpreted.
 
 - **Scope:** an event's content — attendees, notes, drafts, contacts, images, and the
   event itself: what `deleteEvent` cascades to today (§3.5).
-- **Automatic deletion:** 30 days after the event ends. The clock keys on `endsAt`; if
+- **Automatic deletion:** 14 days after the event ends. The clock keys on `endsAt`; if
   that is null, `startsAt`; if both are null, the event's `updatedAt`. No ceiling beyond
   it, no export prompt.
-- **Warning:** from day 23, the application shows her a notice on the event that its
+- **Warning:** from day 7, the application shows her a notice on the event that its
   content will be deleted on the date it will be.
 - **Her delete:** she can delete an event at any time, as today (§3.5).
 - **Audit records:** kept; never pruned. Unchanged, per ADR-0008.
-- **Period:** a build-time constant, not a user setting.
+- **Periods:** build-time constants, not user settings.
 - **Why there is no export prompt:** the correspondence that leaves by her mail client
   is the record kept elsewhere; the application's copy is working material.
+- **Why a fortnight:** the same reason. Because the sent copy is the record, what this
+  rule is for is a backstop for an event she forgets to close out rather than a retention
+  period in its own right, and the owner set it on 2026-09-23 as short as it can be
+  without deleting material she is still working on. Seven days was considered and judged
+  too tight against a slow week or a late follow-up. ADR-0013, *Why fourteen days*.
 
 **Built, and this is how it runs.** `src/lib/db/retention.ts` holds the periods as named
 constants and the clock's fallback order in one function, so the rule and its tests agree
@@ -818,8 +824,8 @@ and ADR-0013 the record.
 Added here, each with a bead, each specific to data protection, none already in §6:
 
 - **Retention bounds an event's content and not the audit records.** An event's content
-  goes thirty days after the event ends (ADR-0013), and the records it generated stay for
-  ever, by decision. What is unbounded is therefore the record table, not the store as a
+  goes fourteen days after the event ends (ADR-0013), and the records it generated stay
+  for ever, by decision. What is unbounded is therefore the record table, not the store as a
   whole.
 - **The deletion happens on the first load after the date, not on the date.** A device
   left closed past the due date holds the content until it is next opened.

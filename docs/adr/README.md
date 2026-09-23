@@ -76,15 +76,18 @@ the registry and advisory material for each, and the deciding reason — the sma
 to trust, a library of primitives with no script, form, or HTML capability — set against
 the cost it carries, which is that it is unmaintained and the record says so.
 
-**0013** turns ADR-0004's mitigation into behaviour. An event's content is deleted thirty
-days after the event ends, keyed on when it ended and falling back to when it started and
-then to when its record was last written; a notice appears from day twenty-three with the
-date; her own delete is unchanged; audit records are never pruned; and the periods are
+**0013** turns ADR-0004's mitigation into behaviour. An event's content is deleted
+fourteen days after the event ends, keyed on when it ended and falling back to when it
+started and then to when its record was last written; a notice appears from day seven with
+the date; her own delete is unchanged; audit records are never pruned; and the periods are
 build-time constants. Nothing is stored to make it work, so the schema does not move, and
 the record states the two things that costs. It also records the owner's first decision —
 prompted, with a sixty-day ceiling — as superseded, and why: the correspondence that
 matters has already left by mail client, so the application's copy is working material and
-an export prompt offers a second copy of something she has.
+an export prompt offers a second copy of something she has. The same reasoning set the
+period at fourteen days on 2026-09-23, replacing the thirty the record was drafted
+against: what the rule is for is a backstop for an event she forgets to close out, and a
+backstop should be no longer than it has to be.
 
 **0012** settles where the application runs and who may call the route that spends
 money, which are one decision because each depends on the other. The private build

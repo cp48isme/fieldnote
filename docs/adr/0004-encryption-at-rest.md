@@ -178,8 +178,8 @@ server-side store of HCP data (plan §5), pseudonymization before the only egres
 events' worth of notes is a smaller loss than one holding two years'.
 
 > **Amended 2026-09-23, session 22.** That retention policy now exists and is
-> implemented: **ADR-0013**. An event's content is deleted thirty days after the event
-> ends, with a notice from day twenty-three. This paragraph's mitigation is therefore a
+> implemented: **ADR-0013**. An event's content is deleted fourteen days after the event
+> ends, with a notice from day seven. This paragraph's mitigation is therefore a
 > property of the application rather than an assumption this record leans on, which is
 > what `fieldnote-tcq` was opened to fix. The second entry above still holds and ADR-0013
 > repeats it: audit records are never pruned, so the store keeps a hash-only record for

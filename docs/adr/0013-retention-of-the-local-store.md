@@ -4,6 +4,10 @@
 - **Date:** 2026-09-17
 - **Deciders:** cp48isme (owner); the schema question and the mechanism by the session
   that implemented it, on the owner's decision
+- **Periods set:** 2026-09-23 — fourteen days, with the notice keeping its seven-day
+  shape and so starting at day seven. The thirty-day figure this record was first written
+  against is under *Alternatives*, with the owner's reasoning. The shape of the decision
+  is unchanged; only the two numbers moved.
 
 ## Context
 
@@ -27,24 +31,44 @@ what happens to the records.
 
 The owner decided on 2026-09-16, then changed the decision on 2026-09-17. Both are in
 `fieldnote-tcq`'s notes. This record carries the second and treats the first as
-superseded, for the reasons under *Alternatives*.
+superseded, for the reasons under *Alternatives*. The period itself was set last, on
+2026-09-23, before this record first landed: fourteen days rather than the thirty it was
+drafted against. That is also under *Alternatives*.
 
 ## Decision
 
-**An event's content is deleted thirty days after the event ends.** Six points, as the
-owner set them on 2026-09-17.
+**An event's content is deleted fourteen days after the event ends.** Six points, as the
+owner set them on 2026-09-17, with the two periods as the owner set them on 2026-09-23.
 
 1. **Scope: an event's content.** Attendees, notes, drafts, contacts, images, and the
    event itself — exactly what `deleteEvent` already cascades to, and nothing else.
-2. **Automatic deletion at thirty days.** The clock keys on the event's `endsAt`; if that
+2. **Automatic deletion at fourteen days.** The clock keys on the event's `endsAt`; if that
    is null, `startsAt`; if both are null, the event's `updatedAt`. No ceiling beyond it
    and no export prompt.
-3. **A notice from day twenty-three.** The application shows a notice on the event saying
+3. **A notice from day seven.** The application shows a notice on the event saying
    its content will be deleted and the date it will be. A notice, not a prompt.
 4. **Her own delete is unchanged.** She can delete an event at any time, as before.
 5. **Audit records are kept and never pruned**, per ADR-0008.
 6. **The periods are build-time constants**, not a user setting. The private fork may
    carry different values.
+
+### Why fourteen days, in the owner's terms
+
+The application's copy is working material. The follow-ups go out within a day or two of
+the event, through her mail client, and that sent copy is the record kept elsewhere. So
+fourteen days is a backstop for an event she forgets to close out rather than a retention
+period in its own right, and a backstop should be as short as it can be while still
+catching the thing it exists to catch.
+
+Seven days was considered and rejected as too tight against a slow week or a late
+follow-up: the backstop would start deleting working material she was still working on,
+which turns a safety net into a hazard. Fourteen leaves room for both and still keeps the
+store to a fortnight, which is what ADR-0004's *Residual risk* is leaning on.
+
+The notice kept its seven-day shape across that change rather than scaling with the
+period. A week is how much warning is useful to a person; it is not a fraction of the
+retention period, and writing it as a gap subtracted from `RETENTION_DAYS` is what let the
+period move without the notice landing after the deletion.
 
 ### How it runs, and why not on a timer
 
@@ -96,6 +120,15 @@ only because the first one was a request rather than a rule — remove the reque
 ceiling has nothing to be a backstop for. Thirty days, automatic, with notice, is the
 whole policy.
 
+**Thirty days.** The figure this record was drafted and first implemented against, changed
+by the owner on 2026-09-23 before it landed. Rejected on the reasoning under *Why fourteen
+days*: a month is a retention period, and what this rule is actually for is a backstop. The
+change cost two constants and the prose that quotes them, because the rule reads the
+constants and the tests name the rule; no logic moved.
+
+**Seven days.** Considered at the same time and rejected as too tight, for the same
+reason. It would also have left no notice window at all without shortening the notice.
+
 **A timer while the application is open.** Rejected above: it would make deletion depend
 on her having the app in front of her, which is precisely when she is working.
 
@@ -117,7 +150,7 @@ The private fork changes the constants and rebuilds.
 **Positive**
 
 - ADR-0004's mitigation is now a property of the application rather than an assumption a
-  record leans on. The store holds an event's content for thirty days after the event and
+  record leans on. The store holds an event's content for a fortnight after the event and
   not indefinitely.
 - The rule is one module with the periods as named constants and the clock's fallback
   order in one function, so the rule and its tests agree by construction rather than by
