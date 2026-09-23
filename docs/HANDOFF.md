@@ -1,7 +1,7 @@
 # Handoff
 
-Written 2026-09-23, at the head of `feat/session-23-device-findings`, for the state
-`main` will be in when it merges. `main` is at `6c9a3cd`.
+Written 2026-09-23, at the head of `feat/session-22-retention`, for the state `main`
+will be in when it merges. `main` is at `2aa1d42`.
 
 Every claim here was checked against the repository, git history, the trackers, the
 GitHub API, or the running deployment in the session that wrote it. Where something
@@ -98,8 +98,10 @@ closed without merging (#3, #5, #26, #27, #35, #52).
   ADR-0012.
 - **Session 21, the private repository, deployed** — **#55** for the code the deployment
   needed, **#56** for the record. ADR-0012 amended.
-- **Session 23, the device findings** — this branch. ADR-0012 amended again;
+- **Session 23, the device findings** — **#57**, 2026-09-22. ADR-0012 amended again;
   `fieldnote-cno` closed.
+- **Session 22, retention implemented** — this branch. ADR-0013; ADR-0004 amended;
+  `fieldnote-iox` closed.
 
 ---
 
@@ -183,8 +185,9 @@ form controls dark under it. Every pair was measured in a browser rather than re
 about; three failed and were darkened, and the control boundary went from 1.26:1 to
 3.32:1. `tests/e2e/theme.spec.ts` asserts the palette with the browser emulating dark.
 
-**Schema is at v9**, unchanged, and deliberately: neither the caller key, the storage
-line, nor anything in session 23 needed a field.
+**Schema is at v9**, unchanged through four sessions, and deliberately: neither the
+caller key, the storage line, the session 23 work, nor retention needed a field. Each
+time the question was answered before any code.
 
 **Versions.** Prompt template 1.2.0; guardrail ruleset 1.4.0. Neither changed.
 
@@ -212,10 +215,11 @@ up to 2 years for flagged content, not a zero-retention arrangement.
 
 ### Session 22 — Retention, implemented
 
-`fieldnote-iox`, as the owner decided it on 2026-09-17: automatic deletion 30 days after
-the event ends, a notice from day 23, her own delete at any time, audit records kept, the
-period a build-time constant. A test for each rule, the ADR the decision still needs, and
-ADR-0004's retention consequence pointed at it. ~3 hours.
+Done, 2026-09-23. ADR-0013 is the record and `src/lib/db/retention.ts` is the rule; the
+schema did not move. What is left in this territory is the two deletion limits, both
+still open owner decisions: removing one attendee leaves their notes and drafts
+(`fieldnote-jqk`), and nothing deletes a single note or a single draft at all
+(`fieldnote-cdx`). Retention works on whole events and neither fixes nor worsens them.
 
 ### Owner actions owed, none of which this repository can verify
 
@@ -243,15 +247,15 @@ why.
 Three places, deliberately. Do not duplicate between them.
 
 **Beads — build state, local.** Verified this session, by doing, before the first
-tracker write and after the last: the tracker's data stays on this machine. 74 issues: 30
-open, 43 closed, 1 blocked, 29 ready (`bd stats`).
+tracker write and after the last: the tracker's data stays on this machine. 74 issues: 28
+open, 45 closed, 1 blocked, 27 ready (`bd stats`).
 
 Closed this session: `fieldnote-6x5`, the precache on a real build; `fieldnote-ijg`, the
 deployment; `fieldnote-v2s`, the private fork's missing session; `fieldnote-cjs`, moot on
 a deployment with no proxy in front of it. Appended: `fieldnote-bdw`, with the second
 device observation. Opened: `fieldnote-cno`, the two interface findings from the device
 check, recorded rather than fixed on the owner's instruction. Still open and
-load-bearing: `fieldnote-iox` — retention, session 22; `fieldnote-bdw` — the seven-day
+load-bearing: `fieldnote-bdw` — the seven-day
 window and storage pressure, now the whole of it; `fieldnote-jqk` and `fieldnote-cdx` —
 the two deletion limits, owner decisions; `fieldnote-52s`, `fieldnote-5ow` — the cascade
 test and the records naming three tables; `fieldnote-8w6`, `fieldnote-ap1` — where
@@ -355,7 +359,11 @@ Stated rather than smoothed over.
 - **The seven-day eviction window and real storage pressure are unobserved.**
 - **Where the platform's dictation runs, and whether the store is in a backup, are
   unrecorded.**
-- **Audit records grow without bound** by design, and retention is decided and not built.
+- **Audit records grow without bound** by design (ADR-0008). Retention bounds an event's
+  content and not the records, so what is unbounded is the record table rather than the
+  store as a whole.
+- **Retention deletes on the first load after the date, not on the date.** A device left
+  closed past a due date holds the content until it is next opened.
 - **A name with neither a title nor a roster entry is still missed.**
 - **Hours in the build guide are estimates, not measurements.**
 

@@ -20,6 +20,8 @@
   and bytes in a string field, and `tests/unit/cipher.test.ts` asserts both. Session 19
   implements the two bytes methods alongside the two string ones. The decision is
   unchanged.
+- **Amended:** 2026-09-23, session 22 — the retention policy this record's *Residual
+  risk* leans on now exists as ADR-0013 and is implemented. The decision is unchanged.
 
 ## Context
 
@@ -174,3 +176,12 @@ The mitigations that actually bound this are architectural and already decided: 
 server-side store of HCP data (plan §5), pseudonymization before the only egress boundary
 (§4.1), and a retention policy that keeps the local store small. A device holding two
 events' worth of notes is a smaller loss than one holding two years'.
+
+> **Amended 2026-09-23, session 22.** That retention policy now exists and is
+> implemented: **ADR-0013**. An event's content is deleted thirty days after the event
+> ends, with a notice from day twenty-three. This paragraph's mitigation is therefore a
+> property of the application rather than an assumption this record leans on, which is
+> what `fieldnote-tcq` was opened to fix. The second entry above still holds and ADR-0013
+> repeats it: audit records are never pruned, so the store keeps a hash-only record for
+> every generation that ever ran, and that growth is accepted. The decision here is
+> unchanged.

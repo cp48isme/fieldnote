@@ -7,6 +7,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 22 — retention, implemented
+
+- An event's content is deleted thirty days after the event ends, keyed on when it ended
+  and falling back to when it started and then to when its record was last written. A
+  notice appears on the event from day twenty-three with the date. Her own delete is
+  unchanged, and audit records are never pruned.
+- The sweep runs on load rather than on a timer, because an installed app is not running
+  when it is closed; deletion reuses `deleteEvent`, so retention and a delete by hand
+  share one cascade.
+- Nothing is stored to make it work, so the schema stays at v9 with no migration. The two
+  things that costs are recorded in the ADR rather than left to be discovered.
+- ADR-0013 records the decision, the mechanism, and the first decision as superseded.
+  ADR-0004's retention consequence points at it, and `docs/DATA-PROTECTION.md` §4 reads as
+  built. `fieldnote-iox` closed.
+- Session 23's date, recorded as 2026-09-23 in five places, corrected to 2026-09-22.
+
 ### Session 23 — the device findings
 
 - The Device link renders whether or not an event exists, so a fresh install can reach
@@ -23,7 +39,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - The generation route's start-up line reports whether the model key is present, never
   its value, so a variable that has not reached a deployment says so in the logs rather
   than waiting to be found by someone drafting.
-- ADR-0012 amended 2026-09-23. `fieldnote-cno` closed.
+- ADR-0012 amended 2026-09-22. `fieldnote-cno` closed.
 
 ### Session 21 — the private repository, deployed
 

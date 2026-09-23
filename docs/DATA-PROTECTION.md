@@ -524,9 +524,9 @@ And one input the platform processes before the application sees it: dictation
 
 ## 4. Retention
 
-**Decided by the owner: 2026-09-16, and changed 2026-09-17.** The decision is in
-`fieldnote-tcq`'s notes of 2026-09-17, which supersede the notes of 2026-09-16, and is
-written here as stated, not reinterpreted.
+**Decided by the owner on 2026-09-16, changed 2026-09-17, and implemented 2026-09-23.**
+The decision is ADR-0013, from `fieldnote-tcq`'s notes of 2026-09-17, which supersede the
+notes of 2026-09-16; it is written here as stated, not reinterpreted.
 
 - **Scope:** an event's content — attendees, notes, drafts, contacts, images, and the
   event itself: what `deleteEvent` cascades to today (§3.5).
@@ -541,16 +541,27 @@ written here as stated, not reinterpreted.
 - **Why there is no export prompt:** the correspondence that leaves by her mail client
   is the record kept elsewhere; the application's copy is working material.
 
-**Not yet implemented.** `fieldnote-iox` carries the implementation, in its own session,
-with the ADR the decision still needs. Nothing in `src/` deletes by age or on a schedule
-today, and no notice of a deletion date is shown: the only timer in the source is the
-crash-recovery heartbeat
-(`src/lib/db/recovery.ts:83`), and the only deletions are the ones §3.5 lists, each by
-her hand. Until `fieldnote-iox` closes, the store is not bounded, and ADR-0004's reliance
-on a small local store — "a device holding two events' worth of notes is a smaller loss
-than one holding two years'" — is a decided policy, not a present property of the
-application. This document does not assume the store is small today, or that anything
-deletes on a schedule today.
+**Built, and this is how it runs.** `src/lib/db/retention.ts` holds the periods as named
+constants and the clock's fallback order in one function, so the rule and its tests agree
+by construction. The sweep runs **on load**, over every event past due, and reuses
+`deleteEvent`, so retention and a delete by hand share one cascade and cannot drift
+apart. Not on a timer: an installed application is not running when it is closed, so an
+interval would delete only while she was looking at the screen. The consequence worth
+stating is that the deletion happens on the first load after the date rather than on the
+date — a phone left closed for a month deletes when it is next opened.
+
+**Nothing is stored to make it work**, so the schema stays at v9 with no migration: every
+date is computed from `endsAt`, `startsAt`, and `updatedAt`, which the event already
+carries. Two things that costs, both accepted in ADR-0013 rather than discovered later.
+There is no record that she saw the notice, so it shows on every load through the seven
+days — right for a notice, wrong for a prompt, and it is a notice. And after a deletion
+nothing distinguishes retention's work from hers: the event is gone either way and its
+audit records are orphaned either way, so the store cannot say which removed it.
+
+ADR-0004's reliance on a small local store — "a device holding two events' worth of notes
+is a smaller loss than one holding two years'" — is therefore now a property of the
+application rather than a decided policy, and that record carries a dated amendment
+saying so. What the store still holds without limit is audit records, below.
 
 **Audit records grow without limit by decision** (ADR-0008; `fieldnote-tcq`). They are
 small — ids, hashes, timestamps, short strings — and they are all that remains of an
@@ -800,14 +811,18 @@ outside the note delimiter; the provider's retention an account arrangement; and
 last item, `fieldnote-loh`, as §6 words it. Each has its bead or its decision record
 there.
 
-Since that list was written, retention has been decided and not built; the second item
-now reads as §4 of this document says, with `fieldnote-tcq` closed and `fieldnote-iox`
-open.
+Since that list was written, retention has been decided and built; the second item now
+reads as §4 of this document says, with `fieldnote-tcq` and `fieldnote-iox` both closed
+and ADR-0013 the record.
 
 Added here, each with a bead, each specific to data protection, none already in §6:
 
-- **Retention is decided and not implemented.** Until `fieldnote-iox` closes, nothing
-  bounds the store.
+- **Retention bounds an event's content and not the audit records.** An event's content
+  goes thirty days after the event ends (ADR-0013), and the records it generated stay for
+  ever, by decision. What is unbounded is therefore the record table, not the store as a
+  whole.
+- **The deletion happens on the first load after the date, not on the date.** A device
+  left closed past the due date holds the content until it is next opened.
 - **Eviction, on the availability axis.** Whether data leaves the device before the
   platform deletes it depends on her exporting it. Two device observations now exist
   (§4), and `persisted()` reports persistent; the seven-day window and behaviour under
