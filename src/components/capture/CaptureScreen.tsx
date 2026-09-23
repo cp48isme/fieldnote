@@ -56,6 +56,8 @@ import {
   saveDraftBody,
   saveNoteBody,
   setActiveEventId,
+  retentionFor,
+  sweepExpiredEvents,
   updateAttendee,
   type ApprovedContentRecord,
   type AttendeeEdit,
@@ -86,6 +88,7 @@ import { EventSetup } from "./EventSetup";
 import { EventSwitcher } from "./EventSwitcher";
 import { NoteLog } from "./NoteLog";
 import { RecoveryNotice } from "./RecoveryNotice";
+import { RetentionNotice } from "./RetentionNotice";
 
 export function CaptureScreen() {
   const [loaded, setLoaded] = useState(false);
@@ -253,6 +256,14 @@ export function CaptureScreen() {
 
     void (async () => {
       try {
+        // Retention first, so what follows never shows an event that is past due
+        // (ADR-0013). On load rather than on a timer: an installed app is not running
+        // when it is closed, and a rule that only fires while she is looking at the
+        // screen is not a rule. A failure here is swallowed inside the sweep; the events
+        // are read afterwards either way.
+        await sweepExpiredEvents(Date.now());
+        if (cancelled) return;
+
         const [all, activeId] = await Promise.all([listEvents(), getActiveEventId()]);
         if (cancelled) return;
 
@@ -648,6 +659,15 @@ export function CaptureScreen() {
               onDismiss={() => void session.dismissRecovery()}
             />
           )}
+
+          {/*
+            The retention notice for the open event, from day 7 (ADR-0013). Rendered
+            beside the recovery notice because both are things the app tells her about
+            this device's state rather than about the event's content, and neither is a
+            control. `retentionFor` is computed on each render from the event's own
+            timestamps; nothing is stored, so nothing can go stale.
+          */}
+          {event && <RetentionNotice retention={retentionFor(event, Date.now())} />}
 
           {(!event || startingNewEvent) && (
             <EventSetup

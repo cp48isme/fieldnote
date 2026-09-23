@@ -27,7 +27,7 @@
     domain. The generated production URL and the branch URL both redirect to a Vercel
     login under Standard Protection, so neither is installable by her, which is the
     intended shape rather than a surprise.
-- **Amended:** 2026-09-23, session 23. Two changes to what decision 6 describes, neither
+- **Amended:** 2026-09-22, session 23. Two changes to what decision 6 describes, neither
   altering a decision.
   - **The start-up line now reports both variables the route refuses without.** It
     already carried the private-term rule's status, count, and source; it now also

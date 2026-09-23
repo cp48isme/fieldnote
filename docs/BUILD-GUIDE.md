@@ -799,9 +799,8 @@ quietly.
 *~3 hours*
 
 `fieldnote-iox`, the retention policy as the owner decided it on 2026-09-17: automatic
-deletion 30 days after the event ends, keyed on `endsAt` with the `startsAt` and
-`updatedAt` fallbacks; a notice on the event from day 23 saying the date its content will
-be deleted; her own delete at any time, as today; audit records kept and never pruned;
+deletion after the event ends, keyed on `endsAt` with the `startsAt` and `updatedAt`
+fallbacks; a notice on the event before that date saying what the date is; her own delete at any time, as today; audit records kept and never pruned;
 the period a build-time constant. A test for each rule, the ADR the decision still needs,
 and ADR-0004's retention consequence pointed at it.
 
@@ -810,9 +809,45 @@ warned-at or dismissed-at timestamp — or whether the rule is computed from the
 existing fields on every load. A stored field is a schema version and a migration with a
 test.
 
-**Done when:** an event's content deletes on the schedule, the notice appears from day
-23 with the right date, audit records survive it, and `docs/DATA-PROTECTION.md` §4 stops
+**Done when:** an event's content deletes on the schedule, the notice appears with the
+right date, audit records survive it, and `docs/DATA-PROTECTION.md` §4 stops
 saying "not yet implemented".
+
+> **Amended 2026-09-23, session 22, on completion.** ADR-0013 records the decision of
+> 2026-09-17 and the mechanism; the first decision, prompted with a sixty-day ceiling, is
+> written up as superseded with the owner's reasoning, which is that the correspondence
+> that matters has already left by mail client and the application's copy is working
+> material.
+>
+> **The period is fourteen days, set by the owner on 2026-09-23 while the work was in
+> review**, replacing the thirty this entry was originally written against. Same reasoning
+> as the export prompt: the sent copy is the record kept elsewhere, so the rule is a
+> backstop for an event she forgets to close out and should be no longer than it has to
+> be. Seven days was considered and judged too tight against a slow week or a late
+> follow-up. The notice kept its seven-day shape and so opens at day seven. Changing it
+> cost two constants and the prose quoting them, and no logic at all, which is what
+> writing the notice as a gap subtracted from the period was for.
+>
+> **The schema question was answered before any code, and the answer was computed.** Every
+> date derives from `endsAt`, `startsAt`, and `updatedAt`, which the event already
+> carries, so the schema stays at v9 with no migration. The ADR states the two things that
+> costs: the notice has no dismissal and so repeats through its window, which suits a
+> notice; and after a deletion nothing distinguishes retention's work from a delete by
+> hand, which is accepted rather than overlooked.
+>
+> **The sweep runs on load, not on a timer**, because an installed application is not
+> running when it is closed. The consequence is stated rather than hidden: an event past
+> its date is deleted the first time the app opens afterwards, so a phone left closed for
+> a month deletes when it is next opened. Deletion reuses `deleteEvent`, so retention and
+> a hand delete share one cascade, and the audit records are orphaned by the same path in
+> both cases.
+>
+> Eighteen unit tests and three end-to-end, each named for the rule it holds, including
+> one that watches an event past its date disappear on reload in a real browser and counts
+> the audit records still in IndexedDB afterwards. ADR-0004's retention consequence now
+> points at ADR-0013, and `docs/DATA-PROTECTION.md` §4 reads as built. The session also
+> corrected session 23's date, which was recorded as 2026-09-23 in five places and
+> happened on 2026-09-22. Unit 385, end-to-end 52. No watched path changed.
 
 ### Session 23 — The device findings
 *~3 hours*
@@ -821,7 +856,7 @@ What the first real use of the deployment turned up, on the device rather than i
 test: `fieldnote-cno`'s two interface findings, a palette that followed the phone into
 dark mode, and a deployment variable that announced nothing about itself.
 
-> **Amended 2026-09-23, session 23, on completion.** Four changes, one deploy.
+> **Amended 2026-09-22, session 23, on completion.** Four changes, one deploy.
 >
 > **Reachable settings.** The Device link left the block that renders only once an event
 > exists, so a fresh install can authorise itself before creating anything. The order she

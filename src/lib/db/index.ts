@@ -141,3 +141,17 @@ export {
   type SessionHandle,
   type RecoveredSession,
 } from "./recovery";
+
+export {
+  RETENTION_DAYS,
+  NOTICE_DAYS_BEFORE_DELETION,
+  NOTICE_FROM_DAY,
+  retentionClockAt,
+  deletionDueAt,
+  noticeFromAt,
+  retentionFor,
+  formatDeletionDate,
+  sweepExpiredEvents,
+  type Retention,
+  type RetentionState,
+} from "./retention";

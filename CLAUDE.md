@@ -138,3 +138,4 @@ Existing (index and conventions in `docs/adr/README.md`):
 - ADR-0010 — `pdf-lib` for producing the briefing document
 - ADR-0011 — a pre-event email is a draft under the review gate, model or not
 - ADR-0012 — deployment on Vercel, and who may call the generation route
+- ADR-0013 — retention of the local store
