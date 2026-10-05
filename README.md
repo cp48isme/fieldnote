@@ -10,7 +10,11 @@ controls are enforced, not asserted: names never reach the model, claim-bearing 
 selected from approved copy or not written, every generation leaves an audit record, and
 the adversarial suite below runs against the live model. Where a control cannot be
 enforced, the documentation says so. `docs/PROJECT-PLAN.md` is the plan; `docs/adr/` holds
-the decisions with their rejected alternatives; `docs/HANDOFF.md` is where things stand.
+the decisions with their rejected alternatives; `docs/THREAT-MODEL.md` is STRIDE per
+boundary with a residual section; `docs/DATA-PROTECTION.md` is the data inventory, the
+flows, and the retention rule; `docs/COMPLIANCE-MAP.md` maps the controls to the NIST AI
+Risk Management Framework, the EU AI Act, and ISO/IEC 42001, including the rows it cannot
+satisfy; `docs/HANDOFF.md` is where things stand.
 
 This is the de-branded public build (ADR-0001). Every name, site, and product detail in
 it is synthetic.
