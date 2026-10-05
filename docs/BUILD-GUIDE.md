@@ -665,6 +665,41 @@ tier rather than expansive; accuracy reads better than overclaiming.
 The same precision applies to controls not built. Map ADR-0004's seam as what it is,
 and cite the ADR, rather than mapping encryption-at-rest as implemented.
 
+> **Amended 2026-10-05, session 17, on completion.** `docs/COMPLIANCE-MAP.md` exists.
+> The risk tier is argued from the Act's own routes rather than asserted: not a
+> prohibited practice, not high-risk by either route, limited risk with transparency the
+> operative obligation. The Article 6(1) question is answered explicitly, because the
+> domain sounds regulated and a reader will look for it — the product demonstrated at
+> these events may be a regulated device, and this application is not a safety component
+> of it. Six high-risk obligations are mapped as **implemented voluntarily**, each with
+> the reason it was actually built, which in every case predates the mapping.
+>
+> **Article 50 produced the one real gap**, and finding it is what the section was for.
+> The duty to mark synthetic content in machine-readable form is not fully answered: the
+> assistive-editing exemption covers the selected claim-bearing text and not the
+> generated relational prose, and exported drafts carry no marker, because export is a
+> clipboard copy and a marker would have to survive a paste. Recorded as
+> `fieldnote-lr8`, to be settled by an ADR rather than in code, since the answer is a
+> position.
+>
+> **ISO/IEC 42001 is the section to read for how the project handles a standard it
+> cannot check.** It is paywalled and this repository does not hold a copy, so that
+> section cites **no control identifiers at all** and says why. Its headline is a
+> negative: the standard specifies a management system, this project has no
+> organisation, and it therefore could not be certified. What the operational half of
+> the standard asks for is substantially present, and the split between the two is the
+> useful result.
+>
+> Three things were found while reading the sources rather than written from them, and
+> each became a bead rather than a silent fix: `fieldnote-12k`, where `README.md`'s eval
+> prose contradicts its own eval table for the same run; `fieldnote-lr8` above; and
+> `fieldnote-6gq`, from the dependency work that preceded this session. The map cites
+> the table rather than the prose for exactly that reason.
+>
+> Every path, test, and bead id the document cites was checked to exist before it was
+> committed. No ADR was written: the session recorded a position in a map, and the one
+> decision it surfaced belongs to a later session.
+
 ### Session 18 — README, system card, demo
 *~3 hours*
 

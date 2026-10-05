@@ -7,6 +7,41 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Session 17 — compliance map
+
+- `docs/COMPLIANCE-MAP.md`: controls mapped to the NIST AI Risk Management Framework
+  1.0, the EU AI Act, and ISO/IEC 42001:2023, with a control inventory naming the test
+  or record that holds each one.
+- The EU AI Act risk tier is argued from the Act's own routes rather than asserted: not
+  a prohibited practice, not high-risk under either Article 6 route, limited risk with
+  transparency the operative obligation. Article 6(1) is answered explicitly, because
+  the product demonstrated at these events may be regulated and this application is not
+  a safety component of it.
+- Six high-risk obligations are mapped as implemented voluntarily, each with the reason
+  it was built, which in every case predates the mapping. Article 12 record-keeping is
+  the clearest: ADR-0008 built it so cleanup could not destroy the evidence.
+- Article 50's machine-readable marking of synthetic content is recorded as **not met**.
+  The assistive-editing exemption covers the selected claim-bearing text and not the
+  generated prose, and exported drafts carry no marker because export is a clipboard
+  copy. `fieldnote-lr8`.
+- The ISO/IEC 42001 section cites no control identifiers, because the standard is
+  paywalled and this project does not hold a copy, and says so. Its headline is that the
+  project has no organisation and therefore no AI management system; the operational
+  half of the standard is substantially present and the split is the result.
+- Controls deliberately not built have their own section citing the record for each:
+  encryption at rest as a seam (ADR-0004), audio capture (ADR-0005), accounts
+  (`SECURITY.md`), post-deployment monitoring, and a channel for data subjects.
+
+### Dependencies
+
+- Dependabot backlog cleared and seven open security alerts taken to zero. #62 merged
+  the group bump, which also carried the undici fix; #61 was closed rather than merged
+  because it would have rolled back the SDK and the framework; #59 bumped the CodeQL
+  action from v4.38.0 to v4.38.1, verified against the upstream release commits.
+- #63 lifted `brace-expansion` past a quadratic-expansion advisory on both version lines
+  in the tree. Dependabot could not produce this one: its run failed with
+  `dependency_file_not_resolvable` on a transitive package. No override was needed.
+
 ### Session 22 — retention, implemented
 
 - An event's content is deleted fourteen days after the event ends, keyed on when it
